@@ -101,7 +101,7 @@ InpRiskPct=1.0
 InpMaxLots=50
 InpPush=false
 InpDrawBoxes=false
-"@ | Out-File $ini -Encoding ascii
+"@ | Out-File $ini -Encoding unicode   # MT5 설정 파일은 UTF-16(유니코드)으로 저장해야 읽힌다
 Write-Host "설정 파일: $ini"
 Write-Host "조건: EURUSD 5분봉, 2019.01.01 ~ $to, 1분 OHLC 모델, 시작 잔고 10,000달러, 거래당 위험 1% (R 계산용)"
 
