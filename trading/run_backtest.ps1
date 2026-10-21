@@ -18,7 +18,8 @@ if (-not (Test-Path $DataDir)) {
            Where-Object { [IO.File]::ReadAllText($_.FullName) -match "IC" } | Select-Object -First 1
     if ($hit) { $DataDir = $hit.DirectoryName }
 }
-$Branch  = "claude/master-agent-system-o87ntp"
+# 캐시된 옛 파일을 받지 않도록 커밋 번호로 고정
+$Branch  = "4bd22a5b8c754ec12e0b16b15098a1630910db25"
 $Base    = "https://raw.githubusercontent.com/seokjun79/aptos-core/$Branch"
 $Work    = Join-Path $HOME "venus-trading"
 
