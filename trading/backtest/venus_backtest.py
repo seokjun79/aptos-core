@@ -1,4 +1,4 @@
-"""Venus model v1 backtester (spec: trading/strategy/venus_model_v1.md).
+"""Venus model v1/v2 backtester (specs: trading/strategy/venus_model_v1.md, venus_model_v2.md).
 
 Bar-by-bar, no lookahead: signal judged on bar i close, entry at bar i+1 open.
 Prices in the CSV are bid; ask = bid + spread(points) * POINT.
@@ -7,6 +7,8 @@ Usage:
   python trading/backtest/venus_backtest.py --data trading/data/EURUSD_M15_icmarkets.csv --model A
   python trading/backtest/venus_backtest.py --data ... --model A --flow 5 --rr 2.0 --start 2024-01-01
   python trading/backtest/venus_backtest.py --data ... --model A --grid
+  python trading/backtest/venus_backtest.py --data ... --model C2 --rr 1.5 --trend
+  python trading/backtest/venus_backtest.py --data ... --suite v2
 
 Resolved ambiguities (see report / comments marked [AMB]):
   - Entry window uses the signal bar's CLOSE time (= bar open time + 15 min).
@@ -24,6 +26,20 @@ Resolved ambiguities (see report / comments marked [AMB]):
     trade closes, subject to 1 position / 2 per day). If long and short setups
     both fire on the same bar, no trade.
   - R per trade = net P&L (after commission) / (lots * SL pips * $10).
+
+v2 (models C1/C2/C3) resolved ambiguities [AMB-v2]:
+  - Range bars (C1 box 02:00-09:00, C3 range 09:00-14:00) = bars whose OPEN time is in
+    [start, end), i.e. the last one closes exactly at the end time.
+  - C1/C3 "first close outside": scanning from the first bar after the range, only the
+    first bar of the day that closes outside (either side) is a breakout. It is a signal
+    only if its close time is inside the entry window; otherwise that day has no signal.
+  - Entry windows use the signal bar's CLOSE time, [start, end), as in v1.
+  - Trend filter T is applied to the raw signal, then "first signal of the day" is taken
+    (so for C2 a counter-trend break does not block a later with-trend break).
+    A first signal later skipped for SL > 25 pip still uses up the day.
+  - H1 EMA50: ewm(span=50, adjust=False), needs 50 completed H1 bars; H1 bars are the
+    M15 data floored to the hour. At a signal bar closing at time t the filter uses the
+    last H1 bar whose open <= floor(t, 1h) - 1h (always completed by t).
 """
 from __future__ import annotations
 
@@ -47,6 +63,16 @@ FORCE_EXIT_MIN = 19 * 60
 
 IS_START, IS_END = "2019-01-01", "2023-12-31"
 OOS_START = "2024-01-01"
+
+# v2 candidate windows (server minutes)
+C1_BOX = (2 * 60, 9 * 60)
+C1_WIN = (10 * 60, 13 * 60)
+C2_WIN = (12 * 60 + 30, 17 * 60 + 30)
+C3_RANGE = (9 * 60, 14 * 60)
+C3_WIN = (15 * 60, 17 * 60 + 30)
+V2_RRS = (1.0, 1.5, 2.0)
+V2_MAX_SL = 25.0
+V2_BAR = {"trades": 60, "PF": 1.2, "max_dd_R": 10.0}
 
 RESULTS = Path(__file__).resolve().parent / "results"
 
@@ -215,6 +241,118 @@ def signals_model_b(df: pd.DataFrame) -> dict:
     return s
 
 
+# ------------------------------------------------------------------ v2 (C1..C3)
+def window_mask(df: pd.DataFrame, win) -> np.ndarray:
+    """Signal bar CLOSE time in [win[0], win[1]) server minutes."""
+    m = _close_minutes(df)
+    return (m >= win[0]) & (m < win[1])
+
+
+def _day_bounds(dates: np.ndarray):
+    n = len(dates)
+    if n == 0:
+        return np.array([], int), np.array([], int)
+    starts = np.flatnonzero(np.r_[True, dates[1:] != dates[:-1]])
+    return starts, np.r_[starts[1:], n]
+
+
+def range_breakout(df: pd.DataFrame, rng, win):
+    """C1/C3 rule. Range = per server date, bars with open time in rng. Only the first
+    bar after the range that CLOSES outside it counts; it is a signal only when its close
+    time is in `win`. Returns (long, short, range_high, range_low)."""
+    ts = pd.DatetimeIndex(df["server_time"])
+    dates = ts.normalize().to_numpy()
+    om = (ts.hour * 60 + ts.minute).to_numpy()
+    h, l, c = (df[k].to_numpy(float) for k in ("high", "low", "close"))
+    n = len(df)
+    long_, short = np.zeros(n, bool), np.zeros(n, bool)
+    r_hi, r_lo = np.full(n, np.nan), np.full(n, np.nan)
+    in_rng = (om >= rng[0]) & (om < rng[1])
+    after = om >= rng[1]
+    wm = window_mask(df, win)
+    for a, b in zip(*_day_bounds(dates)):
+        r = in_rng[a:b]
+        if not r.any():
+            continue
+        bh, bl = h[a:b][r].max(), l[a:b][r].min()
+        cc = c[a:b]
+        out = np.flatnonzero(after[a:b] & ((cc > bh) | (cc < bl)))
+        if len(out) == 0:
+            continue
+        k = a + out[0]
+        if not wm[k]:
+            continue
+        (long_ if c[k] > bh else short)[k] = True
+        r_hi[k], r_lo[k] = bh, bl
+    return long_, short, r_hi, r_lo
+
+
+def c2_raw(df: pd.DataFrame, flow_min: float = 5.0):
+    """C2: close > max(high[i-16..i-1]) and close - close[i-4] >= flow_min pips (short sym.)."""
+    h, l, c = (pd.Series(df[k].to_numpy(float)) for k in ("high", "low", "close"))
+    hh = h.shift(1).rolling(16).max().to_numpy()
+    ll = l.shift(1).rolling(16).min().to_numpy()
+    c4 = c.shift(4).to_numpy()
+    c = c.to_numpy()
+    with np.errstate(invalid="ignore"):
+        long_ = (c > hh) & ((c - c4) / PIP >= flow_min - EPS)
+        short = (c < ll) & ((c4 - c) / PIP >= flow_min - EPS)
+    wm = window_mask(df, C2_WIN)
+    return long_ & wm, short & wm
+
+
+def h1_trend(df: pd.DataFrame, span: int = 50):
+    """Per M15 bar: (H1 close, H1 EMA) of the last H1 bar COMPLETED at that bar's close."""
+    st = df["server_time"]
+    h1 = df.groupby(st.dt.floor("1h"), sort=True)["close"].last()
+    ema = h1.ewm(span=span, adjust=False, min_periods=span).mean()
+    target = ((st + pd.Timedelta(minutes=15)).dt.floor("1h") - pd.Timedelta(hours=1)).to_numpy()
+    pos = h1.index.searchsorted(target, side="right") - 1
+    ok = pos >= 0
+    p = np.maximum(pos, 0)
+    h1c = np.where(ok, h1.to_numpy(float)[p], np.nan) if len(h1) else np.full(len(df), np.nan)
+    e = np.where(ok, ema.to_numpy(float)[p], np.nan) if len(h1) else np.full(len(df), np.nan)
+    return h1c, e
+
+
+def signals_model_c(df: pd.DataFrame, model: str, rr: float = 1.5, trend: bool = False,
+                    flow_min: float = 5.0) -> dict:
+    n = len(df)
+    if model == "C1":
+        long_, short, _, _ = range_breakout(df, C1_BOX, C1_WIN)
+        win = C1_WIN
+    elif model == "C2":
+        long_, short = c2_raw(df, flow_min)
+        win = C2_WIN
+    elif model == "C3":
+        long_, short, _, _ = range_breakout(df, C3_RANGE, C3_WIN)
+        win = C3_WIN
+    else:
+        raise ValueError(model)
+    if trend:
+        h1c, ema = h1_trend(df)
+        with np.errstate(invalid="ignore"):
+            long_ = long_ & (h1c > ema)
+            short = short & (h1c < ema)
+    both = long_ & short
+    long_, short = long_ & ~both, short & ~both
+    any_ = long_ | short
+    dates = pd.DatetimeIndex(df["server_time"]).normalize()
+    first = any_ & (pd.Series(any_).groupby(dates).cumsum().to_numpy() == 1)
+    long_, short = long_ & first, short & first
+    h, l = df["high"].to_numpy(float), df["low"].to_numpy(float)
+    low4 = pd.Series(l).rolling(4, min_periods=1).min().to_numpy()
+    high4 = pd.Series(h).rolling(4, min_periods=1).max().to_numpy()
+    s = _empty_signals(n)
+    s["dir"][long_] = 1
+    s["dir"][short] = -1
+    s["sl"] = np.where(long_, low4 - PIP, np.where(short, high4 + PIP, np.nan))
+    s["rr"][long_ | short] = rr
+    s["max_sl"][long_ | short] = V2_MAX_SL
+    s["win"] = window_mask(df, win)
+    return s
+
+
 # ------------------------------------------------------------------ simulation
 @dataclass
 class Position:
@@ -268,7 +406,7 @@ def simulate(df: pd.DataFrame, sig: dict, cfg: Config | None = None):
     mins = (ts.hour * 60 + ts.minute).to_numpy()
     o, h, l, c = (df[k].to_numpy(float) for k in ("open", "high", "low", "close"))
     spr = df["spread"].to_numpy(float) * POINT
-    win = in_window(df)
+    win = sig["win"] if "win" in sig else in_window(df)  # v2 models carry their own window
     sig_ok = np.ones(len(df), bool)
     if cfg.start is not None:
         sig_ok &= t >= np.datetime64(cfg.start)
@@ -446,14 +584,79 @@ def save_outputs(tr: pd.DataFrame, tag: str, start_balance: float, title: str):
 
 
 # ------------------------------------------------------------------------- CLI
-def build_signals(df, model, flow, rr):
-    return signals_model_a(df, flow, rr) if model == "A" else signals_model_b(df)
+def build_signals(df, model, flow, rr, trend=False):
+    if model == "A":
+        return signals_model_a(df, flow, rr)
+    if model == "B":
+        return signals_model_b(df)
+    return signals_model_c(df, model, rr, trend)
 
 
-def run_once(df, model, flow, rr, start, end, cfg_base: Config):
-    cfg = Config(**{**cfg_base.__dict__, "start": start, "end": end})
-    tr, skips = simulate(df, build_signals(df, model, flow, rr), cfg)
+def run_once(df, model, flow, rr, start, end, cfg_base: Config, trend=False, max_per_day=None):
+    over = {"start": start, "end": end}
+    if max_per_day is not None:
+        over["max_entries_per_day"] = max_per_day
+    cfg = Config(**{**cfg_base.__dict__, **over})
+    tr, skips = simulate(df, build_signals(df, model, flow, rr, trend), cfg)
     return tr, skips, summarize(tr, cfg.balance)
+
+
+def v2_label(model, rr, trend):
+    return f"model{model}_rr{rr:g}_T{'on' if trend else 'off'}"
+
+
+def v2_verdict(s: dict):
+    """Spec bar: trades >= 60, PF >= 1.2, max DD <= 10R. Returns (passed, reasons)."""
+    fails = []
+    if s.get("trades", 0) < V2_BAR["trades"]:
+        fails.append(f"trades {s.get('trades', 0)} < {V2_BAR['trades']}")
+    if s.get("PF", 0) < V2_BAR["PF"]:
+        fails.append(f"PF {s.get('PF', 0)} < {V2_BAR['PF']}")
+    if s.get("max_dd_R", 0) > V2_BAR["max_dd_R"]:
+        fails.append(f"max_dd_R {s.get('max_dd_R', 0)} > {V2_BAR['max_dd_R']}")
+    return not fails, fails
+
+
+def run_suite_v2(df, base: Config, sfx: str, is_start=None, is_end=None, max_per_day=1):
+    t0, t1 = df.server_time.iloc[0], df.server_time.iloc[-1]
+    is_s, is_e = _ts(is_start or IS_START), _ts(is_end or IS_END)
+    oos_s = _ts(OOS_START)
+    eff_s, eff_e = max(is_s, t0.normalize()), min(is_e, t1.normalize())
+    print(f"\nv2 suite: IS {is_s.date()}..{is_e.date()} (data covers {eff_s.date()}..{eff_e.date()}), "
+          f"OOS {oos_s.date()}..end, max {max_per_day} entry/day")
+    rows = []
+    for model in ("C1", "C2", "C3"):
+        for rr in V2_RRS:
+            for trend in (False, True):
+                _, _, s = run_once(df, model, 5.0, rr, is_s, is_e, base, trend, max_per_day)
+                rows.append({"model": model, "rr": rr, "trend": "on" if trend else "off",
+                             "trades": s.get("trades", 0), "win%": s.get("win_rate", 0.0),
+                             "PF": s.get("PF", 0.0), "total_R": s.get("total_R", 0.0),
+                             "max_dd_R": s.get("max_dd_R", 0.0)})
+    table = pd.DataFrame(rows).sort_values(["PF", "total_R"], ascending=False).reset_index(drop=True)
+    print("\nIS table (v2, 18 combos, sorted by PF):")
+    print(table.to_string(index=False))
+    RESULTS.mkdir(parents=True, exist_ok=True)
+    tcsv = RESULTS / f"v2_IS_table{sfx}.csv"
+    table.to_csv(tcsv, index=False)
+    print(f"  -> {tcsv}")
+    elig = table[table.trades >= V2_BAR["trades"]]
+    if elig.empty:
+        print(f"WARNING: no IS combo has >= {V2_BAR['trades']} trades; picking best PF among all combos.")
+        elig = table
+    best = elig.iloc[0]
+    model, rr, trend = str(best.model), float(best.rr), best.trend == "on"
+    label = v2_label(model, rr, trend)
+    print(f"selected on IS: {label} (PF {best.PF}, trades {best.trades})")
+    tr, skips, s = run_once(df, model, 5.0, rr, oos_s, None, base, trend, max_per_day)
+    print_summary(f"OOS v2 {label} {oos_s.date()}..end", s, skips)
+    if len(tr):
+        csv, png = save_outputs(tr, f"v2_{label}_OOS{sfx}", base.balance, f"Venus v2 {label} OOS")
+        print(f"  -> {csv}\n  -> {png}")
+    ok, why = v2_verdict(s)
+    bar = f"trades>={V2_BAR['trades']}, PF>={V2_BAR['PF']}, max_dd_R<={V2_BAR['max_dd_R']:g}"
+    print(f"\nOOS VERDICT v2 {label}: {'PASS' if ok else 'FAIL'} ({bar})" + ("" if ok else f" -- {'; '.join(why)}"))
+    return {"table": table, "selected": label, "oos": s, "passed": ok}
 
 
 def _ts(x):
@@ -463,7 +666,11 @@ def _ts(x):
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--data", required=True)
-    ap.add_argument("--model", choices=["A", "B"], required=True)
+    ap.add_argument("--model", choices=["A", "B", "C1", "C2", "C3"])
+    ap.add_argument("--suite", choices=["v2"], help="v2: 18 combos on IS -> best PF -> single OOS run")
+    ap.add_argument("--trend", action="store_true", help="v2 models: H1 EMA50 trend filter")
+    ap.add_argument("--max-per-day", type=int, default=None,
+                    help="per-day entry cap (default: 2 for A/B, 1 for C*)")
     ap.add_argument("--flow", type=float, default=5.0)
     ap.add_argument("--rr", type=float, default=2.0)
     ap.add_argument("--start")
@@ -471,14 +678,34 @@ def main(argv=None):
     ap.add_argument("--grid", action="store_true", help="IS grid -> pick best PF (>=60 trades) -> single OOS run")
     ap.add_argument("--tag", default="", help="suffix for output files")
     a = ap.parse_args(argv)
+    if not a.suite and not a.model:
+        ap.error("--model or --suite is required")
+    if a.grid and a.model not in ("A", "B"):
+        ap.error("--grid is for models A/B; use --suite v2 for C1..C3")
 
     df = load_csv(a.data)
     base = Config()
     print(f"data: {a.data}  bars={len(df):,}  {df.server_time.iloc[0]} ~ {df.server_time.iloc[-1]}")
     sfx = f"_{a.tag}" if a.tag else ""
 
+    if a.suite == "v2":
+        run_suite_v2(df, base, sfx, a.start, a.end, a.max_per_day if a.max_per_day is not None else 1)
+        return 0
+
+    if a.model.startswith("C"):
+        mpd = a.max_per_day if a.max_per_day is not None else 1
+        tr, skips, s = run_once(df, a.model, a.flow, a.rr, _ts(a.start), _ts(a.end), base, a.trend, mpd)
+        label = v2_label(a.model, a.rr, a.trend)
+        rng = f"{a.start or 'begin'}..{a.end or 'end'}"
+        print_summary(f"v2 {label} {rng}", s, skips)
+        if len(tr):
+            csv, png = save_outputs(tr, f"v2_{label}{sfx}", base.balance, f"Venus v2 {label} {rng}")
+            print(f"  -> {csv}\n  -> {png}")
+        return 0
+
     if not a.grid:
-        tr, skips, s = run_once(df, a.model, a.flow, a.rr, _ts(a.start), _ts(a.end), base)
+        tr, skips, s = run_once(df, a.model, a.flow, a.rr, _ts(a.start), _ts(a.end), base,
+                                max_per_day=a.max_per_day)
         label = f"model{a.model}" + (f"_flow{a.flow:g}_rr{a.rr:g}" if a.model == "A" else "")
         rng = f"{a.start or 'begin'}..{a.end or 'end'}"
         print_summary(f"{label} {rng}", s, skips)

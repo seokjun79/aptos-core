@@ -134,6 +134,12 @@ foreach ($m in @("A", "B")) {
     $res | Out-File $out -Append -Encoding utf8
     if ($code -ne 0) { Fail "모델 $m 백테스트가 실패했어요. 위 내용을 비너스에게 보내 주세요." }
 }
+"`n########## v2 후보 묶음 (C1~C3) ##########" | Out-File $out -Append -Encoding utf8
+$res = & $py $bt --data $csv --suite v2 2>&1 | ForEach-Object { "$_" } | Out-String
+$code = $LASTEXITCODE
+Write-Host $res
+$res | Out-File $out -Append -Encoding utf8
+if ($code -ne 0) { Fail "v2 백테스트가 실패했어요. 위 내용을 비너스에게 보내 주세요." }
 
 Get-Content $out -Raw | Set-Clipboard
 Step "끝!"

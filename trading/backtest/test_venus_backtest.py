@@ -274,3 +274,160 @@ def test_summary_metrics():
     assert s["trades"] == 4 and s["win_rate"] == 50.0 and s["total_R"] == 1.0
     assert s["PF"] == 1.5 and s["max_dd_R"] == 2.0 and s["longest_losing_streak"] == 2
     assert s["per_half_year_R"] == {"2024H1": 0.0, "2024H2": 1.0}
+
+
+# ================================================================ v2 (C1..C3)
+def day_rows(px=1.1000):
+    return flat(96, px)          # one server day of M15 bars from 00:00
+
+
+def _idx(hhmm):
+    h, m = map(int, hhmm.split(":"))
+    return (h * 60 + m) // 15   # bar index by OPEN time within a day starting 00:00
+
+
+V2DAY = "2024-01-03 00:00"
+
+
+def test_c1_box_uses_0200_to_0900_bars_only():
+    rows = day_rows()
+    rows[_idx("01:45")] = (1.1000, 1.1050, 1.0950, 1.1000)   # before box: ignored
+    rows[_idx("03:00")] = (1.1000, 1.1010, 1.0999, 1.1000)   # box high 1.1010
+    rows[_idx("08:45")] = (1.1000, 1.1001, 1.0992, 1.1000)   # last box bar (closes 09:00): low 1.0992
+    rows[_idx("09:00")] = (1.1000, 1.1009, 1.0993, 1.1000)   # after box, inside -> no break
+    rows[_idx("10:00")] = (1.1000, 1.1013, 1.0999, 1.1012)   # closes 10:15 above 1.1010
+    df = make_bars(V2DAY, rows)
+    long_, short, hi, lo = vb.range_breakout(df, vb.C1_BOX, vb.C1_WIN)
+    k = _idx("10:00")
+    assert list(np.nonzero(long_)[0]) == [k] and not short.any()
+    assert hi[k] == pytest.approx(1.1010) and lo[k] == pytest.approx(1.0992)
+    s = vb.signals_model_c(df, "C1", rr=1.5)
+    assert list(np.nonzero(s["dir"])[0]) == [k] and s["dir"][k] == 1
+
+
+def test_c1_only_first_close_outside_counts():
+    rows = day_rows()
+    rows[_idx("03:00")] = (1.1000, 1.1010, 1.0990, 1.1000)
+    rows[_idx("09:15")] = (1.1000, 1.1013, 1.0999, 1.1012)   # first close outside, closes 09:30 (pre-window)
+    rows[_idx("10:30")] = (1.1000, 1.1015, 1.0999, 1.1014)   # second break, in window -> does not count
+    df = make_bars(V2DAY, rows)
+    assert vb.signals_model_c(df, "C1")["dir"].sum() == 0
+    # without the early break, the in-window one is the first and fires
+    rows[_idx("09:15")] = flat(1)[0]
+    df = make_bars(V2DAY, rows)
+    s = vb.signals_model_c(df, "C1")
+    assert list(np.nonzero(s["dir"])[0]) == [_idx("10:30")]
+    # a later opposite break the same day is also not a second signal
+    rows[_idx("11:00")] = (1.1000, 1.1001, 1.0985, 1.0986)
+    s = vb.signals_model_c(make_bars(V2DAY, rows), "C1")
+    assert list(np.nonzero(s["dir"])[0]) == [_idx("10:30")]
+
+
+def c2_rows(break_ok=True, flow_ok=True, at="13:00"):
+    rows = day_rows()
+    k = _idx(at)
+    rows[k - 10] = (1.1000, 1.1008, 1.0999, 1.1000)           # 16-bar high 1.1008
+    rows[k - 4] = (1.1000, 1.1001, 1.0999, 1.1000 if flow_ok else 1.1006)
+    for j in range(k - 3, k):
+        rows[j] = (1.1000, 1.1004, 1.0999, 1.1003 if j == k - 1 else rows[j][3])
+    close = 1.1010 if break_ok else 1.1007
+    rows[k] = (1.1003, close + PIP, 1.1002, close)
+    return rows, k
+
+
+def test_c2_needs_16_bar_high_break_and_5_pip_flow():
+    rows, k = c2_rows()                                        # break 1.1010 > 1.1008, flow 10p
+    s = vb.signals_model_c(make_bars(V2DAY, rows), "C2")
+    assert list(np.nonzero(s["dir"])[0]) == [k] and s["dir"][k] == 1
+    rows, k = c2_rows(break_ok=False)                          # flow 7p but close 1.1007 < 1.1008
+    assert vb.signals_model_c(make_bars(V2DAY, rows), "C2")["dir"].sum() == 0
+    rows, k = c2_rows(flow_ok=False)                           # break ok but flow 4p
+    assert vb.signals_model_c(make_bars(V2DAY, rows), "C2")["dir"].sum() == 0
+    rows, k = c2_rows(at="11:00")                              # closes 11:15, before 12:30 window
+    assert vb.signals_model_c(make_bars(V2DAY, rows), "C2")["dir"].sum() == 0
+    # short symmetric
+    rows, k = c2_rows()
+    rows = [(2.2 - o, 2.2 - l, 2.2 - h, 2.2 - c) for o, h, l, c in rows]
+    s = vb.signals_model_c(make_bars(V2DAY, rows), "C2")
+    assert list(np.nonzero(s["dir"])[0]) == [k] and s["dir"][k] == -1
+
+
+def test_c3_range_0900_1400_and_window_1500_1730():
+    rows = day_rows()
+    rows[_idx("08:45")] = (1.1000, 1.1050, 1.0950, 1.1000)   # before range: ignored
+    rows[_idx("10:00")] = (1.1000, 1.1010, 1.0995, 1.1000)   # range 1.0995..1.1010
+    rows[_idx("15:00")] = (1.1000, 1.1001, 1.0990, 1.0992)   # closes 15:15 below -> short
+    df = make_bars(V2DAY, rows)
+    long_, short, hi, lo = vb.range_breakout(df, vb.C3_RANGE, vb.C3_WIN)
+    k = _idx("15:00")
+    assert list(np.nonzero(short)[0]) == [k] and not long_.any()
+    assert hi[k] == pytest.approx(1.1010) and lo[k] == pytest.approx(1.0995)
+    # break bar closing 17:30 is outside [15:00, 17:30)
+    rows[_idx("15:00")] = flat(1)[0]
+    rows[_idx("17:15")] = (1.1000, 1.1001, 1.0990, 1.0992)
+    assert vb.signals_model_c(make_bars(V2DAY, rows), "C3")["dir"].sum() == 0
+    rows[_idx("17:15")] = flat(1)[0]
+    rows[_idx("17:00")] = (1.1000, 1.1001, 1.0990, 1.0992)   # closes 17:15 -> in window
+    s = vb.signals_model_c(make_bars(V2DAY, rows), "C3")
+    assert list(np.nonzero(s["dir"])[0]) == [_idx("17:00")]
+    # a break at 14:15 (pre-window) is the first close outside -> no signal that day
+    rows[_idx("14:15")] = (1.1000, 1.1012, 1.0999, 1.1011)
+    assert vb.signals_model_c(make_bars(V2DAY, rows), "C3")["dir"].sum() == 0
+
+
+def test_v2_one_entry_per_day_cap():
+    rows = day_rows()
+    rows[_idx("13:30")] = (1.1000, 1.1001, 1.0900, 1.1000)   # stops first trade out
+    rows += day_rows()
+    df = make_bars(V2DAY, rows)
+    s = vb._empty_signals(len(df))
+    for i in (_idx("12:45"), _idx("14:00"), 96 + _idx("12:45")):
+        s["dir"][i], s["sl"][i], s["rr"][i], s["max_sl"][i] = 1, 1.1000 - 10 * PIP, 2.0, 25
+    s["win"] = vb.window_mask(df, vb.C2_WIN)
+    tr, _ = vb.simulate(df, s, vb.Config(max_entries_per_day=1))
+    assert len(tr) == 2
+    assert [pd.Timestamp(t).date().day for t in tr.entry_time] == [3, 4]
+    tr2, _ = vb.simulate(df, s, vb.Config(max_entries_per_day=2))   # v1 cap lets the 2nd in
+    assert len(tr2) == 3
+    # signal builder also keeps only the first signal of the day
+    rows, k = c2_rows()
+    rows2, k2 = c2_rows(at="15:00")
+    rows = rows[:k + 1] + [(o + 0.002, h + 0.002, l + 0.002, c + 0.002) for o, h, l, c in rows2[k + 1:]]
+    s = vb.signals_model_c(make_bars(V2DAY, rows), "C2")
+    assert vb.c2_raw(make_bars(V2DAY, rows))[0].sum() >= 2     # several raw breaks that day
+    assert (s["dir"] != 0).sum() == 1 and s["dir"][k] == 1
+
+
+def test_trend_filter_uses_only_completed_h1_bars():
+    n_days = 4
+    rng = np.random.default_rng(0)
+    px = 1.1 + np.cumsum(rng.normal(0, 2e-4, 96 * n_days))
+    rows = [(p, p + PIP, p - PIP, p) for p in px]
+    df = make_bars("2024-01-01 00:00", rows)
+    h1c, ema = vb.h1_trend(df)
+    # bar opening 10:30 (closes 10:45): last completed H1 is 09:00 -> its close is bar 09:45's close
+    i = 96 * 3 + _idx("10:30")
+    assert h1c[i] == pytest.approx(df.close[96 * 3 + _idx("09:45")])
+    # bar opening 10:45 closes 11:00 -> H1 10:00 is complete, includes this bar's own close
+    j = 96 * 3 + _idx("10:45")
+    assert h1c[j] == pytest.approx(df.close[j])
+    # no lookahead: changing everything from bar i on leaves values at i unchanged
+    df2 = df.copy()
+    df2.loc[i:, ["open", "high", "low", "close"]] += 0.05
+    h1c2, ema2 = vb.h1_trend(df2)
+    assert h1c2[i] == pytest.approx(h1c[i]) and ema2[i] == pytest.approx(ema[i])
+    assert not np.isnan(ema[i])
+    # EMA matches an independent computation over completed hourly closes
+    hourly = df.groupby(df.server_time.dt.floor("1h"))["close"].last()
+    ref = hourly.ewm(span=50, adjust=False).mean()
+    assert ema[i] == pytest.approx(ref[pd.Timestamp("2024-01-04 09:00")])
+    # filter blocks a long when H1 close < EMA
+    s_off = vb.signals_model_c(make_bars(V2DAY, c2_rows()[0]), "C2", trend=False)
+    s_on = vb.signals_model_c(make_bars(V2DAY, c2_rows()[0]), "C2", trend=True)
+    assert s_off["dir"].sum() == 1 and s_on["dir"].sum() == 0   # flat day: <50 H1 bars -> EMA NaN
+
+
+def test_suite_v2_verdict():
+    assert vb.v2_verdict({"trades": 60, "PF": 1.2, "max_dd_R": 10.0})[0]
+    ok, why = vb.v2_verdict({"trades": 59, "PF": 1.5, "max_dd_R": 11})
+    assert not ok and len(why) == 2
