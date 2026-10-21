@@ -99,15 +99,17 @@ def main():
     ap.add_argument("report")
     ap.add_argument("--risk-pct", type=float, default=1.0)
     ap.add_argument("--oos-start", default="2024-01-01")
+    ap.add_argument("--commission-per-lot", type=float, default=7.0,
+                    help="보고서에 수수료가 없을 때 뺄 랏당 왕복 수수료. Standard 계좌(수수료 없음)는 0")
     a = ap.parse_args()
 
     trades, any_comm = parse_trades(deal_rows(read_text(a.report)))
     if not trades:
         sys.exit("보고서에서 거래를 찾지 못했어요. 보고서 파일을 비너스에게 보내 주세요.")
-    if not any_comm:
-        print("주의: 보고서에 수수료가 없어서 랏당 왕복 $7을 직접 뺐어요.")
+    if not any_comm and a.commission_per_lot > 0:
+        print(f"주의: 보고서에 수수료가 없어서 랏당 왕복 ${a.commission_per_lot:g}을 직접 뺐어요.")
         for t in trades:
-            t["pnl"] -= 7.0 * t["volume"]
+            t["pnl"] -= a.commission_per_lot * t["volume"]
             t["balance_after"] = None
     bal = None
     for t in trades:
