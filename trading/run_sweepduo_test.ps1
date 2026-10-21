@@ -12,7 +12,7 @@ $env:PYTHONIOENCODING = "utf-8"
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
 # 캐시된 옛 파일을 받지 않도록 커밋 번호로 고정 (비너스가 올릴 때 채움)
-$Ref  = "__REF__"
+$Ref  = "0c4fc753ad3656017a5174c65dd82bfef28ac980"
 $Base = "https://raw.githubusercontent.com/seokjun79/aptos-core/$Ref"
 $Work = Join-Path $HOME "venus-trading"
 
