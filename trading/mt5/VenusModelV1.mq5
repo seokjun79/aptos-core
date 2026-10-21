@@ -32,7 +32,7 @@ input int              InpLondonEndMin   = 780;   // 런던 끝(서버 분, 13:0
 input int              InpNYStartMin     = 900;   // 뉴욕 시작(서버 분, 15:00)
 input int              InpNYEndMin       = 1050;  // 뉴욕 끝(서버 분, 17:30)
 input int              InpForceExitMin   = 1140;  // 강제 청산(서버 분, 19:00)
-input long             InpMagic          = 520311;// 매직 넘버
+input ulong            InpMagic          = 520311;// 매직 넘버
 
 CTrade   trade;
 datetime g_lastBar      = 0;
@@ -50,7 +50,10 @@ int OnInit()
       g_pip = _Point;
    trade.SetExpertMagicNumber(InpMagic);
    trade.SetDeviationInPoints(20);
+   trade.SetTypeFillingBySymbol(_Symbol);
    ResetDay(DayStart(TimeCurrent()));
+   // 재시작 직후 봉 중간에 진입하지 않도록 현재 봉은 이미 본 것으로 둔다
+   g_lastBar = iTime(_Symbol, PERIOD_M15, 0);
    PrintFormat("Venus v1 시작: 모델=%s 위험=%.2f%% 잠금=-%.1f%%",
                InpModel == MODEL_A_MOMENTUM ? "A 모멘텀" : "B CRT", InpRiskPct, InpDailyLossPct);
    return(INIT_SUCCEEDED);
@@ -67,11 +70,43 @@ int MinuteOfDay(datetime t)
    return (int)((t % 86400) / 60);
   }
 
+string LockKey()
+  {
+   return StringFormat("Venus_%s_%I64u_lock", _Symbol, InpMagic);
+  }
+
+// 당일 실현손익(수익+수수료+스왑). 재시작해도 하루 시작 잔고를 정확히 복원하기 위해 쓴다.
+double RealizedToday(datetime day)
+  {
+   if(!HistorySelect(day, TimeCurrent() + 60))
+      return 0.0;
+   double sum = 0.0;
+   for(int i = HistoryDealsTotal() - 1; i >= 0; i--)
+     {
+      ulong d = HistoryDealGetTicket(i);
+      if(d == 0)
+         continue;
+      long type = HistoryDealGetInteger(d, DEAL_TYPE);
+      if(type != DEAL_TYPE_BUY && type != DEAL_TYPE_SELL)
+         continue; // 입출금 등은 제외
+      sum += HistoryDealGetDouble(d, DEAL_PROFIT) + HistoryDealGetDouble(d, DEAL_COMMISSION) +
+             HistoryDealGetDouble(d, DEAL_SWAP);
+     }
+   return sum;
+  }
+
 void ResetDay(datetime day)
   {
    g_day         = day;
-   g_dayStartBal = AccountInfoDouble(ACCOUNT_BALANCE);
-   g_dayLocked   = false;
+   g_dayStartBal = AccountInfoDouble(ACCOUNT_BALANCE) - RealizedToday(day);
+   // 같은 날 잠긴 적이 있으면 재시작해도 잠금 유지
+   g_dayLocked   = GlobalVariableCheck(LockKey()) && (datetime)GlobalVariableGet(LockKey()) == day;
+  }
+
+void SetLocked()
+  {
+   g_dayLocked = true;
+   GlobalVariableSet(LockKey(), (double)g_day);
   }
 
 //+------------------------------------------------------------------+
@@ -138,10 +173,14 @@ double LotsForRisk(double slDistPrice)
    double vmax     = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_MAX);
    if(tickVal <= 0 || tickSize <= 0 || slDistPrice <= 0 || step <= 0)
       return 0.0;
+   double tickValLoss = SymbolInfoDouble(_Symbol, SYMBOL_TRADE_TICK_VALUE_LOSS);
+   if(tickValLoss > 0)
+      tickVal = tickValLoss;
    double lossPerLot = slDistPrice / tickSize * tickVal;
-   double lots = MathFloor((bal * InpRiskPct / 100.0) / lossPerLot / step) * step;
+   double lots = MathFloor((bal * InpRiskPct / 100.0) / lossPerLot / step + 1e-9) * step;
    if(lots < vmin)
      {
+      // 명세 예외: 소액 계좌는 최소 랏의 위험이 InpMaxRiskPct 이하일 때만 최소 랏으로 진입
       double riskAtMin = vmin * lossPerLot / bal * 100.0;
       if(riskAtMin > InpMaxRiskPct)
         {
@@ -150,7 +189,7 @@ double LotsForRisk(double slDistPrice)
         }
       lots = vmin;
      }
-   return MathMin(lots, vmax);
+   return NormalizeDouble(MathMin(lots, vmax), 2);
   }
 
 //+------------------------------------------------------------------+
@@ -205,6 +244,8 @@ int SignalA(const MqlRates &r[], int i, double &sl, double &tp)
      {
       double low4 = MathMin(MathMin(r[i].low, r[i - 1].low), MathMin(r[i - 2].low, r[i - 3].low));
       double dist = ask - (low4 - g_pip);
+      if(dist <= 0)
+         return 0; // 갭으로 이미 SL 기준 아래
       if(dist < InpSLMinPips * g_pip)
          dist = InpSLMinPips * g_pip;
       if(dist > InpSLMaxPipsA * g_pip)
@@ -220,6 +261,8 @@ int SignalA(const MqlRates &r[], int i, double &sl, double &tp)
      {
       double high4 = MathMax(MathMax(r[i].high, r[i - 1].high), MathMax(r[i - 2].high, r[i - 3].high));
       double dist = (high4 + g_pip) - bid;
+      if(dist <= 0)
+         return 0;
       if(dist < InpSLMinPips * g_pip)
          dist = InpSLMinPips * g_pip;
       if(dist > InpSLMaxPipsA * g_pip)
@@ -256,6 +299,8 @@ int SignalB(const MqlRates &r[], int i, double &sl, double &tp)
    if(longSetup && BosLong(r, i))
      {
       double dist = ask - (c2.low - g_pip);
+      if(dist <= 0)
+         return 0;
       if(dist < InpSLMinPips * g_pip)
          dist = InpSLMinPips * g_pip;
       if(dist > InpSLMaxPipsB * g_pip)
@@ -270,6 +315,8 @@ int SignalB(const MqlRates &r[], int i, double &sl, double &tp)
    if(shortSetup && BosShort(r, i))
      {
       double dist = (c2.high + g_pip) - bid;
+      if(dist <= 0)
+         return 0;
       if(dist < InpSLMinPips * g_pip)
          dist = InpSLMinPips * g_pip;
       if(dist > InpSLMaxPipsB * g_pip)
@@ -296,33 +343,46 @@ void OnTick()
    double equity = AccountInfoDouble(ACCOUNT_EQUITY);
    if(!g_dayLocked && equity <= g_dayStartBal * (1.0 - InpDailyLossPct / 100.0))
      {
-      g_dayLocked = true;
+      SetLocked();
       PrintFormat("하루 손실 잠금: 시작 %.2f → 현재 %.2f", g_dayStartBal, equity);
-      CloseAll("하루 손실 잠금");
      }
+   // 잠긴 날에는 청산이 실패해도 틱마다 다시 시도
+   if(g_dayLocked && HasPosition())
+      CloseAll("하루 손실 잠금");
 
    // 2) 강제 청산 시각
    if(MinuteOfDay(now) >= InpForceExitMin && HasPosition())
       CloseAll("강제 청산 시각");
 
-   // 3) 새 M15 봉에서만 신호 판단
+   // 3) 새 M15 봉에서만 신호 판단. 봉이 열린 지 1분이 지났으면(늦은 시작·끊김) 건너뜀
    datetime barTime = iTime(_Symbol, PERIOD_M15, 0);
    if(barTime == g_lastBar)
       return;
-   g_lastBar = barTime;
+   if(now - barTime > 60)
+     {
+      g_lastBar = barTime;
+      return;
+     }
 
    if(g_dayLocked || HasPosition() || EntriesToday() >= InpMaxTradesDay)
+     {
+      g_lastBar = barTime;
       return;
+     }
 
    datetime signalClose = barTime; // 직전 봉(신호 봉)의 마감 = 현재 봉 시작
    if(!InEntryWindow(signalClose))
+     {
+      g_lastBar = barTime;
       return;
+     }
 
    MqlRates r[];
    ArraySetAsSeries(r, false);
    int n = CopyRates(_Symbol, PERIOD_M15, 1, 40, r);
    if(n < 40)
-      return;
+      return; // 데이터가 아직 없으면 다음 틱에 다시 시도
+   g_lastBar = barTime;
    int i = n - 1; // 마지막으로 마감된 봉
 
    double sl = 0, tp = 0;
@@ -331,6 +391,13 @@ void OnTick()
       return;
 
    double price = (dir > 0) ? SymbolInfoDouble(_Symbol, SYMBOL_ASK) : SymbolInfoDouble(_Symbol, SYMBOL_BID);
+   double minStop = (double)MathMax(SymbolInfoInteger(_Symbol, SYMBOL_TRADE_STOPS_LEVEL),
+                                    SymbolInfoInteger(_Symbol, SYMBOL_TRADE_FREEZE_LEVEL)) * _Point;
+   if(MathAbs(price - sl) <= minStop || MathAbs(tp - price) <= minStop)
+     {
+      Print("진입 안 함: SL/TP가 브로커 최소 거리보다 가까움");
+      return;
+     }
    double lots  = LotsForRisk(MathAbs(price - sl));
    if(lots <= 0)
       return;
