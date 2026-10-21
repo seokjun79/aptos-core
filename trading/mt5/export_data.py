@@ -9,6 +9,7 @@
   python trading/mt5/export_data.py            # 2019-01-01부터 지금까지
   python trading/mt5/export_data.py 2023-01-01 # 시작일 지정
 """
+import os
 import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -76,7 +77,9 @@ def main():
     start = datetime.fromisoformat(sys.argv[1]) if len(sys.argv) > 1 else datetime(2019, 1, 1)
     start = start.replace(tzinfo=timezone.utc)
     end = datetime.now(timezone.utc)
-    if not mt5.initialize():
+    # 여러 MT5가 설치돼 있으면 MT5_PATH(terminal64.exe 경로)로 IC마켓 것을 지정
+    path = os.environ.get("MT5_PATH")
+    if not (mt5.initialize(path=path) if path else mt5.initialize()):
         sys.exit(f"MT5 연결 실패: {mt5.last_error()} — MT5가 켜져 있고 로그인돼 있는지 확인하세요.")
     try:
         if not mt5.symbol_select(SYMBOL, True):
