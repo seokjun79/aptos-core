@@ -89,6 +89,20 @@ foreach ($cand in @("python", "py")) {
         if ($LASTEXITCODE -eq 0 -and "$v" -match "Python 3") { $py = $cand; break }
     } catch { }
 }
+if (-not $py -and (Get-Command winget -ErrorAction SilentlyContinue)) {
+    Write-Host "파이썬이 없어서 자동으로 설치할게요 (1~3분)..." -ForegroundColor Yellow
+    winget install -e --id Python.Python.3.12 --scope user --silent --accept-package-agreements --accept-source-agreements
+    # 새로 설치된 파이썬을 이 창에서 바로 쓸 수 있게 PATH를 다시 읽는다
+    $env:Path = [Environment]::GetEnvironmentVariable("Path", "Machine") + ";" +
+                [Environment]::GetEnvironmentVariable("Path", "User")
+    $direct = Join-Path $env:LOCALAPPDATA "Programs\Python\Python312\python.exe"
+    foreach ($cand in @($direct, "python", "py")) {
+        try {
+            $v = & $cand --version 2>&1
+            if ($LASTEXITCODE -eq 0 -and "$v" -match "Python 3") { $py = $cand; break }
+        } catch { }
+    }
+}
 if (-not $py) {
     Fail "파이썬이 없어요. https://www.python.org/downloads/ 에서 설치할 때 'Add python.exe to PATH'에 꼭 체크하고, PowerShell을 새로 연 뒤 다시 실행해 주세요."
 }
