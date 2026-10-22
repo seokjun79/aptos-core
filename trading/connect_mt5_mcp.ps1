@@ -34,6 +34,7 @@ if ($cfgDirs.Count -eq 0) {
 
 # 3) API 키 (MT5 → 도구 → 옵션 → MCP 탭의 'API 키')
 $key = (Read-Host "MT5 옵션 → MCP 탭의 API 키를 붙여 넣고 Enter").Trim()
+Write-Host "받은 키 길이: $($key.Length)글자 (MT5 키 칸의 글자 수와 같아야 해요)" -ForegroundColor DarkGray
 if ($key -eq "") { Write-Host "[멈춤] API 키가 비어 있어요." -ForegroundColor Red; return }
 
 # 4) MT5 연결 시험: 키를 넘기는 방식이 여러 가지라 차례로 시험해서 되는 것을 쓴다
@@ -63,6 +64,15 @@ foreach ($t in $tries) {
             return
         }
         $codes += $c
+        if ($codes.Count -eq 1) {
+            # 첫 거절 때 MT5가 보낸 설명을 보여 준다 (원인 파악용)
+            try {
+                $resp = $_.Exception.Response
+                $wa = $resp.Headers["WWW-Authenticate"]
+                $txt = (New-Object IO.StreamReader($resp.GetResponseStream())).ReadToEnd()
+                Write-Host "MT5 답변: $wa $txt" -ForegroundColor DarkGray
+            } catch {}
+        }
     }
 }
 if ($null -eq $ok) {
