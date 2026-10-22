@@ -11,7 +11,7 @@
 //|  진입은 고객님이 결정한다. 이 EA는 신규 주문을 넣지 않는다.       |
 //+------------------------------------------------------------------+
 #property copyright "Venus"
-#property version   "1.44"
+#property version   "1.45"
 #property description "SMC+CRT 감시·확정 알림·위험관리 비서. 신규 주문은 넣지 않음."
 #include <Trade\Trade.mqh>
 
@@ -75,6 +75,8 @@ bool     g_locked = false;
 //--- 텔레그램 --------------------------------------------------------
 string g_tgChat = "";
 void   TgSend(string s);
+void   TbLoad();
+void   TbDraw();
 bool   g_tgWarned = false;
 
 string UrlEncode(string s)
@@ -760,6 +762,7 @@ int OnInit()
    g_tgChat = InpTgChatId;
    if(g_tgChat == "" && GlobalVariableCheck("VCRT_TGCHAT"))
       g_tgChat = StringFormat("%.0f", GlobalVariableGet("VCRT_TGCHAT"));
+   TbLoad(); TbDraw();
    EventSetTimer(10);   // 차트 종목에 틱이 없어도 다른 종목을 감시
    PrintFormat("Venus CRT 비서 시작: %d개 종목 감시, 아시아장(NY %02d~%02d시) 알림 없음", ArraySize(W), InpAsiaStartNY, InpAsiaEndNY);
    return INIT_SUCCEEDED;
@@ -781,7 +784,7 @@ void UserBoxes()
    for(int i = 0; i < n; i++)
      {
       string nm = ObjectName(0, i, 0, OBJ_RECTANGLE);
-      if(StringFind(nm, "VCRT_") == 0) continue;
+      if(StringFind(nm, "VCRT_") == 0 || StringFind(nm, "TGBOX_") == 0) continue;
       bool done = false;
       for(int j = 0; j < ArraySize(g_boxDone) && !done; j++) done = (g_boxDone[j] == nm);
       if(done) continue;
@@ -805,7 +808,7 @@ void Hello()
    for(int i = 0; i < ArraySize(W); i++)
       if(!W[i].rebuilt) return;
    g_hello = true;
-   string m = StringFormat("[CRT 비서] 시작했어요 (v1.44, %s봉). 지금 상태:", StringSubstr(EnumToString(InpLTF), 7));
+   string m = StringFormat("[CRT 비서] 시작했어요 (v1.45, %s봉). 지금 상태:", StringSubstr(EnumToString(InpLTF), 7));
    for(int i = 0; i < ArraySize(W); i++)
      {
       string st;
@@ -837,10 +840,178 @@ void Scan()
   }
 
 void OnTick()  { Scan(); }
+//--- 텔레그램 명령: "박스 GBPUSD 1.3355 1.3370" / "박스 목록" / "박스 삭제" ------------
+struct TBox { string sym; double lo, hi; bool done; };
+TBox   g_tb[];
+long   g_upd = 0;
+string TB_FILE = "VenusCRT_boxes.csv";
+
+void TbSave()
+  {
+   int fh = FileOpen(TB_FILE, FILE_WRITE | FILE_TXT | FILE_ANSI);
+   if(fh == INVALID_HANDLE) return;
+   for(int i = 0; i < ArraySize(g_tb); i++)
+      FileWriteString(fh, StringFormat("%s,%.6f,%.6f,%d\n", g_tb[i].sym, g_tb[i].lo, g_tb[i].hi, g_tb[i].done ? 1 : 0));
+   FileClose(fh);
+  }
+
+void TbDraw()
+  {
+   ObjectsDeleteAll(0, "TGBOX_");
+   for(int i = 0; i < ArraySize(g_tb); i++)
+     {
+      if(g_tb[i].sym != _Symbol || g_tb[i].done) continue;
+      string nm = "TGBOX_" + IntegerToString(i);
+      ObjectCreate(0, nm, OBJ_RECTANGLE, 0, TimeCurrent() - 3 * 3600, g_tb[i].hi, TimeCurrent() + 6 * 3600, g_tb[i].lo);
+      ObjectSetInteger(0, nm, OBJPROP_COLOR, clrGoldenrod);
+      ObjectSetInteger(0, nm, OBJPROP_FILL, true);
+      ObjectSetInteger(0, nm, OBJPROP_BACK, true);
+      ObjectSetString(0, nm, OBJPROP_TOOLTIP, "텔레그램 박스 (가격이 오면 알림)");
+     }
+   ChartRedraw();
+  }
+
+void TbLoad()
+  {
+   ArrayResize(g_tb, 0);
+   int fh = FileOpen(TB_FILE, FILE_READ | FILE_TXT | FILE_ANSI);
+   if(fh == INVALID_HANDLE) return;
+   while(!FileIsEnding(fh))
+     {
+      string line = FileReadString(fh), f[];
+      if(StringSplit(line, ',', f) < 4) continue;
+      int n = ArraySize(g_tb); ArrayResize(g_tb, n + 1);
+      g_tb[n].sym = f[0]; g_tb[n].lo = StringToDouble(f[1]); g_tb[n].hi = StringToDouble(f[2]); g_tb[n].done = (f[3] == "1");
+     }
+   FileClose(fh);
+  }
+
+// JSON 문자열 안의 \uXXXX (한글) 와 \" 등을 원래 글자로
+string JsonUnescape(string s)
+  {
+   string out = "";
+   int n = StringLen(s);
+   for(int i = 0; i < n; i++)
+     {
+      ushort c = StringGetCharacter(s, i);
+      if(c != '\\' || i + 1 >= n) { out += ShortToString(c); continue; }
+      ushort d = StringGetCharacter(s, i + 1);
+      if(d == 'u' && i + 5 < n)
+        {
+         out += ShortToString((ushort)StringToInteger("0x" + StringSubstr(s, i + 2, 4)));
+         i += 5;
+        }
+      else { out += (d == 'n') ? "\n" : ShortToString(d); i++; }
+     }
+   return out;
+  }
+
+string NumAfter(string seg, string key)
+  {
+   int p = StringFind(seg, key);
+   if(p < 0) return "";
+   int a = p + StringLen(key), e = a;
+   while(e < StringLen(seg) && (StringGetCharacter(seg, e) == '-' || (StringGetCharacter(seg, e) >= '0' && StringGetCharacter(seg, e) <= '9'))) e++;
+   return StringSubstr(seg, a, e - a);
+  }
+
+void TgCommand(string text)
+  {
+   StringTrimLeft(text); StringTrimRight(text);
+   while(StringReplace(text, "  ", " ") > 0) {}
+   string w[];
+   int n = StringSplit(text, ' ', w);
+   if(n < 1) return;
+   string cmd = w[0];
+   StringToLower(cmd);
+   if(cmd != "박스" && cmd != "box") return;
+   if(n >= 2 && (w[1] == "목록" || w[1] == "list"))
+     {
+      string m = "[CRT 비서] 박스 목록";
+      int cnt = 0;
+      for(int i = 0; i < ArraySize(g_tb); i++)
+         if(!g_tb[i].done) { cnt++; m += StringFormat("\n• %s %s ~ %s", g_tb[i].sym, Px(g_tb[i].sym, g_tb[i].lo), Px(g_tb[i].sym, g_tb[i].hi)); }
+      if(cnt == 0) m += "\n(없음)";
+      TgSend(m);
+      return;
+     }
+   if(n >= 2 && (w[1] == "삭제" || w[1] == "clear"))
+     {
+      ArrayResize(g_tb, 0); TbSave(); TbDraw();
+      TgSend("[CRT 비서] 박스를 모두 지웠어요.");
+      return;
+     }
+   if(n < 4)
+     {
+      TgSend("[CRT 비서] 이렇게 보내 주세요:\n박스 GBPUSD 1.3355 1.3370\n(종목, 아래 가격, 위 가격)\n박스 목록 / 박스 삭제");
+      return;
+     }
+   string sym = w[1];
+   StringToUpper(sym);
+   sym += InpSuffix;
+   StringReplace(w[2], ",", "."); StringReplace(w[3], ",", ".");
+   double a = StringToDouble(w[2]), b = StringToDouble(w[3]);
+   if(!SymbolSelect(sym, true) || a <= 0 || b <= 0)
+     {
+      TgSend(StringFormat("[CRT 비서] '%s' 를 이해하지 못했어요. 예: 박스 GBPUSD 1.3355 1.3370", text));
+      return;
+     }
+   int k = ArraySize(g_tb); ArrayResize(g_tb, k + 1);
+   g_tb[k].sym = sym; g_tb[k].lo = MathMin(a, b); g_tb[k].hi = MathMax(a, b); g_tb[k].done = false;
+   TbSave(); TbDraw();
+   double bid = SymbolInfoDouble(sym, SYMBOL_BID);
+   TgSend(StringFormat("[CRT 비서] %s 박스 %s ~ %s 등록했어요 (지금 %s). 가격이 들어오면 알려 드릴게요.",
+                       sym, Px(sym, g_tb[k].lo), Px(sym, g_tb[k].hi), Px(sym, bid)));
+  }
+
+// 봇에게 온 새 메시지 읽기 (석준님 대화방 것만)
+void TgPoll()
+  {
+   if(g_tgChat == "" || InpTgToken == "") return;
+   string r = TgCall("getUpdates", "timeout=0&offset=" + IntegerToString(g_upd + 1));
+   if(r == "") return;
+   string key = "\"update_id\":";
+   int p = StringFind(r, key);
+   while(p >= 0)
+     {
+      int q = StringFind(r, key, p + 1);
+      string seg = (q >= 0) ? StringSubstr(r, p, q - p) : StringSubstr(r, p);
+      long id = StringToInteger(NumAfter(seg, key));
+      if(id > g_upd) g_upd = id;
+      int tp = StringFind(seg, "\"text\":\"");
+      if(tp >= 0 && NumAfter(seg, "\"chat\":{\"id\":") == g_tgChat)
+        {
+         int a = tp + 8, e = a;
+         while(e < StringLen(seg) && !(StringGetCharacter(seg, e) == '"' && StringGetCharacter(seg, e - 1) != '\\')) e++;
+         TgCommand(JsonUnescape(StringSubstr(seg, a, e - a)));
+        }
+      p = q;
+     }
+  }
+
+void TgBoxes()
+  {
+   bool changed = false;
+   for(int i = 0; i < ArraySize(g_tb); i++)
+     {
+      if(g_tb[i].done) continue;
+      double bid = SymbolInfoDouble(g_tb[i].sym, SYMBOL_BID);
+      if(bid <= 0 || bid < g_tb[i].lo || bid > g_tb[i].hi) continue;
+      g_tb[i].done = true; changed = true;
+      Notify(StringFormat("[CRT 비서] %s 텔레그램 박스 %s~%s 에 가격 도착! (지금 %s)\n확인 캔들 몸통 마감을 보고 결정하세요.",
+                          g_tb[i].sym, Px(g_tb[i].sym, g_tb[i].lo), Px(g_tb[i].sym, g_tb[i].hi), Px(g_tb[i].sym, bid)));
+      int wi = FindWatch(g_tb[i].sym);
+      if(wi >= 0) { W[wi].snap = "박스 도착"; Snap(W[wi]); W[wi].snap = ""; }
+     }
+   if(changed) { TbSave(); TbDraw(); }
+  }
+
 void OnTimer()
   {
    static datetime lastTry = 0;
    if(g_tgChat == "" && InpTgToken != "" && TimeLocal() - lastTry >= 30) { lastTry = TimeLocal(); TgFindChat(); }
+   TgPoll();
+   TgBoxes();
    Scan();
   }
 //+------------------------------------------------------------------+
