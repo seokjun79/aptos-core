@@ -11,7 +11,7 @@
 //|  진입은 고객님이 결정한다. 이 EA는 신규 주문을 넣지 않는다.       |
 //+------------------------------------------------------------------+
 #property copyright "Venus"
-#property version   "1.45"
+#property version   "1.46"
 #property description "SMC+CRT 감시·확정 알림·위험관리 비서. 신규 주문은 넣지 않음."
 #include <Trade\Trade.mqh>
 
@@ -809,7 +809,7 @@ void Hello()
    for(int i = 0; i < ArraySize(W); i++)
       if(!W[i].rebuilt) return;
    g_hello = true;
-   string m = StringFormat("[CRT 비서] 시작했어요 (v1.45, %s봉). 지금 상태:", StringSubstr(EnumToString(InpLTF), 7));
+   string m = StringFormat("[CRT 비서] 시작했어요 (v1.46, %s봉). 지금 상태:", StringSubstr(EnumToString(InpLTF), 7));
    for(int i = 0; i < ArraySize(W); i++)
      {
       string st;
@@ -888,6 +888,19 @@ void TbLoad()
    FileClose(fh);
   }
 
+// 16진수 4글자 → 숫자 (StringToInteger는 16진수를 못 읽음)
+int Hex4(string h)
+  {
+   int v = 0;
+   for(int i = 0; i < StringLen(h); i++)
+     {
+      ushort c = StringGetCharacter(h, i);
+      int d = (c >= '0' && c <= '9') ? c - '0' : (c >= 'a' && c <= 'f') ? c - 'a' + 10 : (c >= 'A' && c <= 'F') ? c - 'A' + 10 : 0;
+      v = v * 16 + d;
+     }
+   return v;
+  }
+
 // JSON 문자열 안의 \uXXXX (한글) 와 \" 등을 원래 글자로
 string JsonUnescape(string s)
   {
@@ -900,7 +913,7 @@ string JsonUnescape(string s)
       ushort d = StringGetCharacter(s, i + 1);
       if(d == 'u' && i + 5 < n)
         {
-         out += ShortToString((ushort)StringToInteger("0x" + StringSubstr(s, i + 2, 4)));
+         out += ShortToString((ushort)Hex4(StringSubstr(s, i + 2, 4)));
          i += 5;
         }
       else { out += (d == 'n') ? "\n" : ShortToString(d); i++; }
@@ -926,7 +939,12 @@ void TgCommand(string text)
    if(n < 1) return;
    string cmd = w[0];
    StringToLower(cmd);
-   if(cmd != "박스" && cmd != "box") return;
+   PrintFormat("[CRT 비서] 텔레그램 명령 받음: %s", text);
+   if(cmd != "박스" && cmd != "box")
+     {
+      TgSend("[CRT 비서] 제가 알아듣는 말:\n박스 GBPUSD 1.3355 1.3370 (종목, 아래 가격, 위 가격)\n박스 목록\n박스 삭제");
+      return;
+     }
    if(n >= 2 && (w[1] == "목록" || w[1] == "list"))
      {
       string m = "[CRT 비서] 박스 목록";
