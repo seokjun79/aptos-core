@@ -4,8 +4,17 @@
 //|  모델 2: 뉴욕 스윕 – 런던 레인지를 뉴욕 킬존에서 스윕            |
 //|  스윕 → 5분 MSS → FVG 진입, SL/TP 자동, 한 번에 한 포지션       |
 //+------------------------------------------------------------------+
+//| v2.10 변경 (검수 결과 반영, 전략 규칙은 그대로)                  |
+//|  1. 랏: 1회 손실이 잔고의 InpMaxRiskPct를 넘으면 진입 안 함      |
+//|  2. 포지션 보유 중에도 다른 모델의 스윕 극값·무효 판정 갱신      |
+//|  3. 지정가에 만료 시각 지정, 재시작 시 대기 주문 복원,          |
+//|     체결 전 TP 먼저 닿으면 취소                                  |
+//|  4. 강제 청산: 청산 시각이 지난 포지션은 언제든 청산             |
+//|  5. 연속 손실을 여러 날에 걸쳐 집계 (오늘 손실로 한도 도달 시 중단)|
+//|  6. FVG는 스윕 이후 봉에서만, 손절 반대편이면 시장가로 대체       |
+//+------------------------------------------------------------------+
 #property copyright "Venus"
-#property version   "2.00"
+#property version   "2.10"
 #property description "런던 스윕 + 뉴욕 스윕 자동매매 (EURUSD 권장). 랏수 지정, SL/TP 자동, 푸시 알림."
 #include <Trade\Trade.mqh>
 
@@ -14,6 +23,8 @@ input double InpLots          = 0.01;     // 랏수 (고정)
 input bool   InpUseRiskLot    = false;    // true: 잔고 % 리스크로 랏 자동 계산
 input double InpRiskPct       = 1.0;      // 1회 리스크 % (위 옵션 true일 때만)
 input double InpMaxLots       = 0.01;     // 최대 랏 (안전장치)
+input double InpMaxRiskPct    = 2.0;      // 1회 손실이 잔고의 이 %를 넘으면 진입 안 함
+input bool   InpEnforceMaxRisk = true;    // 위 한도 적용 (고정 랏일 때도)
 input long   InpMagic         = 20261015; // 매직 넘버 (런던 = 이 값, 뉴욕 = 이 값 + 1)
 input int    InpMaxSpreadPts  = 25;       // 최대 스프레드(포인트), 넘으면 진입 안 함
 input group "=== 모델 공통 ==="
@@ -70,6 +81,7 @@ bool     hasPH = false, hasPL = false;
 ulong    pendTicket = 0;
 datetime pendT = 0;
 double   pendStp = 0;
+double   pendTp = 0;
 int      pendSide = 0;
 
 MState   st[2];
@@ -171,12 +183,14 @@ int Trend4H(datetime t)
   }
 
 //--- 계좌 / 주문 도우미 ---------------------------------------------
+// 오늘 손실 거래 수 한도, 또는 (여러 날에 걸친) 연속 손실 한도에 오늘 도달했으면 오늘은 중단
 bool DayStopped()
   {
    datetime ds = DayStartServer(TimeCurrent());
-   if(!HistorySelect(ds, TimeCurrent() + 60))
+   if(!HistorySelect(ds - 30 * 86400, TimeCurrent() + 60))
       return false;
-   int losses = 0, consec = 0;
+   int lossesToday = 0, consec = 0;
+   datetime lastLoss = 0;
    int n = HistoryDealsTotal();
    for(int i = 0; i < n; i++)
      {
@@ -187,10 +201,70 @@ bool DayStopped()
       if(en != DEAL_ENTRY_OUT && en != DEAL_ENTRY_OUT_BY)
          continue;
       double pr = HistoryDealGetDouble(tk, DEAL_PROFIT) + HistoryDealGetDouble(tk, DEAL_COMMISSION) + HistoryDealGetDouble(tk, DEAL_SWAP);
-      if(pr < 0) { losses++; consec++; }
-      else consec = 0;
+      datetime dt = (datetime)HistoryDealGetInteger(tk, DEAL_TIME);
+      if(pr < 0)
+        {
+         consec++;
+         lastLoss = dt;
+         if(dt >= ds)
+            lossesToday++;
+        }
+      else
+         consec = 0;
      }
-   return (losses >= InpMaxDailyLoss || consec >= InpMaxConsecLoss);
+   return (lossesToday >= InpMaxDailyLoss || (consec >= InpMaxConsecLoss && lastLoss >= ds));
+  }
+
+// 서버 시각 t가 속한 뉴욕 날짜의 hhmm(분) 시각을 서버 시각으로 돌려준다
+datetime NyClockOfDay(datetime t, int minutes)
+  {
+   long ny = (long)t - InpServerMinusNY * 3600;
+   long nyMid = ny - (ny % 86400);
+   return (datetime)(nyMid + minutes * 60 + InpServerMinusNY * 3600);
+  }
+
+// 청산 시각이 지난 이 모델의 포지션·대기 주문 정리 (틱이 늦게 와도 동작)
+void ExpireModel(int k)
+  {
+   datetime now = TimeCurrent();
+   for(int i = PositionsTotal() - 1; i >= 0; i--)
+     {
+      ulong tk = PositionGetTicket(i);
+      if(tk == 0 || PositionGetInteger(POSITION_MAGIC) != MG[k] || PositionGetString(POSITION_SYMBOL) != _Symbol)
+         continue;
+      if(now >= NyClockOfDay((datetime)PositionGetInteger(POSITION_TIME), XE[k]))
+         trade.PositionClose(tk);
+     }
+   for(int i = OrdersTotal() - 1; i >= 0; i--)
+     {
+      ulong tk = OrderGetTicket(i);
+      if(tk == 0 || OrderGetInteger(ORDER_MAGIC) != MG[k] || OrderGetString(ORDER_SYMBOL) != _Symbol)
+         continue;
+      if(now >= NyClockOfDay((datetime)OrderGetInteger(ORDER_TIME_SETUP), XE[k]))
+        {
+         trade.OrderDelete(tk);
+         if(tk == pendTicket) pendTicket = 0;
+        }
+     }
+  }
+
+// 재시작 시 남아 있는 이 EA의 지정가 주문을 다시 관리 대상으로
+void RestorePending()
+  {
+   for(int i = OrdersTotal() - 1; i >= 0; i--)
+     {
+      ulong tk = OrderGetTicket(i);
+      if(tk == 0 || !IsOurMagic(OrderGetInteger(ORDER_MAGIC)) || OrderGetString(ORDER_SYMBOL) != _Symbol)
+         continue;
+      long type = OrderGetInteger(ORDER_TYPE);
+      pendTicket = tk;
+      pendT      = (datetime)OrderGetInteger(ORDER_TIME_SETUP);
+      pendStp    = OrderGetDouble(ORDER_SL);
+      pendTp     = OrderGetDouble(ORDER_TP);
+      pendSide   = (type == ORDER_TYPE_BUY_LIMIT) ? 1 : -1;
+      PrintFormat("대기 주문 복원: #%I64u", tk);
+      return;
+     }
   }
 
 bool HasExposure(bool anySym)
@@ -242,22 +316,35 @@ void CloseModel(long magic)
      }
   }
 
+// 0을 돌려주면 진입하지 않는다 (위험 한도 초과)
 double CalcLots(double risk)
   {
-   double lots = InpLots;
-   if(InpUseRiskLot)
-     {
-      double tv = SymbolInfoDouble(_Symbol, SYMBOL_TRADE_TICK_VALUE);
-      double ts = SymbolInfoDouble(_Symbol, SYMBOL_TRADE_TICK_SIZE);
-      if(tv > 0 && ts > 0 && risk > 0)
-         lots = AccountInfoDouble(ACCOUNT_BALANCE) * InpRiskPct / 100.0 / (risk / ts * tv);
-     }
+   double bal  = AccountInfoDouble(ACCOUNT_BALANCE);
+   double tv   = SymbolInfoDouble(_Symbol, SYMBOL_TRADE_TICK_VALUE_LOSS);
+   if(tv <= 0)
+      tv = SymbolInfoDouble(_Symbol, SYMBOL_TRADE_TICK_VALUE);
+   double ts   = SymbolInfoDouble(_Symbol, SYMBOL_TRADE_TICK_SIZE);
    double step = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_STEP);
    double mn   = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_MIN);
    double mx   = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_MAX);
    if(step <= 0) step = 0.01;
-   lots = MathFloor(lots / step) * step;
-   lots = MathMax(mn, MathMin(lots, MathMin(mx, InpMaxLots)));
+   if(tv <= 0 || ts <= 0 || risk <= 0 || bal <= 0)
+      return 0.0;
+   double lossPerLot = risk / ts * tv;
+   double lots = InpLots;
+   if(InpUseRiskLot)
+      lots = bal * InpRiskPct / 100.0 / lossPerLot;
+   lots = MathFloor(lots / step + 1e-9) * step;
+   lots = MathMin(lots, MathMin(mx, InpMaxLots));
+   if(lots < mn)
+      lots = mn;   // 최소 랏으로 올리되, 아래 위험 검사를 통과해야만 진입
+   double riskPct = lots * lossPerLot / bal * 100.0;
+   if(InpEnforceMaxRisk && riskPct > InpMaxRiskPct)
+     {
+      PrintFormat("진입 안 함: %.2f랏의 손실 위험 %.1f%% > 한도 %.1f%% (손절 %.1f핍)",
+                  lots, riskPct, InpMaxRiskPct, risk / (_Point * 10));
+      return 0.0;
+     }
    return NormalizeDouble(lots, 2);
   }
 
@@ -286,13 +373,20 @@ void PlaceTrade(int k, int s, double entry, bool useLimit, double stp, double tp
       if(MathAbs(e - stp) < minDist || MathAbs(tp - e) < minDist)
          return;
       lots = CalcLots(MathAbs(e - stp));
-      ok = (s == 1) ? trade.BuyLimit(lots, e, _Symbol, stp, tp, ORDER_TIME_GTC, 0, cmt)
-                    : trade.SellLimit(lots, e, _Symbol, stp, tp, ORDER_TIME_GTC, 0, cmt);
+      if(lots <= 0) { st[k].msg = "위험 한도 초과로 진입 안 함"; return; }
+      // 브로커가 허용하면 만료 시각을 지정 (재시작해도 늦게 체결되지 않게)
+      datetime expiry = TimeCurrent() + InpFvgWaitBars * 300;
+      bool canSpecified = (SymbolInfoInteger(_Symbol, SYMBOL_EXPIRATION_MODE) & SYMBOL_EXPIRATION_SPECIFIED) != 0;
+      ENUM_ORDER_TYPE_TIME tt = canSpecified ? ORDER_TIME_SPECIFIED : ORDER_TIME_GTC;
+      datetime ex = canSpecified ? expiry : 0;
+      ok = (s == 1) ? trade.BuyLimit(lots, e, _Symbol, stp, tp, tt, ex, cmt)
+                    : trade.SellLimit(lots, e, _Symbol, stp, tp, tt, ex, cmt);
       if(ok)
         {
          pendTicket = trade.ResultOrder();
          pendT = TimeCurrent();
          pendStp = stp;
+         pendTp = tp;
          pendSide = s;
         }
      }
@@ -306,6 +400,7 @@ void PlaceTrade(int k, int s, double entry, bool useLimit, double stp, double tp
          return;
         }
       lots = CalcLots(MathAbs(e - stp));
+      if(lots <= 0) { st[k].msg = "위험 한도 초과로 진입 안 함"; return; }
       ok = (s == 1) ? trade.Buy(lots, _Symbol, 0, stp, tp, cmt)
                     : trade.Sell(lots, _Symbol, 0, stp, tp, cmt);
      }
@@ -326,11 +421,14 @@ void ManagePending()
    double bid = SymbolInfoDouble(_Symbol, SYMBOL_BID), ask = SymbolInfoDouble(_Symbol, SYMBOL_ASK);
    bool expired = (TimeCurrent() - pendT) > InpFvgWaitBars * 300;
    bool stopHit = (pendSide == 1) ? (bid <= pendStp) : (ask >= pendStp);
-   if(expired || stopHit)
+   // 체결되기 전에 가격이 목표가에 먼저 닿으면 셋업이 끝난 것
+   bool tpHit = pendTp > 0 && ((pendSide == 1) ? (bid >= pendTp) : (ask <= pendTp));
+   if(expired || stopHit || tpHit)
      {
       trade.OrderDelete(pendTicket);
       pendTicket = 0;
-      Notify(StringFormat("[Venus] %s 지정가 취소 (%s)", _Symbol, expired ? "시간 초과" : "체결 전 SL 도달"));
+      Notify(StringFormat("[Venus] %s 지정가 취소 (%s)", _Symbol,
+                          expired ? "시간 초과" : (tpHit ? "체결 전 목표가 도달" : "체결 전 SL 도달")));
      }
   }
 
@@ -388,8 +486,6 @@ void ProcessModel(int k, int sh, bool live)
      }
    if(st[k].swept == 0 || !InWin(m, KS[k], EE[k]))
       return;
-   if(live && HasExposure(false))
-      return;
 
    st[k].swExt = (st[k].swept == -1) ? MathMax(st[k].swExt, h) : MathMin(st[k].swExt, l);
    if((st[k].swept == -1 && c < st[k].aL) || (st[k].swept == 1 && c > st[k].aH))
@@ -398,6 +494,9 @@ void ProcessModel(int k, int sh, bool live)
       if(live) st[k].msg = "반대편까지 가버림 → 오늘 셋업 없음";
       return;
      }
+   // 포지션 보유 중에도 위의 극값·무효 판정은 계속 갱신하고, 진입 판단만 건너뜀
+   if(live && HasExposure(false))
+      return;
 
    // 3) MSS
    double mss  = (st[k].swept == -1) ? lastPL : lastPH;
@@ -417,12 +516,19 @@ void ProcessModel(int k, int sh, bool live)
    double fvg = 0;
    for(int j = sh; j <= sh + 2 && !hasF; j++)
      {
+      if(iTime(_Symbol, PERIOD_M5, j + 2) < st[k].swT)
+         break;   // 스윕 이전 봉으로 만든 갭은 쓰지 않음
       if(s == -1 && iHigh(_Symbol, PERIOD_M5, j) < iLow(_Symbol, PERIOD_M5, j + 2))  { fvg = iHigh(_Symbol, PERIOD_M5, j); hasF = true; }
       if(s == 1  && iLow(_Symbol, PERIOD_M5, j)  > iHigh(_Symbol, PERIOD_M5, j + 2)) { fvg = iLow(_Symbol, PERIOD_M5, j);  hasF = true; }
      }
    double tp = (s == 1) ? st[k].aH : st[k].aL;
    bool useLimit = InpFvgLimit && hasF;
    double e = useLimit ? fvg : c;
+   if(useLimit && s * (e - stp) <= 0)
+     {
+      useLimit = false;   // 갭 가격이 손절 반대편이면 시장가로
+      e = c;
+     }
    double risk = MathAbs(e - stp);
    double rr = (risk > 0) ? s * (tp - e) / risk : 0;
 
@@ -490,6 +596,7 @@ int OnInit()
    for(int sh = warm; sh >= 1; sh--)
       ProcessBar(sh, false);          // 오늘 레인지/스윕 상태 복원 (주문 없음)
    lastBar = iTime(_Symbol, PERIOD_M5, 0);
+   RestorePending();
    PrintFormat("Venus Sweep Duo 시작: %s / %s / 랏 %.2f / 런던 %s · 뉴욕 %s",
                _Symbol, AccountInfoInteger(ACCOUNT_TRADE_MODE) == ACCOUNT_TRADE_MODE_REAL ? "실계좌" : "데모",
                InpLots, ON[0] ? "ON" : "OFF", ON[1] ? "ON" : "OFF");
@@ -506,13 +613,8 @@ void OnDeinit(const int reason)
 void OnTick()
   {
    ManagePending();
-   int m = NyMin(TimeCurrent());
    for(int k = 0; k < 2; k++)
-      if(m >= XE[k] && m < XE[k] + 10)
-        {
-         CloseModel(MG[k]);
-         CancelPending(MG[k]);
-        }
+      ExpireModel(k);
    datetime bt = iTime(_Symbol, PERIOD_M5, 0);
    if(bt != lastBar)
      {
