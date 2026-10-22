@@ -772,6 +772,7 @@ void OnDeinit(const int reason)
   {
    EventKillTimer();
    ObjectsDeleteAll(0, "VCRT_");
+   ObjectsDeleteAll(0, "TGBOX_");
   }
 
 // 석준님이 이 차트에 직접 그린 사각형에 가격이 들어오면 한 번 알림 (비서가 그린 VCRT_ 박스는 제외)
@@ -844,6 +845,7 @@ void OnTick()  { Scan(); }
 struct TBox { string sym; double lo, hi; bool done; };
 TBox   g_tb[];
 long   g_upd = 0;
+datetime g_startGmt = 0;
 string TB_FILE = "VenusCRT_boxes.csv";
 
 void TbSave()
@@ -968,6 +970,7 @@ void TgCommand(string text)
 void TgPoll()
   {
    if(g_tgChat == "" || InpTgToken == "") return;
+   if(g_startGmt == 0) g_startGmt = TimeGMT();
    string r = TgCall("getUpdates", "timeout=0&offset=" + IntegerToString(g_upd + 1));
    if(r == "") return;
    string key = "\"update_id\":";
@@ -978,8 +981,12 @@ void TgPoll()
       string seg = (q >= 0) ? StringSubstr(r, p, q - p) : StringSubstr(r, p);
       long id = StringToInteger(NumAfter(seg, key));
       if(id > g_upd) g_upd = id;
-      int tp = StringFind(seg, "\"text\":\"");
-      if(tp >= 0 && NumAfter(seg, "\"chat\":{\"id\":") == g_tgChat)
+      // 가장 바깥 text (답장일 때 인용된 원래 글이 먼저 나오므로 마지막 것을 씀)
+      int tp = -1, f = StringFind(seg, "\"text\":\"");
+      while(f >= 0) { tp = f; f = StringFind(seg, "\"text\":\"", f + 1); }
+      bool fresh = StringToInteger(NumAfter(seg, "\"date\":")) >= (long)g_startGmt - 60;   // 비서 시작 전 옛 메시지는 무시
+      bool edited = StringFind(seg, "\"edited_message\"") >= 0;
+      if(tp >= 0 && fresh && !edited && NumAfter(seg, "\"chat\":{\"id\":") == g_tgChat)
         {
          int a = tp + 8, e = a;
          while(e < StringLen(seg) && !(StringGetCharacter(seg, e) == '"' && StringGetCharacter(seg, e - 1) != '\\')) e++;
