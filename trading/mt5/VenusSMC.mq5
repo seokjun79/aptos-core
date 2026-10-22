@@ -7,7 +7,7 @@
 //|  규칙 명세: trading/strategy/venus_smc_v1.md                     |
 //+------------------------------------------------------------------+
 #property copyright "Venus"
-#property version   "1.00"
+#property version   "1.01"
 #property description "SMC: H4 바이어스 + H1 오더블록 + M1 CHoCH 진입. 1회 위험 % 랏, 위험 한도 초과 시 진입 안 함."
 #include <Trade\Trade.mqh>
 
@@ -27,8 +27,9 @@ input int    InpH1Lookback     = 60;       // 스윙 고점/저점 찾는 범위
 input bool   InpRequireFvg     = true;     // BOS 움직임에 FVG(변위) 필수
 input bool   InpRequireDiscount = true;    // 롱은 디스카운트, 숏은 프리미엄 OB만
 input int    InpPoiMaxHours    = 120;      // OB 유효 시간 (시간)
-input group "=== M1 진입 ==="
-input int    InpM1SwingLen     = 2;        // M1 CHoCH 스윙 길이
+input group "=== 진입 (기본 M1) ==="
+input ENUM_TIMEFRAMES InpEntryTF = PERIOD_M1; // 진입 시간봉 (M1 / M5 / M15 시험용)
+input int    InpM1SwingLen     = 2;        // 진입 시간봉 CHoCH 스윙 길이
 input int    InpM1Lookback     = 60;       // CHoCH 기준 스윙 찾는 범위 (M1 봉)
 input double InpSLBufferPips   = 1.0;      // 손절 버퍼 (핍)
 input double InpMinSLPips      = 3.0;      // 최소 손절 (핍)
@@ -286,9 +287,9 @@ double CalcLots(double risk)
 //--- ③ 새 M1 봉: OB 진입 확인 → CHoCH면 진입 -----------------------
 void OnNewM1()
   {
-   double h1 = iHigh(_Symbol, PERIOD_M1, 1), l1 = iLow(_Symbol, PERIOD_M1, 1);
-   double c1 = iClose(_Symbol, PERIOD_M1, 1), c2 = iClose(_Symbol, PERIOD_M1, 2);
-   datetime t1 = iTime(_Symbol, PERIOD_M1, 1);
+   double h1 = iHigh(_Symbol, InpEntryTF, 1), l1 = iLow(_Symbol, InpEntryTF, 1);
+   double c1 = iClose(_Symbol, InpEntryTF, 1), c2 = iClose(_Symbol, InpEntryTF, 2);
+   datetime t1 = iTime(_Symbol, InpEntryTF, 1);
 
    // OB 터치·극값 갱신, 진입 전 OB를 종가로 뚫으면 무효
    for(int k = 0; k < 2; k++)
@@ -303,7 +304,7 @@ void OnNewM1()
 
    if(!((poi[0].active && poi[0].touched) || (poi[1].active && poi[1].touched))) return;
    if(HasPosition()) return;
-   int nyh = NyHour(t1 + 60);
+   int nyh = NyHour(t1 + PeriodSeconds(InpEntryTF));
    if(nyh < InpEntryStartNY || nyh >= InpEntryEndNY) return;
    int entries, losses;
    TodayStats(entries, losses);
@@ -316,9 +317,9 @@ void OnNewM1()
       if(!poi[k].active || !poi[k].touched || poi[k].dir != bias) continue;
       int d = poi[k].dir;
       // M1 CHoCH: OB 진입 이후 생긴 마지막 확정 스윙 고점(롱)/저점(숏)을 종가로 처음 돌파
-      int sp = LastSwing(PERIOD_M1, 1, InpM1SwingLen, InpM1Lookback, d == 1);
-      if(sp < 0 || iTime(_Symbol, PERIOD_M1, sp) < poi[k].touchT) continue;
-      double lvl = (d == 1) ? iHigh(_Symbol, PERIOD_M1, sp) : iLow(_Symbol, PERIOD_M1, sp);
+      int sp = LastSwing(InpEntryTF, 1, InpM1SwingLen, InpM1Lookback, d == 1);
+      if(sp < 0 || iTime(_Symbol, InpEntryTF, sp) < poi[k].touchT) continue;
+      double lvl = (d == 1) ? iHigh(_Symbol, InpEntryTF, sp) : iLow(_Symbol, InpEntryTF, sp);
       bool choch = (d == 1) ? (c1 > lvl && c2 <= lvl) : (c1 < lvl && c2 >= lvl);
       if(!choch) continue;
 
@@ -357,7 +358,7 @@ int OnInit()
    trade.SetDeviationInPoints(20);
    trade.SetTypeFillingBySymbol(_Symbol);
    for(int k = 0; k < 2; k++) poi[k].active = false;
-   lastM1 = iTime(_Symbol, PERIOD_M1, 0);
+   lastM1 = iTime(_Symbol, InpEntryTF, 0);
    lastH1 = 0;
    PrintFormat("Venus SMC 시작: %s / 위험 %.1f%% / 한도 %.1f%% / 최대 %.2f랏", _Symbol, InpRiskPct, InpMaxRiskPct, InpMaxLots);
    return INIT_SUCCEEDED;
@@ -368,7 +369,7 @@ void OnTick()
    ManagePositions();
    datetime h1 = iTime(_Symbol, PERIOD_H1, 0);
    if(h1 != lastH1) { lastH1 = h1; OnNewH1(); }
-   datetime m1 = iTime(_Symbol, PERIOD_M1, 0);
+   datetime m1 = iTime(_Symbol, InpEntryTF, 0);
    if(m1 != lastM1) { lastM1 = m1; OnNewM1(); }
    if(MQLInfoInteger(MQL_TESTER)) return;   // 테스터에서는 화면 표시 생략 (속도)
    string s = StringFormat("Venus SMC | H4 방향 %s\n", BiasLabel());
