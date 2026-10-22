@@ -11,7 +11,7 @@
 //|  진입은 고객님이 결정한다. 이 EA는 신규 주문을 넣지 않는다.       |
 //+------------------------------------------------------------------+
 #property copyright "Venus"
-#property version   "1.41"
+#property version   "1.42"
 #property description "SMC+CRT 감시·확정 알림·위험관리 비서. 신규 주문은 넣지 않음."
 #include <Trade\Trade.mqh>
 
@@ -59,6 +59,7 @@ struct Watch
    int      tdir;         // 추적 중인 셋업 방향 (새 4H가 시작돼도 유지)
    double   obH, obL, tp;
    datetime confT;
+   bool     rebuilt;      // 붙인 직후 지난 봉으로 상태를 복원했는지
    string   snap;         // 이번 봉 처리 뒤 텔레그램으로 보낼 차트 사진 설명 (빈칸이면 안 보냄)
   };
 
@@ -461,11 +462,51 @@ void Track(Watch &w)
      }
   }
 
+// 비서를 붙이거나 차트 시간봉을 바꾸면 처음부터 시작한다. 이번 4H 봉의 지난 봉들을 조용히 다시 보며
+// 스윕·극값·MSS 선·확정 여부를 복원한다 (알림은 보내지 않음).
+void Rebuild(Watch &w)
+  {
+   w.rebuilt = true;
+   int first = iBarShift(w.sym, InpLTF, w.h4, false);
+   if(first < 1 || w.crh <= w.crl) return;
+   for(int sh = first; sh >= 1; sh--)
+     {
+      datetime t = iTime(w.sym, InpLTF, sh);
+      double o = iOpen(w.sym, InpLTF, sh), h = iHigh(w.sym, InpLTF, sh);
+      double l = iLow(w.sym, InpLTF, sh),  c = iClose(w.sym, InpLTF, sh);
+      if(t < w.h4 || o <= 0) continue;
+      if(w.dir == 0)
+        {
+         if(l < w.crl)      { w.dir = 1;  w.ext = l; w.extT = t; }
+         else if(h > w.crh) { w.dir = -1; w.ext = h; w.extT = t; }
+         else continue;
+         w.mss = TrueMssLevel(w);
+         continue;
+        }
+      if((w.dir == 1 && l < w.ext) || (w.dir == -1 && h > w.ext))
+        { w.ext = (w.dir == 1) ? l : h; w.extT = t; w.mss = TrueMssLevel(w); continue; }
+      if(w.mss > 0)
+        {
+         bool body = (w.dir == 1) ? (c > w.mss && c > o) : (c < w.mss && c < o);
+         if(body && c > w.crl && c < w.crh) { w.done = true; break; }
+        }
+     }
+   if(w.dir != 0)
+      PrintFormat("[CRT 비서] %s 복원: %s 스윕 극값 %s, MSS 선 %s%s", w.sym, w.dir == 1 ? "CRL" : "CRH",
+                  Px(w.sym, w.ext), Px(w.sym, w.mss), w.done ? " (이미 확정됨)" : "");
+   if(w.sym == _Symbol && w.mss > 0)
+      HLine("VCRT_MSS", w.mss, clrRed, STYLE_DASH, "진짜 MSS 선 (몸통 마감 돌파 대기)");
+  }
+
 void OnNewM5(Watch &w)
   {
+   if(!w.rebuilt && iTime(w.sym, PERIOD_H4, 0) == w.h4) Rebuild(w);
    if(w.stage > 0) Track(w);   // 이전 셋업의 OB 추적은 따로, 새 4H 셋업 감지는 계속
    if(iTime(w.sym, PERIOD_H4, 0) != w.h4)
+     {
       ResetCycle(w);
+      w.rebuilt = true;
+     }
    else if(w.crhT == 0 && w.crlT == 0)
       Anchors(w);              // 시작 직후 봉 데이터가 늦게 오면 다시 계산
    if(w.done) return;
@@ -682,7 +723,7 @@ int OnInit()
       w.sym = s;
       int dg = (int)SymbolInfoInteger(s, SYMBOL_DIGITS);
       w.pip = (dg == 3 || dg == 5) ? SymbolInfoDouble(s, SYMBOL_POINT) * 10 : SymbolInfoDouble(s, SYMBOL_POINT);
-      w.lastM5 = 0; w.sugSL = 0; w.sugDir = 0; w.stage = 0; w.snap = "";
+      w.lastM5 = 0; w.sugSL = 0; w.sugDir = 0; w.stage = 0; w.snap = ""; w.rebuilt = false;
       ResetCycle(w);
       int k = ArraySize(W);
       ArrayResize(W, k + 1);
