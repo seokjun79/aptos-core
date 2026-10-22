@@ -36,26 +36,53 @@ if ($cfgDirs.Count -eq 0) {
 $key = (Read-Host "MT5 옵션 → MCP 탭의 API 키를 붙여 넣고 Enter").Trim()
 if ($key -eq "") { Write-Host "[멈춤] API 키가 비어 있어요." -ForegroundColor Red; return }
 
-# 4) MT5 연결 시험 (MT5가 켜져 있고 '내부 서버 활성화'가 체크돼 있어야 함)
+# 4) MT5 연결 시험: 키를 넘기는 방식이 여러 가지라 차례로 시험해서 되는 것을 쓴다
 $body = '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-03-26","capabilities":{},"clientInfo":{"name":"venus-test","version":"1.0"}}}'
-try {
-    $r = Invoke-WebRequest -UseBasicParsing -Method Post -Uri $Url -Body $body -TimeoutSec 10 `
-        -ContentType "application/json" -Headers @{ Authorization = "Bearer $key"; Accept = "application/json, text/event-stream" }
-    Write-Host "MT5 연결 시험 성공 (응답 $($r.StatusCode))" -ForegroundColor Green
-} catch {
-    $code = $_.Exception.Response.StatusCode.value__
-    if ($code -eq 401 -or $code -eq 403) {
-        Write-Host "[멈춤] API 키가 맞지 않아요 (응답 $code). MCP 탭에서 키를 다시 복사해 주세요." -ForegroundColor Red; return
+$tries = @(
+    @{ name = "Authorization"; value = "Bearer $key"; url = $Url },
+    @{ name = "Authorization"; value = $key;          url = $Url },
+    @{ name = "X-API-Key";     value = $key;          url = $Url },
+    @{ name = "api-key";       value = $key;          url = $Url },
+    @{ name = "";              value = "";            url = "$Url" + "?api_key=" + [Uri]::EscapeDataString($key) },
+    @{ name = "";              value = "";            url = "$Url" + "?key=" + [Uri]::EscapeDataString($key) },
+    @{ name = "";              value = "";            url = "$Url" + "?token=" + [Uri]::EscapeDataString($key) }
+)
+$ok = $null; $codes = @()
+foreach ($t in $tries) {
+    $h = @{ Accept = "application/json, text/event-stream" }
+    if ($t.name -ne "") { $h[$t.name] = $t.value }
+    try {
+        $r = Invoke-WebRequest -UseBasicParsing -Method Post -Uri $t.url -Body $body -TimeoutSec 10 -ContentType "application/json" -Headers $h
+        $ok = $t; Write-Host "MT5 연결 시험 성공 (방식: $(if ($t.name) { $t.name } else { '주소에 키' }))" -ForegroundColor Green
+        break
+    } catch {
+        $c = $_.Exception.Response.StatusCode.value__
+        if ($null -eq $c) {
+            Write-Host "[멈춤] MT5에 닿지 않아요 ($($_.Exception.Message))." -ForegroundColor Red
+            Write-Host "MT5가 켜져 있는지, 옵션 → MCP 탭 '내부 서버 활성화' 체크 후 '확인'을 눌렀는지 봐 주세요." -ForegroundColor Red
+            return
+        }
+        $codes += $c
     }
-    Write-Host "[주의] MT5에 연결하지 못했어요 ($($_.Exception.Message))." -ForegroundColor Yellow
-    Write-Host "MT5가 켜져 있는지, 옵션 → MCP 탭에서 '내부 서버 활성화'가 체크돼 있는지 확인해 주세요. 설정은 계속 저장할게요." -ForegroundColor Yellow
+}
+if ($null -eq $ok) {
+    Write-Host "[멈춤] 모든 방식에서 키를 받아 주지 않았어요 (응답 $($codes -join ','))." -ForegroundColor Red
+    Write-Host "MT5 옵션 → MCP 탭에서 '생성하다'를 누른 뒤 반드시 '확인'을 눌러 저장하고, 그 키로 다시 해 주세요." -ForegroundColor Red
+    return
 }
 
 # 5) Claude 설정 파일에 mt5 추가 (기존 설정은 유지)
-$server = [ordered]@{
-    command = "cmd"
-    args    = @("/c", "npx", "-y", "mcp-remote", $Url, "--allow-http", "--header", 'Authorization:${MT5_AUTH}')
-    env     = [ordered]@{ MT5_AUTH = "Bearer $key" }
+if ($ok.name -ne "") {
+    $server = [ordered]@{
+        command = "cmd"
+        args    = @("/c", "npx", "-y", "mcp-remote", $ok.url, "--allow-http", "--header", ($ok.name + ':${MT5_AUTH}'))
+        env     = [ordered]@{ MT5_AUTH = $ok.value }
+    }
+} else {
+    $server = [ordered]@{
+        command = "cmd"
+        args    = @("/c", "npx", "-y", "mcp-remote", $ok.url, "--allow-http")
+    }
 }
 foreach ($dir in $cfgDirs) {
     New-Item -ItemType Directory -Force -Path $dir | Out-Null
