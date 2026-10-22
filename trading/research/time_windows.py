@@ -15,6 +15,11 @@ import pandas as pd
 
 SERVER_MINUS_NY = 7
 PIP = {"USDJPY": 0.01, "XAUUSD": 0.1}  # 금은 0.1달러를 1 '핍'으로 본다
+# 봉 spread가 0으로 찍히는 경우가 있어, 현재 실제 스프레드(포인트)를 최소 비용으로 쓴다 (symbols_info.txt 2026-10-22)
+SPREAD_FLOOR = {"EURUSD": 8, "GBPUSD": 9, "USDJPY": 10, "AUDUSD": 8, "USDCAD": 10, "USDCHF": 9, "XAUUSD": 15}
+# 1랏 하룻밤 스왑(포인트). 뉴욕 17시를 넘겨 보유하면 차감/가산, 수요일 밤은 3배
+SWAP = {"EURUSD": (-8.012, 1.328), "GBPUSD": (-4.83, -3.183), "USDJPY": (7.954, -16.653), "AUDUSD": (-2.308, -4.687),
+        "USDCAD": (3.386, -11.119), "USDCHF": (6.106, -13.02), "XAUUSD": (-55.402, 38.28)}
 
 # (이름, 종목들, 진입 NY시, 청산 NY시, 방향 +1 매수/-1 매도) — 조사 결과 그대로, 우리 데이터로 고르지 않음
 HYPOTHESES = [
@@ -59,7 +64,14 @@ def run_window(df, symbol, h_in, h_out, direction):
         if isinstance(x, pd.DataFrame):
             x = x.iloc[0]
         gross = direction * (x.open - e.open) / pip
-        cost = e.spread * pt / pip
+        cost = max(e.spread, SPREAD_FLOOR.get(symbol, 0)) * pt / pip
+        # 뉴욕 17시(롤오버)를 지나면 스왑
+        roll = t.normalize() + pd.Timedelta(hours=17)
+        if roll <= t:
+            roll += pd.Timedelta(days=1)
+        if roll < end:
+            sw = SWAP[symbol][0 if direction > 0 else 1] * (3 if roll.dayofweek == 2 else 1)
+            cost -= sw * pt / pip
         rows.append((t, gross - cost, gross, cost))
     return pd.DataFrame(rows, columns=["t", "net", "gross", "cost"])
 
