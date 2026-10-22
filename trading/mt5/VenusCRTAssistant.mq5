@@ -11,7 +11,7 @@
 //|  진입은 고객님이 결정한다. 이 EA는 신규 주문을 넣지 않는다.       |
 //+------------------------------------------------------------------+
 #property copyright "Venus"
-#property version   "1.10"
+#property version   "1.20"
 #property description "SMC+CRT 감시·확정 알림·위험관리 비서. 신규 주문은 넣지 않음."
 #include <Trade\Trade.mqh>
 
@@ -28,6 +28,9 @@ input double InpSLBufferPips   = 1.0;     // 손절 버퍼 (핍)
 input double InpRiskPct        = 1.0;     // 추천 랏 계산용 1회 위험 (잔고 %)
 input bool   InpPush           = true;    // 휴대폰 알림
 input bool   InpDraw           = true;    // 이 차트 종목에 선·박스 그리기
+input group "=== 텔레그램 ==="
+input string InpTgToken        = "";      // 텔레그램 봇 토큰 (@BotFather 에서 받은 것)
+input string InpTgChatId       = "";      // 채팅 ID (비워 두면 봇에게 보낸 첫 메시지에서 자동으로 찾음)
 input group "=== 위험 관리 (고객님 수동 주문) ==="
 input bool   InpGuard          = true;    // 위험 관리 켜기
 input double InpGuardMaxRisk   = 2.0;     // 1회 손실 한도 (잔고 %), 넘으면 랏을 줄임
@@ -63,10 +66,83 @@ bool     g_locked = false;
 
 //--- 도우미 ---------------------------------------------------------
 // 휴대폰 알림은 255자 제한이 있어 줄 단위로 나눠 보낸다
+//--- 텔레그램 --------------------------------------------------------
+string g_tgChat = "";
+void   TgSend(string s);
+bool   g_tgWarned = false;
+
+string UrlEncode(string s)
+  {
+   uchar b[];
+   int n = StringToCharArray(s, b, 0, WHOLE_ARRAY, CP_UTF8) - 1;   // 마지막 0 제외
+   string out = "";
+   for(int i = 0; i < n; i++)
+     {
+      uchar c = b[i];
+      if((c >= '0' && c <= '9') || (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || c == '-' || c == '_' || c == '.')
+         out += CharToString(c);
+      else
+         out += StringFormat("%%%02X", c);
+     }
+   return out;
+  }
+
+// 성공하면 응답 본문, 실패하면 ""
+string TgCall(string method, string body)
+  {
+   if(InpTgToken == "" || MQLInfoInteger(MQL_TESTER)) return "";
+   char data[], res[];
+   string resHdr;
+   StringToCharArray(body, data, 0, WHOLE_ARRAY, CP_UTF8);
+   ArrayResize(data, ArraySize(data) - 1);
+   ResetLastError();
+   int code = WebRequest("POST", "https://api.telegram.org/bot" + InpTgToken + "/" + method,
+                         "Content-Type: application/x-www-form-urlencoded\r\n", 3000, data, res, resHdr);
+   if(code == -1)
+     {
+      if(!g_tgWarned)
+        {
+         g_tgWarned = true;
+         string m = StringFormat("[CRT 비서] 텔레그램 연결 실패 (오류 %d). 도구 → 옵션 → 전문가 조언자 → 'WebRequest 허용 URL'에 https://api.telegram.org 를 넣어 주세요.", GetLastError());
+         Print(m);
+         if(InpPush) SendNotification(m);
+        }
+      return "";
+     }
+   string r = CharArrayToString(res, 0, WHOLE_ARRAY, CP_UTF8);
+   if(code != 200) { PrintFormat("[CRT 비서] 텔레그램 응답 %d: %s", code, r); return ""; }
+   return r;
+  }
+
+// 봇에게 보낸 메시지에서 채팅 ID를 찾아 저장
+void TgFindChat()
+  {
+   if(g_tgChat != "" || InpTgToken == "") return;
+   string r = TgCall("getUpdates", "limit=20");
+   int p = StringFind(r, "\"chat\":{\"id\":");
+   int last = -1;
+   while(p >= 0) { last = p; p = StringFind(r, "\"chat\":{\"id\":", p + 1); }
+   if(last < 0) return;
+   int a = last + 13, e = a;   // "chat":{"id": 는 13글자
+   while(e < StringLen(r) && (StringGetCharacter(r, e) == '-' || (StringGetCharacter(r, e) >= '0' && StringGetCharacter(r, e) <= '9'))) e++;
+   g_tgChat = StringSubstr(r, a, e - a);
+   if(g_tgChat == "") return;
+   GlobalVariableSet("VCRT_TGCHAT", StringToDouble(g_tgChat));
+   TgSend("[CRT 비서] 텔레그램 연결됐어요! 이제 여기로 알림을 보내 드려요.");
+  }
+
+void TgSend(string s)
+  {
+   if(InpTgToken == "" || g_tgChat == "") return;
+   TgCall("sendMessage", "chat_id=" + g_tgChat + "&text=" + UrlEncode(s));
+  }
+
 void Notify(string s)
   {
    Print(s);
-   if(!InpPush || MQLInfoInteger(MQL_TESTER)) return;
+   if(MQLInfoInteger(MQL_TESTER)) return;
+   TgSend(s);
+   if(!InpPush) return;
    string lines[];
    int n = StringSplit(s, '\n', lines);
    string chunk = "";
@@ -91,6 +167,40 @@ bool InAsia(datetime t)
    int h = NyHour(t);
    return (InpAsiaStartNY > InpAsiaEndNY) ? (h >= InpAsiaStartNY || h < InpAsiaEndNY)
                                           : (h >= InpAsiaStartNY && h < InpAsiaEndNY);
+  }
+
+// 추세: 마지막으로 '몸통 마감'으로 깬 스윙(앞뒤 2봉) 방향. 고점 라인을 몸통 마감으로 넘으면 상승,
+// 저점 라인을 몸통 마감으로 깨면 하락 (공부 노트 규칙). +1 상승, -1 하락, 0 모름
+int Bias(string sym, ENUM_TIMEFRAMES tf)
+  {
+   int n = 150;
+   if(Bars(sym, tf) < n + 10) return 0;
+   double lastHi = 0, lastLo = 0;
+   int bias = 0;
+   for(int k = n; k >= 1; k--)
+     {
+      int j = k + 2;   // k봉이 마감될 때 확정되는 스윙
+      double hj = iHigh(sym, tf, j), lj = iLow(sym, tf, j);
+      if(hj > iHigh(sym, tf, j + 1) && hj > iHigh(sym, tf, j + 2) && hj >= iHigh(sym, tf, j - 1) && hj >= iHigh(sym, tf, j - 2)) lastHi = hj;
+      if(lj < iLow(sym, tf, j + 1) && lj < iLow(sym, tf, j + 2) && lj <= iLow(sym, tf, j - 1) && lj <= iLow(sym, tf, j - 2)) lastLo = lj;
+      double c = iClose(sym, tf, k);
+      if(lastHi > 0 && c > lastHi) { bias = 1;  lastHi = 0; }
+      if(lastLo > 0 && c < lastLo) { bias = -1; lastLo = 0; }
+     }
+   return bias;
+  }
+
+string Arrow(int b) { return b > 0 ? "상승↑" : (b < 0 ? "하락↓" : "횡보"); }
+
+// 셋업 방향과 일봉·4H 추세 비교 문구
+string TrendLine(string sym, int dir)
+  {
+   int d1 = Bias(sym, PERIOD_D1), h4 = Bias(sym, PERIOD_H4);
+   int agree = (d1 == dir ? 1 : 0) + (h4 == dir ? 1 : 0);
+   string verdict = (agree == 2) ? "✅ 추세와 같은 방향 (좋은 자리)"
+                  : (agree == 1) ? "🟡 추세 하나만 같은 방향 (조심)"
+                                 : "⚠ 추세 반대 방향 (역추세, 랏 줄이거나 패스)";
+   return StringFormat("추세: 일봉 %s · 4H %s → %s", Arrow(d1), Arrow(h4), verdict);
   }
 
 string Px(string s, double v) { return DoubleToString(v, (int)SymbolInfoInteger(s, SYMBOL_DIGITS)); }
@@ -288,8 +398,9 @@ void OnNewM5(Watch &w)
       else return;
       w.mss = TrueMssLevel(w);
       if(!asia)
-         Notify(StringFormat("[CRT 비서] %s 4H %s 스윕 (%s) → %s 셋업 감시 시작. 진짜 MSS 선 %s",
-                             w.sym, w.dir == 1 ? "CRL" : "CRH", Px(w.sym, w.ext), w.dir == 1 ? "매수" : "매도", Px(w.sym, w.mss)));
+         Notify(StringFormat("[CRT 비서] %s 4H %s 스윕 (%s) → %s 셋업 감시 시작. 진짜 MSS 선 %s\n%s",
+                             w.sym, w.dir == 1 ? "CRL" : "CRH", Px(w.sym, w.ext), w.dir == 1 ? "매수" : "매도", Px(w.sym, w.mss),
+                             TrendLine(w.sym, w.dir)));
      }
    else if((w.dir == 1 && l < w.ext) || (w.dir == -1 && h > w.ext))
      {
@@ -337,11 +448,12 @@ void OnNewM5(Watch &w)
    double lots = SuggestLots(w.sym, risk);
    w.sugSL = sl; w.sugDir = w.dir;
    string msg = StringFormat("[CRT 비서] %s %s 확정! 5분봉 몸통 마감으로 MSS %s 돌파\n"
-                             "OB(M) %s~%s / FVG %s\n지정가 %s · 손절 %s (%.1f핍, 타이트 %s) · 목표 %s (손익비 %.1f)\n추천 랏 %.2f (잔고 %.1f%% 위험)\n%s",
+                             "OB(M) %s~%s / FVG %s\n지정가 %s · 손절 %s (%.1f핍, 타이트 %s) · 목표 %s (손익비 %.1f)\n추천 랏 %.2f (잔고 %.1f%% 위험)\n%s\n%s",
                              w.sym, w.dir == 1 ? "매수" : "매도", Px(w.sym, w.mss),
                              obT > 0 ? Px(w.sym, obL) : "-", obT > 0 ? Px(w.sym, obH) : "-",
                              fvTm > 0 ? (Px(w.sym, fvB) + "~" + Px(w.sym, fvT)) : "없음",
                              Px(w.sym, entry), Px(w.sym, sl), risk / w.pip, Px(w.sym, slT), Px(w.sym, tp), rr, lots, InpRiskPct,
+                             TrendLine(w.sym, w.dir),
                              obT > 0 ? "OB로 되돌아오면 다시 알려 드려요" : "OB를 못 찾았어요. 차트에서 직접 확인해 주세요");
    Notify(msg);
    if(obT > 0) { w.stage = 1; w.tdir = w.dir; w.obH = obH; w.obL = obL; w.tp = tp; w.confT = t1; }
@@ -489,6 +601,9 @@ int OnInit()
      }
    if(ArraySize(W) == 0) return INIT_FAILED;
    trade.SetDeviationInPoints(30);
+   g_tgChat = InpTgChatId;
+   if(g_tgChat == "" && GlobalVariableCheck("VCRT_TGCHAT"))
+      g_tgChat = StringFormat("%.0f", GlobalVariableGet("VCRT_TGCHAT"));
    EventSetTimer(10);   // 차트 종목에 틱이 없어도 다른 종목을 감시
    PrintFormat("Venus CRT 비서 시작: %d개 종목 감시, 아시아장(NY %02d~%02d시) 알림 없음", ArraySize(W), InpAsiaStartNY, InpAsiaEndNY);
    return INIT_SUCCEEDED;
@@ -513,5 +628,10 @@ void Scan()
   }
 
 void OnTick()  { Scan(); }
-void OnTimer() { Scan(); }
+void OnTimer()
+  {
+   static datetime lastTry = 0;
+   if(g_tgChat == "" && InpTgToken != "" && TimeLocal() - lastTry >= 30) { lastTry = TimeLocal(); TgFindChat(); }
+   Scan();
+  }
 //+------------------------------------------------------------------+
