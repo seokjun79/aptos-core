@@ -1,0 +1,433 @@
+//+------------------------------------------------------------------+
+//|  Venus CRT 비서 (MT5) — 자동매매가 아닌 '감시·알림·위험관리' EA   |
+//|  규칙서: trading/strategy/user_smc_crt_rules.md                  |
+//|   ① 4H CRT 기준봉(직전 마감 4H)의 CRH/CRL 너머로 스윕 → 알림     |
+//|   ② 5분봉이 '진짜 MSS 선'(마지막 하락이 시작된 고점)을          |
+//|      몸통 마감으로 돌파 → 확정 알림 + OB·FVG·손절·목표·추천 랏    |
+//|   ③ 아시아장에는 알림 없음                                       |
+//|   ④ 고객님 수동 주문: 손절 없으면 자동 손절, 위험 과다면 랏 축소,  |
+//|      하루 손실 한도면 잠금                                       |
+//|  진입은 고객님이 결정한다. 이 EA는 신규 주문을 넣지 않는다.       |
+//+------------------------------------------------------------------+
+#property copyright "Venus"
+#property version   "1.00"
+#property description "SMC+CRT 감시·확정 알림·위험관리 비서. 신규 주문은 넣지 않음."
+#include <Trade\Trade.mqh>
+
+input group "=== 감시 종목 ==="
+input string InpSymbols        = "GBPUSD,GBPJPY,EURUSD,EURJPY"; // 감시할 종목 (쉼표로 구분)
+input string InpSuffix         = "";      // 브로커 종목 접미사
+input group "=== 시간 (뉴욕 시각) ==="
+input int    InpServerMinusNY  = 7;       // 서버시간 - 뉴욕시간 (IC마켓 = 7)
+input int    InpAsiaStartNY    = 19;      // 아시아장 시작 (알림 없음)
+input int    InpAsiaEndNY      = 2;       // 아시아장 끝
+input group "=== 규칙 ==="
+input int    InpLegBars        = 48;      // 진짜 MSS 선을 찾을 범위 (스윕 저점 이전 5분봉 개수, 48 = 4시간)
+input double InpSLBufferPips   = 1.0;     // 손절 버퍼 (핍)
+input double InpRiskPct        = 1.0;     // 추천 랏 계산용 1회 위험 (잔고 %)
+input bool   InpPush           = true;    // 휴대폰 알림
+input bool   InpDraw           = true;    // 이 차트 종목에 선·박스 그리기
+input group "=== 위험 관리 (고객님 수동 주문) ==="
+input bool   InpGuard          = true;    // 위험 관리 켜기
+input double InpGuardMaxRisk   = 2.0;     // 1회 손실 한도 (잔고 %), 넘으면 랏을 줄임
+input double InpGuardDefaultSL = 15.0;    // 손절이 없을 때 자동으로 거는 손절 (핍)
+input double InpDailyLossPct   = 3.0;     // 하루 손실 한도 (%), 넘으면 잠금
+
+struct Watch
+  {
+   string   sym;
+   double   pip;
+   datetime h4;          // 현재 4H 봉 시작
+   datetime lastM5;
+   double   crh, crl;
+   int      dir;          // 0 없음, +1 매수 셋업(CRL 스윕), -1 매도 셋업(CRH 스윕)
+   double   ext;          // 스윕 극값
+   datetime extT;
+   double   mss;          // 진짜 MSS 선
+   bool     done;         // 이번 4H 봉에서 확정 알림 보냄
+   double   sugSL;        // 최근 셋업의 추천 손절 (위험 관리에 사용)
+   int      sugDir;
+  };
+
+CTrade   trade;
+Watch    W[];
+datetime g_day = 0;
+double   g_dayStart = 0;
+bool     g_locked = false;
+
+//--- 도우미 ---------------------------------------------------------
+// 휴대폰 알림은 255자 제한이 있어 줄 단위로 나눠 보낸다
+void Notify(string s)
+  {
+   Print(s);
+   if(!InpPush || MQLInfoInteger(MQL_TESTER)) return;
+   string lines[];
+   int n = StringSplit(s, '\n', lines);
+   string chunk = "";
+   for(int i = 0; i < n; i++)
+     {
+      if(StringLen(chunk) + StringLen(lines[i]) + 1 > 240)
+        { SendNotification(chunk); chunk = ""; }
+      chunk += (chunk == "" ? "" : "\n") + lines[i];
+     }
+   if(chunk != "") SendNotification(chunk);
+  }
+
+int NyHour(datetime t)
+  {
+   MqlDateTime d;
+   TimeToStruct((datetime)((long)t - InpServerMinusNY * 3600), d);
+   return d.hour;
+  }
+
+bool InAsia(datetime t)
+  {
+   int h = NyHour(t);
+   return (InpAsiaStartNY > InpAsiaEndNY) ? (h >= InpAsiaStartNY || h < InpAsiaEndNY)
+                                          : (h >= InpAsiaStartNY && h < InpAsiaEndNY);
+  }
+
+string Px(string s, double v) { return DoubleToString(v, (int)SymbolInfoInteger(s, SYMBOL_DIGITS)); }
+
+int FindWatch(string s)
+  {
+   for(int i = 0; i < ArraySize(W); i++)
+      if(W[i].sym == s) return i;
+   return -1;
+  }
+
+double LossPerLot(string s, double dist)
+  {
+   double tv = SymbolInfoDouble(s, SYMBOL_TRADE_TICK_VALUE_LOSS);
+   if(tv <= 0) tv = SymbolInfoDouble(s, SYMBOL_TRADE_TICK_VALUE);
+   double ts = SymbolInfoDouble(s, SYMBOL_TRADE_TICK_SIZE);
+   if(tv <= 0 || ts <= 0) return 0;
+   return dist / ts * tv;
+  }
+
+double SuggestLots(string s, double dist)
+  {
+   double lpl = LossPerLot(s, dist);
+   double step = SymbolInfoDouble(s, SYMBOL_VOLUME_STEP);
+   if(lpl <= 0 || step <= 0) return 0;
+   double lots = MathFloor(AccountInfoDouble(ACCOUNT_BALANCE) * InpRiskPct / 100.0 / lpl / step + 1e-9) * step;
+   return NormalizeDouble(lots, 2);
+  }
+
+//--- 그리기 (차트 종목만) --------------------------------------------
+void HLine(string name, double price, color col, ENUM_LINE_STYLE st, string tip)
+  {
+   if(!InpDraw) return;
+   if(ObjectFind(0, name) < 0) ObjectCreate(0, name, OBJ_HLINE, 0, 0, price);
+   ObjectSetDouble(0, name, OBJPROP_PRICE, price);
+   ObjectSetInteger(0, name, OBJPROP_COLOR, col);
+   ObjectSetInteger(0, name, OBJPROP_STYLE, st);
+   ObjectSetString(0, name, OBJPROP_TOOLTIP, tip);
+   ObjectSetString(0, name, OBJPROP_TEXT, tip);
+  }
+
+void Box(string name, datetime t1, double p1, datetime t2, double p2, color col, string tip)
+  {
+   if(!InpDraw) return;
+   if(ObjectFind(0, name) < 0) ObjectCreate(0, name, OBJ_RECTANGLE, 0, t1, p1, t2, p2);
+   ObjectSetInteger(0, name, OBJPROP_TIME, 0, t1);
+   ObjectSetDouble(0, name, OBJPROP_PRICE, 0, p1);
+   ObjectSetInteger(0, name, OBJPROP_TIME, 1, t2);
+   ObjectSetDouble(0, name, OBJPROP_PRICE, 1, p2);
+   ObjectSetInteger(0, name, OBJPROP_COLOR, col);
+   ObjectSetInteger(0, name, OBJPROP_FILL, true);
+   ObjectSetInteger(0, name, OBJPROP_BACK, true);
+   ObjectSetString(0, name, OBJPROP_TOOLTIP, tip);
+  }
+
+//--- 감시 로직 -------------------------------------------------------
+void ResetCycle(Watch &w)
+  {
+   w.h4  = iTime(w.sym, PERIOD_H4, 0);
+   w.crh = iHigh(w.sym, PERIOD_H4, 1);   // 직전 마감 4H = CRT 기준봉(1번 캔들)
+   w.crl = iLow(w.sym, PERIOD_H4, 1);
+   w.dir = 0; w.ext = 0; w.extT = 0; w.mss = 0; w.done = false;
+   w.sugSL = 0; w.sugDir = 0;
+   if(w.sym == _Symbol)
+     {
+      HLine("VCRT_CRH", w.crh, clrDodgerBlue, STYLE_SOLID, "4H CRH");
+      HLine("VCRT_CRL", w.crl, clrDodgerBlue, STYLE_SOLID, "4H CRL");
+      ObjectDelete(0, "VCRT_MSS"); ObjectDelete(0, "VCRT_OB"); ObjectDelete(0, "VCRT_FVG");
+      ObjectDelete(0, "VCRT_SL");  ObjectDelete(0, "VCRT_TP");
+     }
+  }
+
+// 진짜 MSS 선: 스윕 극값 이전 InpLegBars개 5분봉에서, CRT 범위 안에 있는 스윙 고점(앞뒤 2봉보다 높음) 중
+// 가장 높은 것 = 마지막 하락이 시작된 고점 (매도는 대칭). 작은 중간 고점은 자연히 제외된다.
+double TrueMssLevel(const Watch &w)
+  {
+   int es = iBarShift(w.sym, PERIOD_M5, w.extT, false);
+   if(es < 0) return 0;
+   double best = 0;
+   for(int k = es + 3; k <= es + InpLegBars; k++)
+     {
+      double v  = (w.dir == 1) ? iHigh(w.sym, PERIOD_M5, k) : iLow(w.sym, PERIOD_M5, k);
+      if(v <= 0) break;
+      if(w.dir == 1 && v >= w.crh) continue;
+      if(w.dir == -1 && v <= w.crl) continue;
+      bool sw = true;
+      for(int j = 1; j <= 2 && sw; j++)
+        {
+         double a = (w.dir == 1) ? iHigh(w.sym, PERIOD_M5, k + j) : iLow(w.sym, PERIOD_M5, k + j);
+         double b = (w.dir == 1) ? iHigh(w.sym, PERIOD_M5, k - j) : iLow(w.sym, PERIOD_M5, k - j);
+         if(w.dir == 1)  sw = (v > a && v >= b);
+         else            sw = (v < a && v <= b);
+        }
+      if(!sw) continue;
+      if(best == 0 || (w.dir == 1 && v > best) || (w.dir == -1 && v < best))
+         best = v;
+     }
+   return best;
+  }
+
+void OnNewM5(Watch &w)
+  {
+   if(iTime(w.sym, PERIOD_H4, 0) != w.h4)
+      ResetCycle(w);
+   if(w.done) return;
+   datetime t1 = iTime(w.sym, PERIOD_M5, 1);
+   double o = iOpen(w.sym, PERIOD_M5, 1), h = iHigh(w.sym, PERIOD_M5, 1);
+   double l = iLow(w.sym, PERIOD_M5, 1),  c = iClose(w.sym, PERIOD_M5, 1);
+   if(o <= 0 || w.crh <= w.crl) return;
+   bool asia = InAsia(t1 + 300);
+
+   // ① 스윕 감지 / 극값 갱신
+   if(w.dir == 0)
+     {
+      if(l < w.crl) { w.dir = 1;  w.ext = l; w.extT = t1; }
+      else if(h > w.crh) { w.dir = -1; w.ext = h; w.extT = t1; }
+      else return;
+      w.mss = TrueMssLevel(w);
+      if(!asia)
+         Notify(StringFormat("[CRT 비서] %s 4H %s 스윕 (%s) → %s 셋업 감시 시작. 진짜 MSS 선 %s",
+                             w.sym, w.dir == 1 ? "CRL" : "CRH", Px(w.sym, w.ext), w.dir == 1 ? "매수" : "매도", Px(w.sym, w.mss)));
+     }
+   else if((w.dir == 1 && l < w.ext) || (w.dir == -1 && h > w.ext))
+     {
+      w.ext = (w.dir == 1) ? l : h; w.extT = t1;
+      w.mss = TrueMssLevel(w);
+     }
+   if(w.sym == _Symbol && w.mss > 0)
+      HLine("VCRT_MSS", w.mss, clrRed, STYLE_DASH, "진짜 MSS 선 (몸통 마감 돌파 대기)");
+
+   // ② 확정: 진짜 MSS 선을 몸통 마감으로 돌파, 종가는 CRT 범위 안
+   if(w.mss <= 0) return;
+   bool body = (w.dir == 1) ? (c > w.mss && c > o) : (c < w.mss && c < o);
+   bool inside = c > w.crl && c < w.crh;
+   if(!(body && inside)) return;
+   w.done = true;
+   if(asia)
+     {
+      Print(w.sym, " MSS 확정됐지만 아시아장이라 알림 생략");
+      return;
+     }
+   // OB: 극값~확정 봉 사이 마지막 반대색 봉, FVG: 같은 구간 가장 최근 갭
+   int es = iBarShift(w.sym, PERIOD_M5, w.extT, false);
+   double obH = 0, obL = 0, fvB = 0, fvT = 0;
+   datetime obT = 0, fvTm = 0;
+   // OB = 스윕 극값 부근의 반대색 봉 중 극값에 가장 가까운 봉 (일지의 분홍·노란 박스)
+   double best = 0;
+   for(int k = 2; k <= es + 2; k++)
+     {
+      double ok = iOpen(w.sym, PERIOD_M5, k), ck = iClose(w.sym, PERIOD_M5, k);
+      if(!((w.dir == 1 && ck < ok) || (w.dir == -1 && ck > ok))) continue;
+      double ex = (w.dir == 1) ? iLow(w.sym, PERIOD_M5, k) : iHigh(w.sym, PERIOD_M5, k);
+      if(obT == 0 || (w.dir == 1 && ex < best) || (w.dir == -1 && ex > best))
+        { best = ex; obH = iHigh(w.sym, PERIOD_M5, k); obL = iLow(w.sym, PERIOD_M5, k); obT = iTime(w.sym, PERIOD_M5, k); }
+     }
+   for(int k = 1; k + 2 <= es && fvTm == 0; k++)
+     {
+      double hk2 = iHigh(w.sym, PERIOD_M5, k + 2), lk2 = iLow(w.sym, PERIOD_M5, k + 2);
+      double hk = iHigh(w.sym, PERIOD_M5, k), lk = iLow(w.sym, PERIOD_M5, k);
+      if(w.dir == 1 && hk2 < lk)  { fvB = hk2; fvT = lk; fvTm = iTime(w.sym, PERIOD_M5, k + 2); }
+      if(w.dir == -1 && lk2 > hk) { fvB = hk; fvT = lk2; fvTm = iTime(w.sym, PERIOD_M5, k + 2); }
+     }
+   double sl = w.ext - w.dir * InpSLBufferPips * w.pip;
+   double tp = (w.dir == 1) ? w.crh : w.crl;
+   double entry = (obT > 0) ? ((w.dir == 1) ? obH : obL) : c;
+   double risk = MathAbs(entry - sl);
+   double rr = (risk > 0) ? w.dir * (tp - entry) / risk : 0;
+   double lots = SuggestLots(w.sym, risk);
+   w.sugSL = sl; w.sugDir = w.dir;
+   string msg = StringFormat("[CRT 비서] %s %s 확정! 5분봉 몸통 마감으로 MSS %s 돌파\n"
+                             "OB %s~%s / FVG %s\n지정가 %s · 손절 %s (%.1f핍) · 목표 %s (손익비 %.1f)\n추천 랏 %.2f (잔고 %.1f%% 위험)",
+                             w.sym, w.dir == 1 ? "매수" : "매도", Px(w.sym, w.mss),
+                             obT > 0 ? Px(w.sym, obL) : "-", obT > 0 ? Px(w.sym, obH) : "-",
+                             fvTm > 0 ? (Px(w.sym, fvB) + "~" + Px(w.sym, fvT)) : "없음",
+                             Px(w.sym, entry), Px(w.sym, sl), risk / w.pip, Px(w.sym, tp), rr, lots, InpRiskPct);
+   Notify(msg);
+   if(w.sym == _Symbol)
+     {
+      datetime tEnd = TimeCurrent() + 4 * 3600;
+      if(obT > 0)  Box("VCRT_OB", obT, obH, tEnd, obL, clrDarkKhaki, "5M OB");
+      if(fvTm > 0) Box("VCRT_FVG", fvTm, fvT, tEnd, fvB, clrPlum, "5M FVG");
+      HLine("VCRT_SL", sl, clrOrangeRed, STYLE_DOT, "추천 손절");
+      HLine("VCRT_TP", tp, clrLimeGreen, STYLE_DOT, "목표 (CRT 반대편)");
+     }
+  }
+
+//--- 위험 관리 -------------------------------------------------------
+ulong    g_failTk[];
+datetime g_failT[];
+
+// 같은 티켓의 실패는 처음 한 번만 알리고, 60초 간격으로만 다시 시도
+bool CanTry(ulong tk)
+  {
+   for(int i = 0; i < ArraySize(g_failTk); i++)
+      if(g_failTk[i] == tk) return TimeCurrent() - g_failT[i] >= 60;
+   return true;
+  }
+void Failed(ulong tk, string what)
+  {
+   for(int i = 0; i < ArraySize(g_failTk); i++)
+      if(g_failTk[i] == tk) { g_failT[i] = TimeCurrent(); return; }
+   int n = ArraySize(g_failTk);
+   ArrayResize(g_failTk, n + 1); ArrayResize(g_failT, n + 1);
+   g_failTk[n] = tk; g_failT[n] = TimeCurrent();
+   Notify(StringFormat("[CRT 비서] ⚠ #%I64u %s 실패 (%u %s). 직접 확인해 주세요!", tk, what, trade.ResultRetcode(), trade.ResultRetcodeDescription()));
+  }
+
+string GKey(string k) { return "VCRT_" + IntegerToString(AccountInfoInteger(ACCOUNT_LOGIN)) + "_" + k; }
+
+void Guard()
+  {
+   if(!InpGuard) return;
+   datetime now = TimeCurrent();
+   datetime day = now - (now % 86400);
+   if(day != g_day)
+     {
+      g_day = day;
+      // 재시작해도 같은 날이면 저장된 시작 잔고·잠금을 이어받는다
+      if(GlobalVariableCheck(GKey("day")) && (datetime)GlobalVariableGet(GKey("day")) == day)
+        {
+         g_dayStart = GlobalVariableGet(GKey("start"));
+         g_locked   = GlobalVariableGet(GKey("lock")) > 0;
+        }
+      else
+        {
+         g_dayStart = AccountInfoDouble(ACCOUNT_BALANCE);
+         g_locked   = false;
+         GlobalVariableSet(GKey("day"), (double)day);
+         GlobalVariableSet(GKey("start"), g_dayStart);
+         GlobalVariableSet(GKey("lock"), 0);
+        }
+     }
+   double eq = AccountInfoDouble(ACCOUNT_EQUITY);
+   if(!g_locked && g_dayStart > 0 && eq <= g_dayStart * (1.0 - InpDailyLossPct / 100.0))
+     {
+      g_locked = true;
+      GlobalVariableSet(GKey("lock"), 1);
+      Notify(StringFormat("[CRT 비서] 하루 손실 %.1f%% 도달 → 오늘은 잠금. 수동 포지션을 정리해요.", InpDailyLossPct));
+     }
+   double bal = AccountInfoDouble(ACCOUNT_BALANCE);
+   for(int i = PositionsTotal() - 1; i >= 0; i--)
+     {
+      ulong tk = PositionGetTicket(i);
+      if(tk == 0 || PositionGetInteger(POSITION_MAGIC) != 0) continue;   // 고객님 수동 주문만
+      string s = PositionGetString(POSITION_SYMBOL);
+      int wi = FindWatch(s);
+      if(wi < 0) continue;
+      if(g_locked)
+        {
+         if(CanTry(tk) && !trade.PositionClose(tk)) Failed(tk, "잠금 청산");
+         continue;
+        }
+      int dir = (PositionGetInteger(POSITION_TYPE) == POSITION_TYPE_BUY) ? 1 : -1;
+      double open = PositionGetDouble(POSITION_PRICE_OPEN), sl = PositionGetDouble(POSITION_SL);
+      double vol = PositionGetDouble(POSITION_VOLUME);
+      if(sl == 0)
+        {
+         double ns = (W[wi].sugDir == dir && W[wi].sugSL > 0 && dir * (open - W[wi].sugSL) > 0)
+                     ? W[wi].sugSL : open - dir * InpGuardDefaultSL * W[wi].pip;
+         ns = NormalizeDouble(ns, (int)SymbolInfoInteger(s, SYMBOL_DIGITS));
+         double px = (dir == 1) ? SymbolInfoDouble(s, SYMBOL_BID) : SymbolInfoDouble(s, SYMBOL_ASK);
+         double minDist = (SymbolInfoInteger(s, SYMBOL_TRADE_STOPS_LEVEL) + 2) * SymbolInfoDouble(s, SYMBOL_POINT);
+         if(dir * (px - ns) <= minDist)
+           {
+            // 이미 손절 자리보다 불리하게 움직임 → 걸 수 없으니 알림
+            if(CanTry(tk)) Failed(tk, StringFormat("자동 손절 %s (현재가가 이미 넘어감)", Px(s, ns)));
+            continue;
+           }
+         if(!CanTry(tk)) continue;
+         if(trade.PositionModify(tk, ns, PositionGetDouble(POSITION_TP)))
+            Notify(StringFormat("[CRT 비서] %s 손절이 없어서 %s 에 자동으로 걸었어요", s, Px(s, ns)));
+         else
+            Failed(tk, "자동 손절");
+         continue;   // 다음 틱에 손절 기준으로 랏 점검
+        }
+      if(dir * (open - sl) <= 0) continue;   // 손절이 본전 이상이면 위험 없음
+      double lpl = LossPerLot(s, MathAbs(open - sl));
+      if(lpl <= 0 || bal <= 0) continue;
+      double riskPct = vol * lpl / bal * 100.0;
+      if(riskPct > InpGuardMaxRisk + 0.05)
+        {
+         double step = SymbolInfoDouble(s, SYMBOL_VOLUME_STEP), mn = SymbolInfoDouble(s, SYMBOL_VOLUME_MIN);
+         double keep = MathMax(mn, MathFloor(bal * InpGuardMaxRisk / 100.0 / lpl / step + 1e-9) * step);
+         double cut = NormalizeDouble(vol - keep, 2);
+         if(cut >= mn && CanTry(tk))
+           {
+            if(trade.PositionClosePartial(tk, cut))
+               Notify(StringFormat("[CRT 비서] %s 위험 %.1f%% > 한도 %.1f%% → %.2f랏 줄여서 %.2f랏만 남겼어요", s, riskPct, InpGuardMaxRisk, cut, keep));
+            else
+               Failed(tk, "랏 줄이기");
+           }
+        }
+     }
+  }
+
+//--- 이벤트 ----------------------------------------------------------
+int OnInit()
+  {
+   string parts[];
+   int n = StringSplit(InpSymbols, ',', parts);
+   ArrayResize(W, 0);
+   for(int i = 0; i < n; i++)
+     {
+      string s = parts[i];
+      StringTrimLeft(s); StringTrimRight(s);
+      if(s == "") continue;
+      s += InpSuffix;
+      if(!SymbolSelect(s, true)) { PrintFormat("[CRT 비서] %s 종목을 찾을 수 없어 건너뜀", s); continue; }
+      Watch w;
+      w.sym = s;
+      int dg = (int)SymbolInfoInteger(s, SYMBOL_DIGITS);
+      w.pip = (dg == 3 || dg == 5) ? SymbolInfoDouble(s, SYMBOL_POINT) * 10 : SymbolInfoDouble(s, SYMBOL_POINT);
+      w.lastM5 = 0; w.sugSL = 0; w.sugDir = 0;
+      ResetCycle(w);
+      int k = ArraySize(W);
+      ArrayResize(W, k + 1);
+      W[k] = w;
+     }
+   if(ArraySize(W) == 0) return INIT_FAILED;
+   trade.SetDeviationInPoints(30);
+   EventSetTimer(10);   // 차트 종목에 틱이 없어도 다른 종목을 감시
+   PrintFormat("Venus CRT 비서 시작: %d개 종목 감시, 아시아장(NY %02d~%02d시) 알림 없음", ArraySize(W), InpAsiaStartNY, InpAsiaEndNY);
+   return INIT_SUCCEEDED;
+  }
+
+void OnDeinit(const int reason)
+  {
+   EventKillTimer();
+   ObjectsDeleteAll(0, "VCRT_");
+  }
+
+void Scan()
+  {
+   for(int i = 0; i < ArraySize(W); i++)
+     {
+      datetime b = iTime(W[i].sym, PERIOD_M5, 0);
+      if(b == 0 || b == W[i].lastM5) continue;
+      W[i].lastM5 = b;
+      OnNewM5(W[i]);
+     }
+   Guard();
+  }
+
+void OnTick()  { Scan(); }
+void OnTimer() { Scan(); }
+//+------------------------------------------------------------------+
