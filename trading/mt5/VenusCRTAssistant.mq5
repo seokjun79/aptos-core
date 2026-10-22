@@ -11,7 +11,7 @@
 //|  진입은 고객님이 결정한다. 이 EA는 신규 주문을 넣지 않는다.       |
 //+------------------------------------------------------------------+
 #property copyright "Venus"
-#property version   "1.42"
+#property version   "1.43"
 #property description "SMC+CRT 감시·확정 알림·위험관리 비서. 신규 주문은 넣지 않음."
 #include <Trade\Trade.mqh>
 
@@ -745,6 +745,27 @@ void OnDeinit(const int reason)
    ObjectsDeleteAll(0, "VCRT_");
   }
 
+// 붙인 직후 한 번: 종목별 지금 상태를 텔레그램으로 보고 (연결 확인 겸)
+bool g_hello = false;
+void Hello()
+  {
+   if(g_hello || g_tgChat == "" || InpTgToken == "") return;
+   for(int i = 0; i < ArraySize(W); i++)
+      if(!W[i].rebuilt) return;
+   g_hello = true;
+   string m = StringFormat("[CRT 비서] 시작했어요 (v1.43, %s봉). 지금 상태:", StringSubstr(EnumToString(InpLTF), 7));
+   for(int i = 0; i < ArraySize(W); i++)
+     {
+      string st;
+      if(W[i].dir == 0)   st = "스윕 없음, 대기";
+      else if(W[i].done)  st = StringFormat("%s 셋업 이미 확정됨", W[i].dir == 1 ? "매수" : "매도");
+      else                st = StringFormat("%s 셋업, MSS 선 %s 몸통 마감 대기", W[i].dir == 1 ? "매수" : "매도", Px(W[i].sym, W[i].mss));
+      m += StringFormat("\n• %s: CRH %s / CRL %s → %s", W[i].sym, Px(W[i].sym, W[i].crh), Px(W[i].sym, W[i].crl), st);
+     }
+   Print(m);
+   TgSend(m);
+  }
+
 void Scan()
   {
    for(int i = 0; i < ArraySize(W); i++)
@@ -756,6 +777,7 @@ void Scan()
       OnNewM5(W[i]);
       if(W[i].snap != "") Snap(W[i]);
      }
+   Hello();
    Guard();
   }
 
