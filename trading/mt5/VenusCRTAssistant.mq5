@@ -11,7 +11,7 @@
 //|  진입은 고객님이 결정한다. 이 EA는 신규 주문을 넣지 않는다.       |
 //+------------------------------------------------------------------+
 #property copyright "Venus"
-#property version   "1.30"
+#property version   "1.31"
 #property description "SMC+CRT 감시·확정 알림·위험관리 비서. 신규 주문은 넣지 않음."
 #include <Trade\Trade.mqh>
 
@@ -330,6 +330,15 @@ void Snap(Watch &w)
    if(temp) ChartClose(cid);
   }
 
+// 같은 4H 봉에서 이미 보낸 알림인지 (EA를 다시 붙여도 중복 알림이 안 가게 터미널에 기록)
+bool AlreadySent(string sym, string kind, datetime h4)
+  {
+   string k = "VCRT_" + kind + "_" + sym;
+   if(GlobalVariableCheck(k) && (datetime)GlobalVariableGet(k) == h4) return true;
+   GlobalVariableSet(k, (double)h4);
+   return false;
+  }
+
 //--- 감시 로직 -------------------------------------------------------
 void ResetCycle(Watch &w)
   {
@@ -473,8 +482,9 @@ void OnNewM5(Watch &w)
       else if(h > w.crh) { w.dir = -1; w.ext = h; w.extT = t1; }
       else return;
       w.mss = TrueMssLevel(w);
-      if(!asia) w.snap = "스윕 (파란 선 = 4H CRH/CRL, 빨간 점선 = 진짜 MSS 선)";
-      if(!asia)
+      bool dup = AlreadySent(w.sym, "SW", w.h4);
+      if(!asia && !dup) w.snap = "스윕 (파란 선 = 4H CRH/CRL, 빨간 점선 = 진짜 MSS 선)";
+      if(!asia && !dup)
          Notify(StringFormat("[CRT 비서] %s 4H %s 스윕 (%s) → %s 셋업 감시 시작. 진짜 MSS 선 %s\n%s",
                              w.sym, w.dir == 1 ? "CRL" : "CRH", Px(w.sym, w.ext), w.dir == 1 ? "매수" : "매도", Px(w.sym, w.mss),
                              TrendLine(w.sym, w.dir)));
@@ -493,6 +503,7 @@ void OnNewM5(Watch &w)
    bool inside = c > w.crl && c < w.crh;
    if(!(body && inside)) return;
    w.done = true;
+   if(AlreadySent(w.sym, "CF", w.h4)) return;   // 다시 붙이기 전에 이미 알린 확정
    if(asia)
      {
       Print(w.sym, " MSS 확정됐지만 아시아장이라 알림 생략");
