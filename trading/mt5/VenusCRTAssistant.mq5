@@ -11,7 +11,7 @@
 //|  진입은 고객님이 결정한다. 이 EA는 신규 주문을 넣지 않는다.       |
 //+------------------------------------------------------------------+
 #property copyright "Venus"
-#property version   "1.20"
+#property version   "1.30"
 #property description "SMC+CRT 감시·확정 알림·위험관리 비서. 신규 주문은 넣지 않음."
 #include <Trade\Trade.mqh>
 
@@ -31,6 +31,7 @@ input bool   InpDraw           = true;    // 이 차트 종목에 선·박스 �
 input group "=== 텔레그램 ==="
 input string InpTgToken        = "";      // 텔레그램 봇 토큰 (@BotFather 에서 받은 것)
 input string InpTgChatId       = "";      // 채팅 ID (비워 두면 봇에게 보낸 첫 메시지에서 자동으로 찾음)
+input bool   InpTgChart        = true;    // 알림 때 5분봉 차트 사진도 보내기
 input group "=== 위험 관리 (고객님 수동 주문) ==="
 input bool   InpGuard          = true;    // 위험 관리 켜기
 input double InpGuardMaxRisk   = 2.0;     // 1회 손실 한도 (잔고 %), 넘으면 랏을 줄임
@@ -56,6 +57,7 @@ struct Watch
    int      tdir;         // 추적 중인 셋업 방향 (새 4H가 시작돼도 유지)
    double   obH, obL, tp;
    datetime confT;
+   string   snap;         // 이번 봉 처리 뒤 텔레그램으로 보낼 차트 사진 설명 (빈칸이면 안 보냄)
   };
 
 CTrade   trade;
@@ -135,6 +137,32 @@ void TgSend(string s)
   {
    if(InpTgToken == "" || g_tgChat == "") return;
    TgCall("sendMessage", "chat_id=" + g_tgChat + "&text=" + UrlEncode(s));
+  }
+
+// 텔레그램으로 사진 보내기 (MQL5\Files 안의 파일)
+void TgPhoto(string file, string caption)
+  {
+   if(InpTgToken == "" || g_tgChat == "" || MQLInfoInteger(MQL_TESTER)) return;
+   int fh = FileOpen(file, FILE_READ | FILE_BIN);
+   if(fh == INVALID_HANDLE) { PrintFormat("[CRT 비서] 차트 사진 파일을 못 열었어요 (%d)", GetLastError()); return; }
+   char img[];
+   FileReadArray(fh, img);
+   FileClose(fh);
+   string bd = "----VenusCRTBoundary7MA4YWxk";
+   string head = "--" + bd + "\r\nContent-Disposition: form-data; name=\"chat_id\"\r\n\r\n" + g_tgChat + "\r\n"
+               + "--" + bd + "\r\nContent-Disposition: form-data; name=\"caption\"\r\n\r\n" + caption + "\r\n"
+               + "--" + bd + "\r\nContent-Disposition: form-data; name=\"photo\"; filename=\"chart.png\"\r\nContent-Type: image/png\r\n\r\n";
+   string tail = "\r\n--" + bd + "--\r\n";
+   char a[], t[], data[], res[];
+   StringToCharArray(head, a, 0, WHOLE_ARRAY, CP_UTF8); ArrayResize(a, ArraySize(a) - 1);
+   StringToCharArray(tail, t, 0, WHOLE_ARRAY, CP_UTF8); ArrayResize(t, ArraySize(t) - 1);
+   ArrayCopy(data, a);
+   ArrayCopy(data, img, ArraySize(data));
+   ArrayCopy(data, t, ArraySize(data));
+   string resHdr;
+   int code = WebRequest("POST", "https://api.telegram.org/bot" + InpTgToken + "/sendPhoto",
+                         "Content-Type: multipart/form-data; boundary=" + bd + "\r\n", 10000, data, res, resHdr);
+   if(code != 200) PrintFormat("[CRT 비서] 차트 사진 전송 실패 (%d): %s", code, CharArrayToString(res, 0, WHOLE_ARRAY, CP_UTF8));
   }
 
 void Notify(string s)
@@ -256,6 +284,52 @@ void Box(string name, datetime t1, double p1, datetime t2, double p2, color col,
    ObjectSetString(0, name, OBJPROP_TOOLTIP, tip);
   }
 
+// 선 하나 (차트 id 지정)
+void SnapLine(long cid, string name, double price, color col, ENUM_LINE_STYLE st)
+  {
+   if(price <= 0) return;
+   ObjectCreate(cid, name, OBJ_HLINE, 0, 0, price);
+   ObjectSetInteger(cid, name, OBJPROP_COLOR, col);
+   ObjectSetInteger(cid, name, OBJPROP_STYLE, st);
+  }
+
+// 5분봉 차트를 사진으로 찍어 텔레그램으로 보낸다. 감시 종목이 이 차트가 아니면 잠깐 열었다 닫는다.
+void Snap(Watch &w)
+  {
+   if(!InpTgChart || InpTgToken == "" || g_tgChat == "" || MQLInfoInteger(MQL_TESTER)) return;
+   long cid = ChartID();
+   bool temp = (w.sym != _Symbol || Period() != PERIOD_M5);
+   if(temp)
+     {
+      cid = ChartOpen(w.sym, PERIOD_M5);
+      if(cid == 0) { PrintFormat("[CRT 비서] %s 차트를 열지 못했어요 (%d)", w.sym, GetLastError()); return; }
+      ChartSetInteger(cid, CHART_SHOW_GRID, false);
+      ChartSetInteger(cid, CHART_AUTOSCROLL, true);
+      ChartSetInteger(cid, CHART_SHIFT, true);
+      SnapLine(cid, "S_CRH", w.crh, clrDodgerBlue, STYLE_SOLID);
+      SnapLine(cid, "S_CRL", w.crl, clrDodgerBlue, STYLE_SOLID);
+      SnapLine(cid, "S_MSS", w.mss, clrRed, STYLE_DASH);
+      if(w.stage > 0)
+        {
+         ObjectCreate(cid, "S_OB", OBJ_RECTANGLE, 0, w.confT - 3600, w.obH, TimeCurrent() + 3600, w.obL);
+         ObjectSetInteger(cid, "S_OB", OBJPROP_COLOR, clrDarkKhaki);
+         ObjectSetInteger(cid, "S_OB", OBJPROP_FILL, true);
+         ObjectSetInteger(cid, "S_OB", OBJPROP_BACK, true);
+         SnapLine(cid, "S_TP", w.tp, clrLimeGreen, STYLE_DOT);
+        }
+      if(w.sugDir != 0) SnapLine(cid, "S_SL", w.sugSL, clrOrangeRed, STYLE_DOT);
+      ChartRedraw(cid);
+      Sleep(1500);   // 새 차트가 그려질 시간
+     }
+   ChartRedraw(cid);
+   string f = "VCRT_" + w.sym + ".png";
+   if(ChartScreenShot(cid, f, 1100, 650, ALIGN_RIGHT))
+      TgPhoto(f, w.sym + " 5분봉 · " + w.snap);
+   else
+      PrintFormat("[CRT 비서] %s 차트 사진 실패 (%d)", w.sym, GetLastError());
+   if(temp) ChartClose(cid);
+  }
+
 //--- 감시 로직 -------------------------------------------------------
 void ResetCycle(Watch &w)
   {
@@ -362,6 +436,7 @@ void Track(Watch &w)
       if((w.tdir == 1 && l <= edge) || (w.tdir == -1 && h >= edge))
         {
          w.stage = 2;
+         w.snap = "OB 도달";
          Notify(StringFormat("[CRT 비서] %s OB(M) %s~%s 도달! 지정가 자리예요.\n더 확실하게: %s 쪽 몸통 마감 캔들을 기다려요.",
                                        w.sym, Px(w.sym, w.obL), Px(w.sym, w.obH), w.tdir == 1 ? "양봉" : "음봉"));
         }
@@ -371,6 +446,7 @@ void Track(Watch &w)
    bool conf = (w.tdir == 1) ? (c > o && c > w.obH) : (c < o && c < w.obL);
    if(conf)
      {
+      w.snap = "확인 캔들 마감";
       Notify(StringFormat("[CRT 비서] %s %s 확인 캔들 마감 (%s). 다음 봉 시가가 진입 자리예요. 결정은 고객님!", w.sym, side, Px(w.sym, c)));
       w.stage = 0;
      }
@@ -397,6 +473,7 @@ void OnNewM5(Watch &w)
       else if(h > w.crh) { w.dir = -1; w.ext = h; w.extT = t1; }
       else return;
       w.mss = TrueMssLevel(w);
+      if(!asia) w.snap = "스윕 (파란 선 = 4H CRH/CRL, 빨간 점선 = 진짜 MSS 선)";
       if(!asia)
          Notify(StringFormat("[CRT 비서] %s 4H %s 스윕 (%s) → %s 셋업 감시 시작. 진짜 MSS 선 %s\n%s",
                              w.sym, w.dir == 1 ? "CRL" : "CRH", Px(w.sym, w.ext), w.dir == 1 ? "매수" : "매도", Px(w.sym, w.mss),
@@ -455,6 +532,7 @@ void OnNewM5(Watch &w)
                              Px(w.sym, entry), Px(w.sym, sl), risk / w.pip, Px(w.sym, slT), Px(w.sym, tp), rr, lots, InpRiskPct,
                              TrendLine(w.sym, w.dir),
                              obT > 0 ? "OB로 되돌아오면 다시 알려 드려요" : "OB를 못 찾았어요. 차트에서 직접 확인해 주세요");
+   w.snap = "확정 (노란 박스 = OB, 주황 = 손절, 초록 = 목표)";
    Notify(msg);
    if(obT > 0) { w.stage = 1; w.tdir = w.dir; w.obH = obH; w.obL = obL; w.tp = tp; w.confT = t1; }
    if(w.sym == _Symbol)
@@ -593,7 +671,7 @@ int OnInit()
       w.sym = s;
       int dg = (int)SymbolInfoInteger(s, SYMBOL_DIGITS);
       w.pip = (dg == 3 || dg == 5) ? SymbolInfoDouble(s, SYMBOL_POINT) * 10 : SymbolInfoDouble(s, SYMBOL_POINT);
-      w.lastM5 = 0; w.sugSL = 0; w.sugDir = 0; w.stage = 0;
+      w.lastM5 = 0; w.sugSL = 0; w.sugDir = 0; w.stage = 0; w.snap = "";
       ResetCycle(w);
       int k = ArraySize(W);
       ArrayResize(W, k + 1);
@@ -622,7 +700,9 @@ void Scan()
       datetime b = iTime(W[i].sym, PERIOD_M5, 0);
       if(b == 0 || b == W[i].lastM5) continue;
       W[i].lastM5 = b;
+      W[i].snap = "";
       OnNewM5(W[i]);
+      if(W[i].snap != "") Snap(W[i]);
      }
    Guard();
   }
