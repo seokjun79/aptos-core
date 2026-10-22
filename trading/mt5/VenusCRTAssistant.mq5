@@ -50,6 +50,7 @@ struct Watch
    int      sugDir;
    datetime crhT, crlT;   // CRH·CRL을 만든 5분봉 시각 (그림의 C)
    int      stage;        // 0 대기, 1 확정 후 OB 되돌림 대기, 2 OB 도달 후 확인 캔들 대기
+   int      tdir;         // 추적 중인 셋업 방향 (새 4H가 시작돼도 유지)
    double   obH, obL, tp;
    datetime confT;
   };
@@ -152,8 +153,24 @@ void ResetCycle(Watch &w)
    w.crh = iHigh(w.sym, PERIOD_H4, 1);   // 직전 마감 4H = CRT 기준봉(1번 캔들)
    w.crl = iLow(w.sym, PERIOD_H4, 1);
    w.dir = 0; w.ext = 0; w.extT = 0; w.mss = 0; w.done = false;
-   w.sugSL = 0; w.sugDir = 0; w.stage = 0;
-   // C1(직전 4H) 안에서 CRH·CRL을 만든 5분봉 찾기
+   if(w.stage == 0) { w.sugSL = 0; w.sugDir = 0; }   // OB 추적 중이면 추천 손절 유지
+   Anchors(w);
+   if(w.sym == _Symbol)
+     {
+      HLine("VCRT_CRH", w.crh, clrDodgerBlue, STYLE_SOLID, "4H CRH");
+      HLine("VCRT_CRL", w.crl, clrDodgerBlue, STYLE_SOLID, "4H CRL");
+      ObjectDelete(0, "VCRT_MSS");
+      if(w.stage == 0)
+        {
+         ObjectDelete(0, "VCRT_OB"); ObjectDelete(0, "VCRT_FVG");
+         ObjectDelete(0, "VCRT_SL"); ObjectDelete(0, "VCRT_TP");
+        }
+     }
+  }
+
+// C1(직전 4H) 안에서 CRH·CRL을 만든 5분봉(그림의 C) 찾기
+void Anchors(Watch &w)
+  {
    w.crhT = 0; w.crlT = 0;
    int sEnd = iBarShift(w.sym, PERIOD_M5, iTime(w.sym, PERIOD_H4, 1), false);
    int sBeg = iBarShift(w.sym, PERIOD_M5, w.h4, false) + 1;
@@ -163,13 +180,6 @@ void ResetCycle(Watch &w)
       int lo = iLowest(w.sym, PERIOD_M5, MODE_LOW, sEnd - sBeg + 1, sBeg);
       if(hi >= 0) w.crhT = iTime(w.sym, PERIOD_M5, hi);
       if(lo >= 0) w.crlT = iTime(w.sym, PERIOD_M5, lo);
-     }
-   if(w.sym == _Symbol)
-     {
-      HLine("VCRT_CRH", w.crh, clrDodgerBlue, STYLE_SOLID, "4H CRH");
-      HLine("VCRT_CRL", w.crl, clrDodgerBlue, STYLE_SOLID, "4H CRL");
-      ObjectDelete(0, "VCRT_MSS"); ObjectDelete(0, "VCRT_OB"); ObjectDelete(0, "VCRT_FVG");
-      ObjectDelete(0, "VCRT_SL");  ObjectDelete(0, "VCRT_TP");
      }
   }
 
@@ -186,10 +196,10 @@ double TrueMssLevel(const Watch &w)
    if(anchor > 0)
      {
       int as = iBarShift(w.sym, PERIOD_M5, anchor, false);
-      if(as > es + 3) last = MathMin(as - 1, es + 150);
+      if(as > es) last = (int)MathMin(as - 1, es + 150);
      }
    double best = 0;
-   for(int k = es + 3; k <= last; k++)
+   for(int k = (int)MathMax(es + 1, 3); k <= last; k++)
      {
       double v  = (w.dir == 1) ? iHigh(w.sym, PERIOD_M5, k) : iLow(w.sym, PERIOD_M5, k);
       if(v <= 0) break;
@@ -218,44 +228,51 @@ void Track(Watch &w)
    double l = iLow(w.sym, PERIOD_M5, 1),  c = iClose(w.sym, PERIOD_M5, 1);
    if(o <= 0) return;
    bool asia = InAsia(t1 + 300);
-   string side = (w.dir == 1) ? "매수" : "매도";
-   double edge = (w.dir == 1) ? w.obH : w.obL;   // 가격이 먼저 닿는 OB 끝
-   double far  = (w.dir == 1) ? w.obL : w.obH;   // 이 너머로 마감하면 무효
-   if(t1 - w.confT > 8 * 3600) { w.stage = 0; return; }
-   if(w.dir * (c - far) < 0)
+   string side = (w.tdir == 1) ? "매수" : "매도";
+   double edge = (w.tdir == 1) ? w.obH : w.obL;   // 가격이 먼저 닿는 OB 끝
+   double far  = (w.tdir == 1) ? w.obL : w.obH;   // 이 너머로 마감하면 무효
+   if(t1 - w.confT > 8 * 3600)
      {
-      if(!asia) Notify(StringFormat("[CRT 비서] %s %s 셋업 무효: OB를 몸통으로 뚫고 마감 (%s). 진입하지 마세요.", w.sym, side, Px(w.sym, c)));
+      Notify(StringFormat("[CRT 비서] %s %s 셋업: 8시간 동안 진입 자리가 안 나와서 감시를 끝내요.", w.sym, side));
       w.stage = 0; return;
      }
+   if(w.tdir * (c - far) < 0)
+     {
+      Notify(StringFormat("[CRT 비서] %s %s 셋업 무효: OB를 몸통으로 뚫고 마감 (%s). 진입하지 마세요.", w.sym, side, Px(w.sym, c)));
+      w.stage = 0; return;
+     }
+   if((w.tdir == 1 && h >= w.tp) || (w.tdir == -1 && l <= w.tp))
+     {
+      Notify(StringFormat("[CRT 비서] %s 진입 전에 목표 %s 도달 → 이번 셋업은 끝. 쫓아가지 마세요.", w.sym, Px(w.sym, w.tp)));
+      w.stage = 0; return;
+     }
+   if(asia) return;   // 아시아장: 진입 단계로 넘어가지 않음 (거래 금지)
    if(w.stage == 1)
      {
-      if((w.dir == 1 && h >= w.tp) || (w.dir == -1 && l <= w.tp))
-        {
-         if(!asia) Notify(StringFormat("[CRT 비서] %s OB로 오기 전에 목표 %s 도달 → 이번 셋업은 끝. 쫓아가지 마세요.", w.sym, Px(w.sym, w.tp)));
-         w.stage = 0; return;
-        }
-      if((w.dir == 1 && l <= edge) || (w.dir == -1 && h >= edge))
+      if((w.tdir == 1 && l <= edge) || (w.tdir == -1 && h >= edge))
         {
          w.stage = 2;
-         if(!asia) Notify(StringFormat("[CRT 비서] %s OB(M) %s~%s 도달! 지정가 자리예요.\n더 확실하게: %s 쪽 몸통 마감 캔들을 기다려요.",
-                                       w.sym, Px(w.sym, w.obL), Px(w.sym, w.obH), w.dir == 1 ? "양봉" : "음봉"));
+         Notify(StringFormat("[CRT 비서] %s OB(M) %s~%s 도달! 지정가 자리예요.\n더 확실하게: %s 쪽 몸통 마감 캔들을 기다려요.",
+                                       w.sym, Px(w.sym, w.obL), Px(w.sym, w.obH), w.tdir == 1 ? "양봉" : "음봉"));
         }
       else return;   // 닿은 봉이 곧바로 확인 캔들일 수도 있어 아래로 이어서 본다
      }
    // stage 2: OB에서 반대로 몸통 마감 = 확인 캔들 (반성 원칙: 마감 확인 후 진입)
-   bool conf = (w.dir == 1) ? (c > o && c > w.obH) : (c < o && c < w.obL);
+   bool conf = (w.tdir == 1) ? (c > o && c > w.obH) : (c < o && c < w.obL);
    if(conf)
      {
-      if(!asia) Notify(StringFormat("[CRT 비서] %s %s 확인 캔들 마감 (%s). 다음 봉 시가가 진입 자리예요. 결정은 고객님!", w.sym, side, Px(w.sym, c)));
+      Notify(StringFormat("[CRT 비서] %s %s 확인 캔들 마감 (%s). 다음 봉 시가가 진입 자리예요. 결정은 고객님!", w.sym, side, Px(w.sym, c)));
       w.stage = 0;
      }
   }
 
 void OnNewM5(Watch &w)
   {
-   if(w.stage > 0) { Track(w); return; }
+   if(w.stage > 0) Track(w);   // 이전 셋업의 OB 추적은 따로, 새 4H 셋업 감지는 계속
    if(iTime(w.sym, PERIOD_H4, 0) != w.h4)
       ResetCycle(w);
+   else if(w.crhT == 0 && w.crlT == 0)
+      Anchors(w);              // 시작 직후 5분봉 데이터가 늦게 오면 다시 계산
    if(w.done) return;
    datetime t1 = iTime(w.sym, PERIOD_M5, 1);
    double o = iOpen(w.sym, PERIOD_M5, 1), h = iHigh(w.sym, PERIOD_M5, 1);
@@ -320,13 +337,14 @@ void OnNewM5(Watch &w)
    double lots = SuggestLots(w.sym, risk);
    w.sugSL = sl; w.sugDir = w.dir;
    string msg = StringFormat("[CRT 비서] %s %s 확정! 5분봉 몸통 마감으로 MSS %s 돌파\n"
-                             "OB(M) %s~%s / FVG %s\n지정가 %s · 손절 %s (%.1f핍, 타이트 %s) · 목표 %s (손익비 %.1f)\n추천 랏 %.2f (잔고 %.1f%% 위험)\nOB로 되돌아오면 다시 알려 드려요",
+                             "OB(M) %s~%s / FVG %s\n지정가 %s · 손절 %s (%.1f핍, 타이트 %s) · 목표 %s (손익비 %.1f)\n추천 랏 %.2f (잔고 %.1f%% 위험)\n%s",
                              w.sym, w.dir == 1 ? "매수" : "매도", Px(w.sym, w.mss),
                              obT > 0 ? Px(w.sym, obL) : "-", obT > 0 ? Px(w.sym, obH) : "-",
                              fvTm > 0 ? (Px(w.sym, fvB) + "~" + Px(w.sym, fvT)) : "없음",
-                             Px(w.sym, entry), Px(w.sym, sl), risk / w.pip, Px(w.sym, slT), Px(w.sym, tp), rr, lots, InpRiskPct);
+                             Px(w.sym, entry), Px(w.sym, sl), risk / w.pip, Px(w.sym, slT), Px(w.sym, tp), rr, lots, InpRiskPct,
+                             obT > 0 ? "OB로 되돌아오면 다시 알려 드려요" : "OB를 못 찾았어요. 차트에서 직접 확인해 주세요");
    Notify(msg);
-   if(obT > 0) { w.stage = 1; w.obH = obH; w.obL = obL; w.tp = tp; w.confT = t1; }
+   if(obT > 0) { w.stage = 1; w.tdir = w.dir; w.obH = obH; w.obL = obL; w.tp = tp; w.confT = t1; }
    if(w.sym == _Symbol)
      {
       datetime tEnd = TimeCurrent() + 4 * 3600;
