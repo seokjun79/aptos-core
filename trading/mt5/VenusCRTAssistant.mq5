@@ -2,7 +2,7 @@
 //|  Venus CRT 비서 (MT5) — 자동매매가 아닌 '감시·알림·위험관리' EA   |
 //|  규칙서: trading/strategy/user_smc_crt_rules.md                  |
 //|   ① 4H CRT 기준봉(직전 마감 4H)의 CRH/CRL 너머로 스윕 → 알림     |
-//|   ② 5분봉이 '진짜 MSS 선'(마지막 하락이 시작된 고점)을          |
+//|   ② 1분봉(InpLTF)이 '진짜 MSS 선'(마지막 하락이 시작된 고점)을  |
 //|      몸통 마감으로 돌파 → 확정 알림 + OB·FVG·손절·목표·추천 랏    |
 //|   ③ 확정 후 가격이 OB(M)로 되돌아오면 알림, 확인 캔들 마감 알림  |
 //|   ④ 아시아장에는 알림 없음                                       |
@@ -11,7 +11,7 @@
 //|  진입은 고객님이 결정한다. 이 EA는 신규 주문을 넣지 않는다.       |
 //+------------------------------------------------------------------+
 #property copyright "Venus"
-#property version   "1.40"
+#property version   "1.41"
 #property description "SMC+CRT 감시·확정 알림·위험관리 비서. 신규 주문은 넣지 않음."
 #include <Trade\Trade.mqh>
 
@@ -23,8 +23,9 @@ input int    InpServerMinusNY  = 7;       // 서버시간 - 뉴욕시간 (IC마�
 input int    InpAsiaStartNY    = 19;      // 아시아장 시작 (알림 없음)
 input int    InpAsiaEndNY      = 2;       // 아시아장 끝
 input group "=== 규칙 ==="
-input int    InpLegBars        = 48;      // 진짜 MSS 선을 찾을 범위 (스윕 저점 이전 5분봉 개수, 48 = 4시간)
-input int    InpSwingBars      = 3;       // MSS 스윙 판단: 앞뒤 몇 봉보다 높아야(낮아야) 스윙으로 볼지
+input ENUM_TIMEFRAMES InpLTF  = PERIOD_M1; // MSS·OB를 보는 시간봉 (석준님은 1분봉)
+input int    InpLegBars        = 240;     // C 시각을 모를 때 MSS를 찾을 범위 (봉 개수)
+input int    InpSwingBars      = 5;       // MSS 스윙 판단: 앞뒤 몇 봉보다 높아야(낮아야) 스윙으로 볼지
 input double InpSLBufferPips   = 1.0;     // 손절 버퍼 (핍)
 input double InpRiskPct        = 1.0;     // 추천 랏 계산용 1회 위험 (잔고 %)
 input bool   InpPush           = true;    // 휴대폰 알림
@@ -32,7 +33,7 @@ input bool   InpDraw           = true;    // 이 차트 종목에 선·박스 �
 input group "=== 텔레그램 ==="
 input string InpTgToken        = "";      // 텔레그램 봇 토큰 (@BotFather 에서 받은 것)
 input string InpTgChatId       = "";      // 채팅 ID (비워 두면 봇에게 보낸 첫 메시지에서 자동으로 찾음)
-input bool   InpTgChart        = true;    // 알림 때 5분봉 차트 사진도 보내기
+input bool   InpTgChart        = true;    // 알림 때 차트 사진도 보내기
 input group "=== 위험 관리 (고객님 수동 주문) ==="
 input bool   InpGuard          = true;    // 위험 관리 켜기
 input double InpGuardMaxRisk   = 2.0;     // 1회 손실 한도 (잔고 %), 넘으면 랏을 줄임
@@ -53,7 +54,7 @@ struct Watch
    bool     done;         // 이번 4H 봉에서 확정 알림 보냄
    double   sugSL;        // 최근 셋업의 추천 손절 (위험 관리에 사용)
    int      sugDir;
-   datetime crhT, crlT;   // CRH·CRL을 만든 5분봉 시각 (그림의 C)
+   datetime crhT, crlT;   // CRH·CRL을 만든 봉 시각 (그림의 C)
    int      stage;        // 0 대기, 1 확정 후 OB 되돌림 대기, 2 OB 도달 후 확인 캔들 대기
    int      tdir;         // 추적 중인 셋업 방향 (새 4H가 시작돼도 유지)
    double   obH, obL, tp;
@@ -294,15 +295,15 @@ void SnapLine(long cid, string name, double price, color col, ENUM_LINE_STYLE st
    ObjectSetInteger(cid, name, OBJPROP_STYLE, st);
   }
 
-// 5분봉 차트를 사진으로 찍어 텔레그램으로 보낸다. 감시 종목이 이 차트가 아니면 잠깐 열었다 닫는다.
+// 차트 차트를 사진으로 찍어 텔레그램으로 보낸다. 감시 종목이 이 차트가 아니면 잠깐 열었다 닫는다.
 void Snap(Watch &w)
   {
    if(!InpTgChart || InpTgToken == "" || g_tgChat == "" || MQLInfoInteger(MQL_TESTER)) return;
    long cid = ChartID();
-   bool temp = (w.sym != _Symbol || Period() != PERIOD_M5);
+   bool temp = (w.sym != _Symbol || Period() != InpLTF);
    if(temp)
      {
-      cid = ChartOpen(w.sym, PERIOD_M5);
+      cid = ChartOpen(w.sym, InpLTF);
       if(cid == 0) { PrintFormat("[CRT 비서] %s 차트를 열지 못했어요 (%d)", w.sym, GetLastError()); return; }
       ChartSetInteger(cid, CHART_SHOW_GRID, false);
       ChartSetInteger(cid, CHART_AUTOSCROLL, true);
@@ -325,7 +326,7 @@ void Snap(Watch &w)
    ChartRedraw(cid);
    string f = "VCRT_" + w.sym + ".png";
    if(ChartScreenShot(cid, f, 1100, 650, ALIGN_RIGHT))
-      TgPhoto(f, w.sym + " 5분봉 · " + w.snap);
+      TgPhoto(f, w.sym + " " + StringSubstr(EnumToString(InpLTF), 7) + " · " + w.snap);
    else
       PrintFormat("[CRT 비서] %s 차트 사진 실패 (%d)", w.sym, GetLastError());
    if(temp) ChartClose(cid);
@@ -362,48 +363,48 @@ void ResetCycle(Watch &w)
      }
   }
 
-// C1(직전 4H) 안에서 CRH·CRL을 만든 5분봉(그림의 C) 찾기
+// C1(직전 4H) 안에서 CRH·CRL을 만든 봉(그림의 C) 찾기
 void Anchors(Watch &w)
   {
    w.crhT = 0; w.crlT = 0;
-   int sEnd = iBarShift(w.sym, PERIOD_M5, iTime(w.sym, PERIOD_H4, 1), false);
-   int sBeg = iBarShift(w.sym, PERIOD_M5, w.h4, false) + 1;
+   int sEnd = iBarShift(w.sym, InpLTF, iTime(w.sym, PERIOD_H4, 1), false);
+   int sBeg = iBarShift(w.sym, InpLTF, w.h4, false) + 1;
    if(sEnd >= sBeg && sBeg > 0)
      {
-      int hi = iHighest(w.sym, PERIOD_M5, MODE_HIGH, sEnd - sBeg + 1, sBeg);
-      int lo = iLowest(w.sym, PERIOD_M5, MODE_LOW, sEnd - sBeg + 1, sBeg);
-      if(hi >= 0) w.crhT = iTime(w.sym, PERIOD_M5, hi);
-      if(lo >= 0) w.crlT = iTime(w.sym, PERIOD_M5, lo);
+      int hi = iHighest(w.sym, InpLTF, MODE_HIGH, sEnd - sBeg + 1, sBeg);
+      int lo = iLowest(w.sym, InpLTF, MODE_LOW, sEnd - sBeg + 1, sBeg);
+      if(hi >= 0) w.crhT = iTime(w.sym, InpLTF, hi);
+      if(lo >= 0) w.crlT = iTime(w.sym, InpLTF, lo);
      }
   }
 
 // 진짜 MSS 선 (석준님 그림, 매수 기준): 스윕 최저점(극값)으로 내려오기 직전의 스윙 고점
 // = 마지막 하락이 시작된 고점. 극값에서 거꾸로 가며 처음 만나는 스윙 고점(앞뒤 InpSwingBars봉보다 높음).
 // 가격이 더 낮은 저점을 새로 만들면 그 직전 스윙 고점으로 선이 내려온다. 매도는 대칭.
-// 작은 흔들림은 InpSwingBars(기본 3)로 거른다. C(CRH/CRL을 만든 봉) 이전까지는 찾지 않는다.
+// 작은 흔들림은 InpSwingBars(기본 5)로 거른다. C(CRH/CRL을 만든 봉) 이전까지는 찾지 않는다.
 double TrueMssLevel(const Watch &w)
   {
-   int es = iBarShift(w.sym, PERIOD_M5, w.extT, false);
+   int es = iBarShift(w.sym, InpLTF, w.extT, false);
    if(es < 0) return 0;
    int n = (int)MathMax(1, InpSwingBars);
    datetime anchor = (w.dir == 1) ? w.crlT : w.crhT;
    int last = es + InpLegBars;
    if(anchor > 0)
      {
-      int as = iBarShift(w.sym, PERIOD_M5, anchor, false);
-      if(as > es) last = (int)MathMin(as - 1, es + 150);
+      int as = iBarShift(w.sym, InpLTF, anchor, false);
+      if(as > es) last = (int)MathMin(as - 1, es + 600);
      }
    for(int k = (int)MathMax(es + 1, n + 1); k <= last; k++)
      {
-      double v  = (w.dir == 1) ? iHigh(w.sym, PERIOD_M5, k) : iLow(w.sym, PERIOD_M5, k);
+      double v  = (w.dir == 1) ? iHigh(w.sym, InpLTF, k) : iLow(w.sym, InpLTF, k);
       if(v <= 0) break;
       if(w.dir == 1 && v >= w.crh) continue;
       if(w.dir == -1 && v <= w.crl) continue;
       bool sw = true;
       for(int j = 1; j <= n && sw; j++)
         {
-         double a = (w.dir == 1) ? iHigh(w.sym, PERIOD_M5, k + j) : iLow(w.sym, PERIOD_M5, k + j);
-         double b = (w.dir == 1) ? iHigh(w.sym, PERIOD_M5, k - j) : iLow(w.sym, PERIOD_M5, k - j);
+         double a = (w.dir == 1) ? iHigh(w.sym, InpLTF, k + j) : iLow(w.sym, InpLTF, k + j);
+         double b = (w.dir == 1) ? iHigh(w.sym, InpLTF, k - j) : iLow(w.sym, InpLTF, k - j);
          if(w.dir == 1)  sw = (v > a && v >= b);
          else            sw = (v < a && v <= b);
         }
@@ -411,36 +412,15 @@ double TrueMssLevel(const Watch &w)
      }
    return 0;
   }
-   double best = 0;
-   for(int k = (int)MathMax(es + 1, 3); k <= last; k++)
-     {
-      double v  = (w.dir == 1) ? iHigh(w.sym, PERIOD_M5, k) : iLow(w.sym, PERIOD_M5, k);
-      if(v <= 0) break;
-      if(w.dir == 1 && v >= w.crh) continue;
-      if(w.dir == -1 && v <= w.crl) continue;
-      bool sw = true;
-      for(int j = 1; j <= 2 && sw; j++)
-        {
-         double a = (w.dir == 1) ? iHigh(w.sym, PERIOD_M5, k + j) : iLow(w.sym, PERIOD_M5, k + j);
-         double b = (w.dir == 1) ? iHigh(w.sym, PERIOD_M5, k - j) : iLow(w.sym, PERIOD_M5, k - j);
-         if(w.dir == 1)  sw = (v > a && v >= b);
-         else            sw = (v < a && v <= b);
-        }
-      if(!sw) continue;
-      if(best == 0 || (w.dir == 1 && v > best) || (w.dir == -1 && v < best))
-         best = v;
-     }
-   return best;
-  }
 
 // 확정 후: 가격이 OB(그림의 D)로 되돌아오는지, 그다음 확인 캔들이 마감하는지 지켜본다
 void Track(Watch &w)
   {
-   datetime t1 = iTime(w.sym, PERIOD_M5, 1);
-   double o = iOpen(w.sym, PERIOD_M5, 1), h = iHigh(w.sym, PERIOD_M5, 1);
-   double l = iLow(w.sym, PERIOD_M5, 1),  c = iClose(w.sym, PERIOD_M5, 1);
+   datetime t1 = iTime(w.sym, InpLTF, 1);
+   double o = iOpen(w.sym, InpLTF, 1), h = iHigh(w.sym, InpLTF, 1);
+   double l = iLow(w.sym, InpLTF, 1),  c = iClose(w.sym, InpLTF, 1);
    if(o <= 0) return;
-   bool asia = InAsia(t1 + 300);
+   bool asia = InAsia(t1 + PeriodSeconds(InpLTF));
    string side = (w.tdir == 1) ? "매수" : "매도";
    double edge = (w.tdir == 1) ? w.obH : w.obL;   // 가격이 먼저 닿는 OB 끝
    double far  = (w.tdir == 1) ? w.obL : w.obH;   // 이 너머로 마감하면 무효
@@ -487,13 +467,13 @@ void OnNewM5(Watch &w)
    if(iTime(w.sym, PERIOD_H4, 0) != w.h4)
       ResetCycle(w);
    else if(w.crhT == 0 && w.crlT == 0)
-      Anchors(w);              // 시작 직후 5분봉 데이터가 늦게 오면 다시 계산
+      Anchors(w);              // 시작 직후 봉 데이터가 늦게 오면 다시 계산
    if(w.done) return;
-   datetime t1 = iTime(w.sym, PERIOD_M5, 1);
-   double o = iOpen(w.sym, PERIOD_M5, 1), h = iHigh(w.sym, PERIOD_M5, 1);
-   double l = iLow(w.sym, PERIOD_M5, 1),  c = iClose(w.sym, PERIOD_M5, 1);
+   datetime t1 = iTime(w.sym, InpLTF, 1);
+   double o = iOpen(w.sym, InpLTF, 1), h = iHigh(w.sym, InpLTF, 1);
+   double l = iLow(w.sym, InpLTF, 1),  c = iClose(w.sym, InpLTF, 1);
    if(o <= 0 || w.crh <= w.crl) return;
-   bool asia = InAsia(t1 + 300);
+   bool asia = InAsia(t1 + PeriodSeconds(InpLTF));
 
    // ① 스윕 감지 / 극값 갱신
    if(w.dir == 0)
@@ -530,22 +510,22 @@ void OnNewM5(Watch &w)
       return;
      }
    // OB: 극값~확정 봉 사이 마지막 반대색 봉, FVG: 같은 구간 가장 최근 갭
-   int es = iBarShift(w.sym, PERIOD_M5, w.extT, false);
+   int es = iBarShift(w.sym, InpLTF, w.extT, false);
    double obH = 0, obL = 0, fvB = 0, fvT = 0;
    datetime obT = 0, fvTm = 0;
    // OB = MSS를 깬 하락(매수는 상승) 직전의 마지막 반대색 봉 = 그림의 M (B에서 4로 내려오는 중간)
    for(int k = 2; k <= es && obT == 0; k++)
      {
-      double ok = iOpen(w.sym, PERIOD_M5, k), ck = iClose(w.sym, PERIOD_M5, k);
+      double ok = iOpen(w.sym, InpLTF, k), ck = iClose(w.sym, InpLTF, k);
       if(!((w.dir == 1 && ck < ok) || (w.dir == -1 && ck > ok))) continue;
-      obH = iHigh(w.sym, PERIOD_M5, k); obL = iLow(w.sym, PERIOD_M5, k); obT = iTime(w.sym, PERIOD_M5, k);
+      obH = iHigh(w.sym, InpLTF, k); obL = iLow(w.sym, InpLTF, k); obT = iTime(w.sym, InpLTF, k);
      }
    for(int k = 1; k + 2 <= es && fvTm == 0; k++)
      {
-      double hk2 = iHigh(w.sym, PERIOD_M5, k + 2), lk2 = iLow(w.sym, PERIOD_M5, k + 2);
-      double hk = iHigh(w.sym, PERIOD_M5, k), lk = iLow(w.sym, PERIOD_M5, k);
-      if(w.dir == 1 && hk2 < lk)  { fvB = hk2; fvT = lk; fvTm = iTime(w.sym, PERIOD_M5, k + 2); }
-      if(w.dir == -1 && lk2 > hk) { fvB = hk; fvT = lk2; fvTm = iTime(w.sym, PERIOD_M5, k + 2); }
+      double hk2 = iHigh(w.sym, InpLTF, k + 2), lk2 = iLow(w.sym, InpLTF, k + 2);
+      double hk = iHigh(w.sym, InpLTF, k), lk = iLow(w.sym, InpLTF, k);
+      if(w.dir == 1 && hk2 < lk)  { fvB = hk2; fvT = lk; fvTm = iTime(w.sym, InpLTF, k + 2); }
+      if(w.dir == -1 && lk2 > hk) { fvB = hk; fvT = lk2; fvTm = iTime(w.sym, InpLTF, k + 2); }
      }
    double sl = w.ext - w.dir * InpSLBufferPips * w.pip;                       // 안전: A(스윕 극값) 너머
    double slT = (obT > 0) ? ((w.dir == 1) ? obL : obH) - w.dir * InpSLBufferPips * w.pip : sl;  // 타이트: OB 너머
@@ -555,7 +535,7 @@ void OnNewM5(Watch &w)
    double rr = (risk > 0) ? w.dir * (tp - entry) / risk : 0;
    double lots = SuggestLots(w.sym, risk);
    w.sugSL = sl; w.sugDir = w.dir;
-   string msg = StringFormat("[CRT 비서] %s %s 확정! 5분봉 몸통 마감으로 MSS %s 돌파\n"
+   string msg = StringFormat("[CRT 비서] %s %s 확정! 몸통 마감으로 MSS %s 돌파\n"
                              "OB(M) %s~%s / FVG %s\n지정가 %s · 손절 %s (%.1f핍, 타이트 %s) · 목표 %s (손익비 %.1f)\n추천 랏 %.2f (잔고 %.1f%% 위험)\n%s\n%s",
                              w.sym, w.dir == 1 ? "매수" : "매도", Px(w.sym, w.mss),
                              obT > 0 ? Px(w.sym, obL) : "-", obT > 0 ? Px(w.sym, obH) : "-",
@@ -728,7 +708,7 @@ void Scan()
   {
    for(int i = 0; i < ArraySize(W); i++)
      {
-      datetime b = iTime(W[i].sym, PERIOD_M5, 0);
+      datetime b = iTime(W[i].sym, InpLTF, 0);
       if(b == 0 || b == W[i].lastM5) continue;
       W[i].lastM5 = b;
       W[i].snap = "";
