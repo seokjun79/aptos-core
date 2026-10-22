@@ -11,7 +11,7 @@
 //|  진입은 고객님이 결정한다. 이 EA는 신규 주문을 넣지 않는다.       |
 //+------------------------------------------------------------------+
 #property copyright "Venus"
-#property version   "1.31"
+#property version   "1.40"
 #property description "SMC+CRT 감시·확정 알림·위험관리 비서. 신규 주문은 넣지 않음."
 #include <Trade\Trade.mqh>
 
@@ -24,6 +24,7 @@ input int    InpAsiaStartNY    = 19;      // 아시아장 시작 (알림 없음)
 input int    InpAsiaEndNY      = 2;       // 아시아장 끝
 input group "=== 규칙 ==="
 input int    InpLegBars        = 48;      // 진짜 MSS 선을 찾을 범위 (스윕 저점 이전 5분봉 개수, 48 = 4시간)
+input int    InpSwingBars      = 3;       // MSS 스윙 판단: 앞뒤 몇 봉보다 높아야(낮아야) 스윙으로 볼지
 input double InpSLBufferPips   = 1.0;     // 손절 버퍼 (핍)
 input double InpRiskPct        = 1.0;     // 추천 랏 계산용 1회 위험 (잔고 %)
 input bool   InpPush           = true;    // 휴대폰 알림
@@ -376,14 +377,15 @@ void Anchors(Watch &w)
      }
   }
 
-// 진짜 MSS 선 (고객님 '끝판' 그림, 매도 기준): CRH를 만든 고점 C ~ 스윕 고점 A 사이의
-// 스윙 저점(앞뒤 2봉보다 낮음) 중 가장 낮은 것 = 그림의 2번 LL (A로 오르는 마지막 상승이 시작된 곳).
-// 4번처럼 이 선을 몸통 마감으로 깨면 확정. 매수는 대칭 (CRL 저점 ~ 스윕 저점 사이 가장 높은 스윙 고점).
-// C 시각을 모르면 스윕 극값 이전 InpLegBars개 봉에서 찾는다.
+// 진짜 MSS 선 (석준님 그림, 매수 기준): 스윕 최저점(극값)으로 내려오기 직전의 스윙 고점
+// = 마지막 하락이 시작된 고점. 극값에서 거꾸로 가며 처음 만나는 스윙 고점(앞뒤 InpSwingBars봉보다 높음).
+// 가격이 더 낮은 저점을 새로 만들면 그 직전 스윙 고점으로 선이 내려온다. 매도는 대칭.
+// 작은 흔들림은 InpSwingBars(기본 3)로 거른다. C(CRH/CRL을 만든 봉) 이전까지는 찾지 않는다.
 double TrueMssLevel(const Watch &w)
   {
    int es = iBarShift(w.sym, PERIOD_M5, w.extT, false);
    if(es < 0) return 0;
+   int n = (int)MathMax(1, InpSwingBars);
    datetime anchor = (w.dir == 1) ? w.crlT : w.crhT;
    int last = es + InpLegBars;
    if(anchor > 0)
@@ -391,6 +393,24 @@ double TrueMssLevel(const Watch &w)
       int as = iBarShift(w.sym, PERIOD_M5, anchor, false);
       if(as > es) last = (int)MathMin(as - 1, es + 150);
      }
+   for(int k = (int)MathMax(es + 1, n + 1); k <= last; k++)
+     {
+      double v  = (w.dir == 1) ? iHigh(w.sym, PERIOD_M5, k) : iLow(w.sym, PERIOD_M5, k);
+      if(v <= 0) break;
+      if(w.dir == 1 && v >= w.crh) continue;
+      if(w.dir == -1 && v <= w.crl) continue;
+      bool sw = true;
+      for(int j = 1; j <= n && sw; j++)
+        {
+         double a = (w.dir == 1) ? iHigh(w.sym, PERIOD_M5, k + j) : iLow(w.sym, PERIOD_M5, k + j);
+         double b = (w.dir == 1) ? iHigh(w.sym, PERIOD_M5, k - j) : iLow(w.sym, PERIOD_M5, k - j);
+         if(w.dir == 1)  sw = (v > a && v >= b);
+         else            sw = (v < a && v <= b);
+        }
+      if(sw) return v;   // 극값에 가장 가까운 스윙 = 마지막 하락(상승)의 시작점
+     }
+   return 0;
+  }
    double best = 0;
    for(int k = (int)MathMax(es + 1, 3); k <= last; k++)
      {
