@@ -11,7 +11,7 @@
 //|  진입은 고객님이 결정한다. 이 EA는 신규 주문을 넣지 않는다.       |
 //+------------------------------------------------------------------+
 #property copyright "Venus"
-#property version   "1.43"
+#property version   "1.44"
 #property description "SMC+CRT 감시·확정 알림·위험관리 비서. 신규 주문은 넣지 않음."
 #include <Trade\Trade.mqh>
 
@@ -58,6 +58,7 @@ struct Watch
    int      stage;        // 0 대기, 1 확정 후 OB 되돌림 대기, 2 OB 도달 후 확인 캔들 대기
    int      tdir;         // 추적 중인 셋업 방향 (새 4H가 시작돼도 유지)
    double   obH, obL, tp;
+   datetime obT;
    datetime confT;
    bool     rebuilt;      // 붙인 직후 지난 봉으로 상태를 복원했는지
    string   snap;         // 이번 봉 처리 뒤 텔레그램으로 보낼 차트 사진 설명 (빈칸이면 안 보냄)
@@ -168,8 +169,10 @@ void TgPhoto(string file, string caption)
    if(code != 200) PrintFormat("[CRT 비서] 차트 사진 전송 실패 (%d): %s", code, CharArrayToString(res, 0, WHOLE_ARRAY, CP_UTF8));
   }
 
+bool g_quiet = false;   // 복원 중에는 알림을 보내지 않음
 void Notify(string s)
   {
+   if(g_quiet) return;
    Print(s);
    if(MQLInfoInteger(MQL_TESTER)) return;
    TgSend(s);
@@ -415,11 +418,11 @@ double TrueMssLevel(const Watch &w)
   }
 
 // 확정 후: 가격이 OB(그림의 D)로 되돌아오는지, 그다음 확인 캔들이 마감하는지 지켜본다
-void Track(Watch &w)
+void Track(Watch &w, int sh = 1)
   {
-   datetime t1 = iTime(w.sym, InpLTF, 1);
-   double o = iOpen(w.sym, InpLTF, 1), h = iHigh(w.sym, InpLTF, 1);
-   double l = iLow(w.sym, InpLTF, 1),  c = iClose(w.sym, InpLTF, 1);
+   datetime t1 = iTime(w.sym, InpLTF, sh);
+   double o = iOpen(w.sym, InpLTF, sh), h = iHigh(w.sym, InpLTF, sh);
+   double l = iLow(w.sym, InpLTF, sh),  c = iClose(w.sym, InpLTF, sh);
    if(o <= 0) return;
    bool asia = InAsia(t1 + PeriodSeconds(InpLTF));
    string side = (w.tdir == 1) ? "매수" : "매도";
@@ -469,7 +472,7 @@ void Rebuild(Watch &w)
    w.rebuilt = true;
    int first = iBarShift(w.sym, InpLTF, w.h4, false);
    if(first < 1 || w.crh <= w.crl) return;
-   for(int sh = first; sh >= 1; sh--)
+   for(int sh = first; sh >= 2; sh--)   // 1번 봉(방금 마감)은 OnNewM5가 평소처럼 알림과 함께 처리
      {
       datetime t = iTime(w.sym, InpLTF, sh);
       double o = iOpen(w.sym, InpLTF, sh), h = iHigh(w.sym, InpLTF, sh);
@@ -488,9 +491,32 @@ void Rebuild(Watch &w)
       if(w.mss > 0)
         {
          bool body = (w.dir == 1) ? (c > w.mss && c > o) : (c < w.mss && c < o);
-         if(body && c > w.crl && c < w.crh) { w.done = true; break; }
+         if(body && c > w.crl && c < w.crh)
+           {
+            w.done = true;
+            // 확정 봉 직전의 마지막 반대색 봉 = OB. 그 뒤 봉들로 OB 추적 상태까지 복원
+            int es = iBarShift(w.sym, InpLTF, w.extT, false);
+            for(int k = sh + 1; k <= es; k++)
+              {
+               double ok = iOpen(w.sym, InpLTF, k), ck = iClose(w.sym, InpLTF, k);
+               if(!((w.dir == 1 && ck < ok) || (w.dir == -1 && ck > ok))) continue;
+               if(InAsia(t + PeriodSeconds(InpLTF))) break;   // 아시아장 확정은 실시간에도 추적하지 않음
+               w.obH = iHigh(w.sym, InpLTF, k); w.obL = iLow(w.sym, InpLTF, k); w.obT = iTime(w.sym, InpLTF, k);
+               w.stage = 1; w.tdir = w.dir; w.confT = t;
+               w.tp = (w.dir == 1) ? w.crh : w.crl;
+               w.sugSL = w.ext - w.dir * InpSLBufferPips * w.pip; w.sugDir = w.dir;
+               break;
+              }
+            g_quiet = true;
+            for(int r = sh - 1; r >= 2 && w.stage > 0; r--) Track(w, r);   // 1번 봉은 OnNewM5가 알림과 함께 처리
+            g_quiet = false;
+            w.snap = "";   // 복원 중 생긴 사진 요청은 버림
+            break;
+           }
         }
      }
+   if(w.sym == _Symbol && w.stage > 0)
+      Box("VCRT_OB", w.obT, w.obH, TimeCurrent() + 4 * 3600, w.obL, clrDarkKhaki, "OB (가격이 오면 알림)");
    if(w.dir != 0)
       PrintFormat("[CRT 비서] %s 복원: %s 스윕 극값 %s, MSS 선 %s%s", w.sym, w.dir == 1 ? "CRL" : "CRH",
                   Px(w.sym, w.ext), Px(w.sym, w.mss), w.done ? " (이미 확정됨)" : "");
@@ -745,6 +771,32 @@ void OnDeinit(const int reason)
    ObjectsDeleteAll(0, "VCRT_");
   }
 
+// 석준님이 이 차트에 직접 그린 사각형에 가격이 들어오면 한 번 알림 (비서가 그린 VCRT_ 박스는 제외)
+string g_boxDone[];
+void UserBoxes()
+  {
+   double bid = SymbolInfoDouble(_Symbol, SYMBOL_BID);
+   if(bid <= 0) return;
+   int n = ObjectsTotal(0, 0, OBJ_RECTANGLE);
+   for(int i = 0; i < n; i++)
+     {
+      string nm = ObjectName(0, i, 0, OBJ_RECTANGLE);
+      if(StringFind(nm, "VCRT_") == 0) continue;
+      bool done = false;
+      for(int j = 0; j < ArraySize(g_boxDone) && !done; j++) done = (g_boxDone[j] == nm);
+      if(done) continue;
+      double p1 = ObjectGetDouble(0, nm, OBJPROP_PRICE, 0), p2 = ObjectGetDouble(0, nm, OBJPROP_PRICE, 1);
+      double hi = MathMax(p1, p2), lo = MathMin(p1, p2);
+      if(bid > hi || bid < lo) continue;
+      int k = ArraySize(g_boxDone); ArrayResize(g_boxDone, k + 1); g_boxDone[k] = nm;
+      if(InAsia(TimeCurrent())) continue;
+      Notify(StringFormat("[CRT 비서] %s 석준님이 그린 박스 %s~%s 에 가격 도착! (지금 %s)\n확인 캔들 몸통 마감을 보고 결정하세요.",
+                          _Symbol, Px(_Symbol, lo), Px(_Symbol, hi), Px(_Symbol, bid)));
+      int wi = FindWatch(_Symbol);
+      if(wi >= 0) { W[wi].snap = "석준님 박스 도착"; Snap(W[wi]); W[wi].snap = ""; }
+     }
+  }
+
 // 붙인 직후 한 번: 종목별 지금 상태를 텔레그램으로 보고 (연결 확인 겸)
 bool g_hello = false;
 void Hello()
@@ -753,12 +805,14 @@ void Hello()
    for(int i = 0; i < ArraySize(W); i++)
       if(!W[i].rebuilt) return;
    g_hello = true;
-   string m = StringFormat("[CRT 비서] 시작했어요 (v1.43, %s봉). 지금 상태:", StringSubstr(EnumToString(InpLTF), 7));
+   string m = StringFormat("[CRT 비서] 시작했어요 (v1.44, %s봉). 지금 상태:", StringSubstr(EnumToString(InpLTF), 7));
    for(int i = 0; i < ArraySize(W); i++)
      {
       string st;
       if(W[i].dir == 0)   st = "스윕 없음, 대기";
-      else if(W[i].done)  st = StringFormat("%s 셋업 이미 확정됨", W[i].dir == 1 ? "매수" : "매도");
+      else if(W[i].stage == 1) st = StringFormat("%s 확정, OB %s~%s 로 되돌아오면 알림", W[i].dir == 1 ? "매수" : "매도", Px(W[i].sym, W[i].obL), Px(W[i].sym, W[i].obH));
+      else if(W[i].stage == 2) st = StringFormat("%s 확정, OB 도달 → 확인 캔들 대기", W[i].dir == 1 ? "매수" : "매도");
+      else if(W[i].done)  st = StringFormat("%s 셋업 이미 확정·종료", W[i].dir == 1 ? "매수" : "매도");
       else                st = StringFormat("%s 셋업, MSS 선 %s 몸통 마감 대기", W[i].dir == 1 ? "매수" : "매도", Px(W[i].sym, W[i].mss));
       m += StringFormat("\n• %s: CRH %s / CRL %s → %s", W[i].sym, Px(W[i].sym, W[i].crh), Px(W[i].sym, W[i].crl), st);
      }
@@ -778,6 +832,7 @@ void Scan()
       if(W[i].snap != "") Snap(W[i]);
      }
    Hello();
+   UserBoxes();
    Guard();
   }
 
