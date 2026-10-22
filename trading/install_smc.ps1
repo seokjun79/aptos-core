@@ -1,7 +1,7 @@
 # Venus SMC EA을 MT5에 설치하고 컴파일한다 (고객님 Windows 컴퓨터용)
 [Console]::OutputEncoding = [Text.Encoding]::UTF8
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-$Ref = "54257148de359850f2f6c1cf0f4959c36a003427"
+$Ref = "58c73bbee1be1ed5198259e9381c4a62f90b9bfd"
 $DataDir = Join-Path $env:APPDATA "MetaQuotes\Terminal\010E047102812FC0C18890992854220E"
 $install = ([IO.File]::ReadAllText((Join-Path $DataDir "origin.txt"))).Trim([char]0, ' ', "`r", "`n")
 $expDir = Join-Path $DataDir "MQL5\Experts\Venus"
@@ -17,5 +17,5 @@ if (($logText -match "(\d+)\s+error" -and [int]$Matches[1] -gt 0) -or -not (Test
     Write-Host $logText
     Write-Host "[멈춤] 컴파일 오류예요. 위 내용을 비너스에게 보내 주세요." -ForegroundColor Red
 } else {
-    Write-Host "설치·컴파일 성공! Venus\VenusSMC.ex5 (v1.00)" -ForegroundColor Green
+    Write-Host "설치·컴파일 성공! Venus\VenusSMC.ex5 (v1.01)" -ForegroundColor Green
 }
