@@ -11,7 +11,7 @@
 //|  진입은 고객님이 결정한다. 이 EA는 신규 주문을 넣지 않는다.       |
 //+------------------------------------------------------------------+
 #property copyright "Venus"
-#property version   "1.46"
+#property version   "1.47"
 #property description "SMC+CRT 감시·확정 알림·위험관리 비서. 신규 주문은 넣지 않음."
 #include <Trade\Trade.mqh>
 
@@ -809,7 +809,7 @@ void Hello()
    for(int i = 0; i < ArraySize(W); i++)
       if(!W[i].rebuilt) return;
    g_hello = true;
-   string m = StringFormat("[CRT 비서] 시작했어요 (v1.46, %s봉). 지금 상태:", StringSubstr(EnumToString(InpLTF), 7));
+   string m = StringFormat("[CRT 비서] 시작했어요 (v1.47, %s봉). 지금 상태:", StringSubstr(EnumToString(InpLTF), 7));
    for(int i = 0; i < ArraySize(W); i++)
      {
       string st;
@@ -930,6 +930,46 @@ string NumAfter(string seg, string key)
    return StringSubstr(seg, a, e - a);
   }
 
+// "잔고": 계좌·열린 포지션·오늘 손익
+void TgAccount()
+  {
+   string cur = AccountInfoString(ACCOUNT_CURRENCY);
+   double bal = AccountInfoDouble(ACCOUNT_BALANCE), eq = AccountInfoDouble(ACCOUNT_EQUITY);
+   string m = StringFormat("[CRT 비서] 계좌 #%I64d\n잔고 %.2f %s · 평가금 %.2f · 미실현 %+.2f",
+                           AccountInfoInteger(ACCOUNT_LOGIN), bal, cur, eq, eq - bal);
+   double ml = AccountInfoDouble(ACCOUNT_MARGIN_LEVEL);
+   if(AccountInfoDouble(ACCOUNT_MARGIN) > 0) m += StringFormat("\n증거금 비율 %.0f%%", ml);
+   // 오늘 확정 손익 (서버 날짜 기준)
+   datetime now = TimeCurrent(), day = now - (now % 86400);
+   double today = 0; int cnt = 0;
+   if(HistorySelect(day, now + 60))
+      for(int i = 0; i < HistoryDealsTotal(); i++)
+        {
+         ulong d = HistoryDealGetTicket(i);
+         long en = HistoryDealGetInteger(d, DEAL_ENTRY);
+         if(en != DEAL_ENTRY_OUT && en != DEAL_ENTRY_INOUT && en != DEAL_ENTRY_OUT_BY) continue;
+         today += HistoryDealGetDouble(d, DEAL_PROFIT) + HistoryDealGetDouble(d, DEAL_COMMISSION) + HistoryDealGetDouble(d, DEAL_SWAP);
+         cnt++;
+        }
+   m += StringFormat("\n오늘 청산 %d건 %+.2f %s", cnt, today, cur);
+   if(g_locked) m += "\n⚠ 오늘은 하루 손실 한도로 잠금 중";
+   int np = PositionsTotal();
+   if(np == 0) m += "\n열린 포지션 없음";
+   for(int i = 0; i < np; i++)
+     {
+      ulong tk = PositionGetTicket(i);
+      if(tk == 0) continue;
+      string sy = PositionGetString(POSITION_SYMBOL);
+      double sl = PositionGetDouble(POSITION_SL), tp = PositionGetDouble(POSITION_TP);
+      m += StringFormat("\n• %s %s %.2f랏 @%s 손절 %s 목표 %s → %+.2f",
+                        sy, PositionGetInteger(POSITION_TYPE) == POSITION_TYPE_BUY ? "매수" : "매도",
+                        PositionGetDouble(POSITION_VOLUME), Px(sy, PositionGetDouble(POSITION_PRICE_OPEN)),
+                        sl > 0 ? Px(sy, sl) : "없음", tp > 0 ? Px(sy, tp) : "없음",
+                        PositionGetDouble(POSITION_PROFIT) + PositionGetDouble(POSITION_SWAP));
+     }
+   TgSend(m);
+  }
+
 void TgCommand(string text)
   {
    StringTrimLeft(text); StringTrimRight(text);
@@ -940,9 +980,11 @@ void TgCommand(string text)
    string cmd = w[0];
    StringToLower(cmd);
    PrintFormat("[CRT 비서] 텔레그램 명령 받음: %s", text);
+   if(cmd == "잔고" || cmd == "계좌" || cmd == "balance") { TgAccount(); return; }
+   if(cmd == "상태" || cmd == "status") { g_hello = false; Hello(); return; }
    if(cmd != "박스" && cmd != "box")
      {
-      TgSend("[CRT 비서] 제가 알아듣는 말:\n박스 GBPUSD 1.3355 1.3370 (종목, 아래 가격, 위 가격)\n박스 목록\n박스 삭제");
+      TgSend("[CRT 비서] 제가 알아듣는 말:\n잔고 (계좌·포지션·오늘 손익)\n상태 (4종목 감시 상태)\n박스 GBPUSD 1.3355 1.3370 (종목, 아래 가격, 위 가격)\n박스 목록\n박스 삭제");
       return;
      }
    if(n >= 2 && (w[1] == "목록" || w[1] == "list"))
