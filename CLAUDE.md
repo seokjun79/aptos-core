@@ -15,7 +15,7 @@
 필드: title, agent, status(running|waiting|needs_user|done|failed), summary, result, started, updated(ISO+09:00), steps[{t,text}].
 석준님은 카드의 **승인/보류/취소** 버튼(여러 개 선택 가능)으로 결정한다. 누르면 문서에 decision·decidedAt이 저장되고 "[현황판 결정]" 메시지가 이 세션에 온다.
 그 메시지를 받으면 ArtifactData로 해당 문서를 읽어 decision을 확인하고 그대로 처리한 뒤 decisionSeen: true와 status·steps를 갱신한다. 승인된 일은 다시 묻지 않고 진행한다.
-단, 실제 매매 주문·결제처럼 돈이 나가는 일은 현황판 승인 뒤에도 이 방에서 한 번 더 확인한다.
+석준님 본인이 현황판에서 누른 승인은 돈이 걸린 일에도 최종 승인으로 본다 (다시 묻지 않는다). 현황판은 석준님만 열 수 있다. 처리하면 바로 카드 상태를 바꿔서 승인이 반영된 것이 보이게 한다.
 
 ## 조직도
 
