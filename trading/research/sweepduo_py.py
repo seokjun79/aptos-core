@@ -64,20 +64,26 @@ def prepare(zp, sym, tf):
     h1["b"] = h1.time // 14400
     h4 = h1.groupby("b").agg(high=("high", "max"), low=("low", "min"), close=("close", "last"))
     hb, H, L, C = h4.index.values, h4.high.values, h4.low.values, h4.close.values
-    tr4 = np.zeros(len(hb), dtype=int)
-    st, sh, sl, hsh, hsl, n5 = 0, 0.0, 0.0, False, False, 5
-    for q in range(len(hb)):
-        p = q - n5
-        if p - n5 >= 0:
-            if all(H[p - k] <= H[p] for k in range(1, 6)) and all(H[p + k] < H[p] for k in range(1, 6)):
+    # EA Trend4H 그대로: 직전 마감봉 L에서 과거 300봉만 다시 훑어 마지막 구조 돌파 방향
+    nb, n5 = len(hb), 5
+    isH = np.zeros(nb, bool); isL = np.zeros(nb, bool)
+    for p in range(n5, nb - n5):
+        isH[p] = all(H[p - k] <= H[p] for k in range(1, 6)) and all(H[p + k] < H[p] for k in range(1, 6))
+        isL[p] = all(L[p - k] >= L[p] for k in range(1, 6)) and all(L[p + k] > L[p] for k in range(1, 6))
+    tr4 = np.zeros(nb, dtype=int)
+    for Lq in range(nb):
+        st, hsh, hsl, sh, sl = 0, False, False, 0.0, 0.0
+        for q in range(max(Lq - 300, 2 * n5 + 2), Lq + 1):
+            p = q - n5
+            if isH[p]:
                 sh, hsh = H[p], True
-            if all(L[p - k] >= L[p] for k in range(1, 6)) and all(L[p + k] > L[p] for k in range(1, 6)):
+            if isL[p]:
                 sl, hsl = L[p], True
-        if hsh and C[q] > sh:
-            st, hsh = 1, False
-        if hsl and C[q] < sl:
-            st, hsl = -1, False
-        tr4[q] = st
+            if hsh and C[q] > sh:
+                st, hsh = 1, False
+            if hsl and C[q] < sl:
+                st, hsl = -1, False
+        tr4[Lq] = st
     pos = np.searchsorted(hb, t // 14400, side="left") - 1            # 진행 중 4H봉의 직전 봉
     d["tr4"] = np.where(pos >= 0, tr4[np.clip(pos, 0, None)], 0)
     for k in ("o", "h", "l", "c", "cost", "atr", "pdh", "pdl", "spread"):
@@ -91,7 +97,7 @@ def inwin(m, a, b):
     return (a <= m < b) if a <= b else (m >= a or m < b)
 
 
-def run(d, p=BASE):
+def run(d, p=BASE, log=None):
     o, h, l, c, t, m, cost, atr = d["o"], d["h"], d["l"], d["c"], d["t"], d["m"], d["cost"], d["atr"]
     n, lenc = len(o), p["len_c"]
     MD = [tuple(x * 60 for x in mm) for mm in p["models"]]
@@ -105,7 +111,7 @@ def run(d, p=BASE):
     def close_pos(i, px, kind):
         nonlocal posn
         r = (posn["s"] * (px - posn["e"]) - posn["cost"]) / posn["risk"]
-        closed.append((t[posn["i"]], t[i], posn["k"], posn["s"], r, kind))
+        closed.append((t[posn["i"]], t[i], posn["k"], posn["s"], r, kind, posn["sc"]))
         posn = None
 
     def day_stopped(ds):
@@ -195,6 +201,9 @@ def run(d, p=BASE):
             score = ((d["tr4"][j] == s) + hasF + bool(s_["swPD"]) + ((e < mid) if s == 1 else (e > mid))
                      + (rr >= 3) + (abs(s_["swExt"] - (s_["aL"] if s == 1 else s_["aH"])) >= 0.5 * a))
             s_["done"] = True
+            if log is not None:
+                log.append(dict(t=t[j], k=k, s=s, score=score, rr=rr, t4=d["tr4"][j], hasF=hasF, pd=s_["swPD"],
+                                e=e, stp=stp, tp=tp, aH=s_["aH"], aL=s_["aL"], swExt=s_["swExt"], atr=a))
             if rr < p["min_rr"] or score < p["min_score"]:
                 continue
             if rr > p["max_rr"]:
@@ -209,12 +218,12 @@ def run(d, p=BASE):
             if useLimit and s * (o[i] - e) > mind:
                 if abs(e - stp) < mind or abs(tp - e) < mind:
                     continue
-                pend = dict(k=k, s=s, e=e, stp=stp, tp=tp, t0=ti, xe=xe)
+                pend = dict(k=k, s=s, e=e, stp=stp, tp=tp, t0=ti, xe=xe, sc=score)
             else:
                 e = o[i]
                 if s * (tp - e) <= mind or s * (e - stp) <= mind:
                     continue
-                posn = dict(k=k, s=s, e=e, stp=stp, tp=tp, xe=xe, i=i, cost=cost[i], risk=abs(e - stp), fill=i)
+                posn = dict(k=k, s=s, e=e, stp=stp, tp=tp, xe=xe, i=i, cost=cost[i], risk=abs(e - stp), fill=i, sc=score)
         # (3) 봉 i 안의 경로
         if pend:
             s = pend["s"]
@@ -222,7 +231,7 @@ def run(d, p=BASE):
                 pend = None
             elif (s == 1 and l[i] <= pend["e"]) or (s == -1 and h[i] >= pend["e"]):
                 posn = dict(k=pend["k"], s=s, e=pend["e"], stp=pend["stp"], tp=pend["tp"], xe=pend["xe"], i=i,
-                            cost=cost[i], risk=abs(pend["e"] - pend["stp"]), fill=i, lim=True)
+                            cost=cost[i], risk=abs(pend["e"] - pend["stp"]), fill=i, lim=True, sc=pend["sc"])
                 pend = None
         if posn:
             s = posn["s"]
@@ -231,7 +240,7 @@ def run(d, p=BASE):
             elif not (posn.get("lim") and posn["fill"] == i) and (
                     (s == 1 and h[i] >= posn["tp"]) or (s == -1 and l[i] <= posn["tp"])):
                 close_pos(i, posn["tp"], "tp")
-    res = pd.DataFrame(closed, columns=["entry_t", "exit_t", "model", "dir", "R", "kind"])
+    res = pd.DataFrame(closed, columns=["entry_t", "exit_t", "model", "dir", "R", "kind", "score"])
     for col in ("entry_t", "exit_t"):
         res[col] = pd.to_datetime(res[col], unit="s")
     res["symbol"] = d["sym"]
