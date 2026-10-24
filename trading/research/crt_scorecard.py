@@ -15,9 +15,17 @@
 관례(crt_cisd.py·ict_atm.py): 비용 = max(봉 spread, SPREAD_FLOOR)×point, 거래당 1회(진입 봉 기준) 차감,
 같은 봉 손절·목표 동시면 손절 먼저, 손절폭 < 4×비용이면 제외. 결과는 R. 서버시각 = 뉴욕+7h.
 특징은 모두 진입 시점(확인 봉 마감)까지 알 수 있는 값만 사용.
-사용: python -I crt_scorecard.py venus_data.zip [out_dir]
+사용: python -I crt_scorecard.py <zip 또는 폴더> [--out DIR] [--tf M15|M5] [--syms EURUSD,GBPUSD,...]
+  - 폴더 모드: {SYM}_M5.csv(time=유닉스 서버시각) 만 있어도 됨. 없는 M15/H1/H4/D1은 M5를 서버시각으로 묶어 만든다
+    (M15 = time//900, H1 = //3600, H4 = //14400, D1 = //86400; sweepduo_py.py _resample 과 같은 방식).
+  - --tf M5 (미리 정함, 새 튜닝 없음): 구조 TF만 M5로. 프랙탈 N=3(봉 수 그대로), 봉 수로 정한 창은 같은 '시간'이
+    되도록 ×3: MSS_LOOKBACK 96→288봉(24h), OB_BACK 10→30봉(2.5h), ENTRY_WAIT 24→72봉(6h), H4 안 최소 봉 수 12/8→36/24.
+    최대 보유 24시간(시간 기준), 손절·목표·비용·특징·IS/OOS 분할·탐색 방식은 M15와 동일.
+  - 기본값(--tf M15, 7종목, zip)은 이전 결과와 똑같다. 결과 파일은 --out 폴더에만 쓴다.
 """
+import argparse
 import io
+import time as _time
 import json
 import math
 import os
@@ -29,11 +37,14 @@ import numpy as np
 import pandas as pd
 
 SYMBOLS = ["EURUSD", "GBPUSD", "USDJPY", "AUDUSD", "USDCAD", "USDCHF", "XAUUSD"]
-SPREAD_FLOOR = {"EURUSD": 8, "GBPUSD": 9, "USDJPY": 10, "AUDUSD": 8, "USDCAD": 10, "USDCHF": 9, "XAUUSD": 15}
-POINT = {"USDJPY": 0.001, "XAUUSD": 0.01}
-PIP = {"USDJPY": 0.01, "XAUUSD": 0.1}
+SPREAD_FLOOR = {"EURUSD": 8, "GBPUSD": 9, "USDJPY": 10, "AUDUSD": 8, "USDCAD": 10, "USDCHF": 9, "XAUUSD": 15,
+                "GBPJPY": 22, "EURJPY": 18}
+POINT = {"USDJPY": 0.001, "XAUUSD": 0.01, "GBPJPY": 0.001, "EURJPY": 0.001}
+PIP = {"USDJPY": 0.01, "XAUUSD": 0.1, "GBPJPY": 0.01, "EURJPY": 0.01}
 SERVER_MINUS_NY = 7
-N_FR, MSS_LOOKBACK, OB_BACK, ENTRY_WAIT, HOLD_H = 3, 96, 10, 24, 24
+N_FR, MSS_LOOKBACK, OB_BACK, ENTRY_WAIT, HOLD_H = 3, 96, 10, 24, 24      # M15 기준 봉 수 (HOLD_H는 시간)
+MIN_C1, MIN_C2 = 12, 8                                                    # H4 안 최소 M15 봉 수 (C1, C2)
+TF_SEC = {"M5": 300, "M15": 900}
 SPLIT = np.datetime64("2024-01-01")
 OUTCOMES = ["r_opp", "r_rr2", "r_rr3", "rt_opp", "rt_rr2", "rt_rr3"]
 SEARCH_OUTCOMES = ["r_opp", "r_rr2", "r_rr3"]      # 탐색은 기본 손절 3개 목표만 (미리 정함)
@@ -41,10 +52,33 @@ MIN_CELL = 80
 
 
 # ---------------------------------------------------------------- data
+RES_SEC = {"M15": 900, "H1": 3600, "H4": 14400, "D1": 86400}
+
+
+def _resample(m5, sec):
+    g = m5.groupby(m5.time // sec, sort=True)
+    out = g.agg(open=("open", "first"), high=("high", "max"), low=("low", "min"), close=("close", "last"),
+                spread=("spread", "median")).reset_index(drop=True)
+    out.insert(0, "time", (g.time.first() // sec * sec).values)
+    return out
+
+
 def read(zp, sym, tf):
-    df = pd.read_csv(io.BytesIO(zipfile.ZipFile(zp).read(f"{sym}_{tf}.csv")))
+    name = f"{sym}_{tf}.csv"
+    if os.path.isdir(zp):
+        path = os.path.join(zp, name)
+        if os.path.exists(path):
+            df = pd.read_csv(path)
+        elif tf in RES_SEC:          # 없으면 M5로 만든다 (서버시각 기준)
+            df = _resample(pd.read_csv(os.path.join(zp, f"{sym}_M5.csv")), RES_SEC[tf])
+        else:
+            raise FileNotFoundError(path)
+    else:
+        with zipfile.ZipFile(zp) as z:
+            df = pd.read_csv(io.BytesIO(z.read(name)))
+    df = df.sort_values("time", kind="stable").drop_duplicates("time").reset_index(drop=True)
     df["srv"] = pd.to_datetime(df.time, unit="s")
-    return df.reset_index(drop=True)
+    return df
 
 
 def h4_from_m15(m):
@@ -87,19 +121,24 @@ def fractal_high_mask(h, n):
 
 
 def sim(h, l, c, i0, last, entry, sl, tp, cost):
+    """봉 순서대로: 같은 봉에서 손절·목표 동시면 손절 먼저 (예전 루프와 결과 동일, numpy로 빠르게)."""
     risk = entry - sl
-    for i in range(i0, last + 1):
+    hit = np.flatnonzero((l[i0:last + 1] <= sl) | (h[i0:last + 1] >= tp))
+    if len(hit):
+        i = i0 + int(hit[0])
         if l[i] <= sl:
             return (-risk - cost) / risk, i
-        if h[i] >= tp:
-            return (tp - entry - cost) / risk, i
+        return (tp - entry - cost) / risk, i
     return (c[last] - entry - cost) / risk, last
 
 
 # ---------------------------------------------------------------- setups
-def scan(zp, sym):
+def scan(zp, sym, tf="M15"):
+    k_tf = 900 // TF_SEC[tf]                       # M15=1, M5=3 : 봉 수 창을 같은 시간으로 맞춤
+    mss_lb, ob_back, entry_wait = MSS_LOOKBACK * k_tf, OB_BACK * k_tf, ENTRY_WAIT * k_tf
+    min_c1, min_c2 = MIN_C1 * k_tf, MIN_C2 * k_tf
     pip = PIP.get(sym, 0.0001)
-    m = read(zp, sym, "M15")
+    m = read(zp, sym, tf)
     d1 = read(zp, sym, "D1")
     cost_all = np.maximum(m.spread.values, SPREAD_FLOOR[sym]) * POINT.get(sym, 0.00001)
     tsec = m.time.values.astype(np.int64)
@@ -128,10 +167,13 @@ def scan(zp, sym):
         else:
             o, h, l, c = -m.open.values, -m.low.values, -m.high.values, -m.close.values
         fh = fractal_high_mask(h, N_FR)
+        # pf[i] = i 이하에서 가장 가까운 프랙탈 고점 인덱스 (없으면 -1) — 뒤로 훑는 루프 대신 사용 (결과 동일)
+        pf = np.where(fh, np.arange(len(h)), -1)
+        pf = np.maximum.accumulate(pf)
         n = len(o)
         for j in range(1, len(starts) - 2):
             a1, a2, a3, a4 = starts[j - 1], starts[j], starts[j + 1], starts[j + 2]
-            if a2 - a1 < 12 or a3 - a2 < 8 or m_bin[a2] - m_bin[a1] != 1:
+            if a2 - a1 < min_c1 or a3 - a2 < min_c2 or m_bin[a2] - m_bin[a1] != 1:
                 continue
             crh, crl = h[a1:a2].max(), l[a1:a2].min()
             sw = next((k for k in range(a2, a3) if l[k] < crl), None)
@@ -145,22 +187,24 @@ def scan(zp, sym):
                 if k == ext:
                     continue
                 # 극값 이전 가장 가까운 '이미 확정된' 스윙 고점 (극값이 갱신되면 자동으로 다시 계산)
-                sp = next((q for q in range(ext - 1, max(ext - MSS_LOOKBACK, N_FR), -1)
-                           if fh[q] and q + N_FR <= k), None)
-                if sp is None:
+                lo_q = max(ext - mss_lb, N_FR)
+                sp = pf[ext - 1] if ext >= 1 else -1
+                while sp > lo_q and sp + N_FR > k:
+                    sp = pf[sp - 1]
+                if sp <= lo_q:
                     continue
                 if c[k] > h[sp] and c[k] > o[k] and crl < c[k] < crh:
                     mss = k
                     break
             if mss is None:
                 continue
-            ob = next((q for q in range(mss - 1, max(ext - OB_BACK, 0) - 1, -1) if c[q] < o[q]), None)
+            ob = next((q for q in range(mss - 1, max(ext - ob_back, 0) - 1, -1) if c[q] < o[q]), None)
             if ob is None:
                 continue
             ob_hi, ob_lo = h[ob], l[ob]
             ext_px = l[ext]
             touched, conf = False, None
-            for q in range(mss + 1, min(n - 1, mss + 1 + ENTRY_WAIT)):
+            for q in range(mss + 1, min(n - 1, mss + 1 + entry_wait)):
                 if l[q] < ext_px or h[q] >= crh:
                     break
                 if l[q] <= ob_hi:
@@ -280,19 +324,22 @@ def z_for(alpha):
     return hi
 
 
-def main(zp, out):
+def main(zp, out, tf="M15", syms=None):
+    SYMS = list(syms or SYMBOLS)
     os.makedirs(out, exist_ok=True)
     parts, raw = [], 0
-    for s in SYMBOLS:
-        t, nraw = scan(zp, s)
+    for s in SYMS:
+        t0 = _time.time()
+        t, nraw = scan(zp, s, tf)
         raw += nraw
         parts.append(t)
-        print(f"[{s}] 진입 셋업 {nraw} → 동시 1셋업 적용 {len(t)}  손절 중앙값 {t.risk_pips.median():.1f}핍", flush=True)
+        print(f"[{s}] 진입 셋업 {nraw} → 동시 1셋업 적용 {len(t)}  손절 중앙값 {t.risk_pips.median():.1f}핍"
+              f"  ({tf}, {_time.time() - t0:.0f}초)", flush=True)
     a = pd.concat(parts).sort_values("t").reset_index(drop=True)
     a.to_csv(os.path.join(out, "crt_scorecard_trades.csv"), index=False)
     is_m = a.t.values < SPLIT
     days = (a.t.max() - a.t.min()) / pd.Timedelta(days=1) * 5 / 7
-    print(f"\n기간 {a.t.min()} ~ {a.t.max()} (서버시각), 거래 {len(a)}건, 7종목 합 하루 {len(a) / days:.2f}회")
+    print(f"\n기간 {a.t.min()} ~ {a.t.max()} (서버시각), 거래 {len(a)}건, {len(SYMS)}종목 합 하루 {len(a) / days:.2f}회")
 
     print("\n## 1. 전부 진입 (기준선)")
     for o in OUTCOMES:
@@ -328,20 +375,20 @@ def main(zp, out):
         if len(top) == 5:
             break
     print(f"  IS t ≥ {zb:.2f} 통과 칸 수: {sum(1 for x in cells if x['is_t'] >= zb)}")
-    sym_pos_needed = 4
+    sym_pos_needed = math.ceil(len(SYMS) * 4 / 7)        # 7종목=4 (기존과 같음), 9종목=6, 1종목=1
     results = []
     for cnd in top:
         o, sel = cnd["outcome"], cnd["sel"]
         si, so = st(a.loc[sel & is_m, o]), st(a.loc[sel & ~is_m, o])
         sub = a.loc[sel & ~is_m]
-        sym_pos = sum(1 for s in SYMBOLS if np.nansum(sub.loc[sub.sym == s, o]) > 0)
+        sym_pos = sum(1 for s in SYMS if np.nansum(sub.loc[sub.sym == s, o]) > 0)
         oos_days = (a.t.max() - pd.Timestamp(SPLIT)) / pd.Timedelta(days=1) * 5 / 7
         passed = (so["pf"] >= 1.2 and so["dd"] <= 10 and so["n"] >= 60 and si["avg"] > 0 and so["avg"] > 0
                   and sym_pos >= sym_pos_needed)
         yrs = a.loc[sel].groupby(a.loc[sel].t.dt.year)[o].agg(["count", "sum"])
         print(f"\n  후보 {cnd['feat']}={cnd['val']} [{o}]")
         print("    IS ", fmt(si))
-        print("    OOS", fmt(so), f" OOS 양수 종목 {sym_pos}/7  하루 {so['n'] / oos_days:.2f}회  → {'합격' if passed else '불합격'}")
+        print("    OOS", fmt(so), f" OOS 양수 종목 {sym_pos}/{len(SYMS)}  하루 {so['n'] / oos_days:.2f}회  → {'합격' if passed else '불합격'}")
         print("    연도별:", "  ".join(f"{y}:{int(r['count'])}건 {r['sum']:+.1f}R" for y, r in yrs.iterrows()))
         results.append(dict(rule=f"{cnd['feat']}={cnd['val']}", target=o, IS=si, OOS=so, oos_sym_pos=sym_pos,
                             trades_per_day_oos=so["n"] / oos_days, passed=bool(passed)))
@@ -373,7 +420,7 @@ def main(zp, out):
             row["grade"] = g
             grade_rows.append(row)
     sym_rows = []
-    for s in SYMBOLS:
+    for s in SYMS:
         sel = (a.sym == s).values
         r = dict(symbol=s)
         for o in ("r_rr3", "r_opp"):
@@ -387,9 +434,10 @@ def main(zp, out):
     print(pd.DataFrame(sym_rows).to_string(index=False))
     gj = dict(
         generated="2026-10-24", script="trading/research/crt_scorecard.py",
-        data="IC Markets M15/D1, 7 symbols, server time = NY+7h", period=f"{a.t.min()} ~ {a.t.max()} (server)",
+        data=f"IC Markets {tf} (+H4/D1; resampled from M5 in folder mode), {len(SYMS)} symbols: {','.join(SYMS)}; "
+             f"server time = NY+7h (KST = server+6h US DST / +7h otherwise)", tf=tf, period=f"{a.t.min()} ~ {a.t.max()} (server)",
         split="IS < 2024-01-01 <= OOS", cost="max(bar spread, floor) x point, once per trade",
-        setup="H4 CRT sweep -> M15 MSS (fractal N=3, body close inside range) -> OB touch -> M15 close beyond OB -> next open; "
+        setup=f"H4 CRT sweep -> {tf} MSS (fractal N=3, body close inside range) -> OB touch -> {tf} close beyond OB -> next open; "
               "SL sweep extreme - 1 pip; max hold 24h",
         keys=dict(aligned="count of D1 and H4 Bias() (EA function) equal to trade direction at entry",
                   session="NY hour of entry bar: asia 19-02, london 02-08, ny 08-12, late 12-19"),
@@ -401,9 +449,23 @@ def main(zp, out):
                      for k, v in r.items()} for r in results],
         tests=ncell, bonferroni_t=round(zb, 2), is_oos_rank_corr=round(float(rho), 2), bucket_edges=edges,
     )
-    with open(os.path.join(out, "crt_grades.json"), "w") as f:
+    with open(os.path.join(out, "crt_grades.json"), "w", encoding="utf-8") as f:
         json.dump(gj, f, ensure_ascii=False, indent=1, default=lambda x: x.item() if hasattr(x, "item") else str(x))
 
 
 if __name__ == "__main__":
-    main(sys.argv[1], sys.argv[2] if len(sys.argv) > 2 else ".")
+    try:
+        sys.stdout.reconfigure(encoding="utf-8")     # Windows에서 > crt_out.txt 로 받을 때 한글·기호 깨짐 방지
+    except Exception:
+        pass
+    ap = argparse.ArgumentParser()
+    ap.add_argument("data", help="venus_data.zip 또는 {SYM}_M5.csv 폴더")
+    ap.add_argument("out_pos", nargs="?", default=None, help="(예전 방식) 결과 폴더")
+    ap.add_argument("--out", default=None)
+    ap.add_argument("--tf", default="M15", choices=["M15", "M5"])
+    ap.add_argument("--syms", default=None, help="쉼표 구분, 기본 7종목")
+    a_ = ap.parse_args()
+    syms = [x.strip().upper() for x in a_.syms.split(",") if x.strip()] if a_.syms else SYMBOLS
+    t_start = _time.time()
+    main(a_.data, a_.out or a_.out_pos or ".", a_.tf, syms)
+    print(f"\n총 소요 {(_time.time() - t_start) / 60:.1f}분", flush=True)
