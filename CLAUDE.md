@@ -8,6 +8,12 @@
 - **RC비너스:** 석준님 집 PC에서 `claude --remote-control`로 도는 세션 (C:\Users\kun00\venus). PC 설치·MT5 조작·PC 데이터 작업.
 - 매니저 비너스는 send_message로 RC비너스에게 일을 맡기고, RC비너스는 결과를 매니저 비너스에게 보고한다. 실제 주문·돈이 나가는 일은 석준님 허락 후에만.
 
+## 작업 현황판
+
+석준님은 https://claude.ai/artifact/8gHYgfmGCUFGEHRZmHJ3vq ("비너스 작업 현황판")에서 담당 에이전트·RC비너스의 일을 본다.
+매니저 비너스는 일을 맡길 때·중간 소식이 올 때·끝났을 때마다 ArtifactData로 `tasks` 컬렉션 문서를 갱신한다.
+필드: title, agent, status(running|waiting|needs_user|done|failed), summary, result, started, updated(ISO+09:00), steps[{t,text}].
+
 ## 조직도
 
 | 에이전트 | 맡는 일 |
