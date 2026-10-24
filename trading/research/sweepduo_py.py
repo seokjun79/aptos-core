@@ -1,6 +1,7 @@
 """Venus Sweep Duo v2.10 (trading/mt5/VenusSweepDuo.mq5) 파이썬 이식 + 다종목·견고성 점검.
 
-사용: python -I sweepduo_py.py <venus_data.zip> [--out DIR]
+사용: python -I sweepduo_py.py <venus_data.zip 또는 CSV 폴더> [--out DIR] [--tf M5] [--syms EURUSD,GBPUSD,...]
+ CSV 폴더 모드: {종목}_M5.csv만 있어도 됨 (H1·D1이 없으면 M5를 서버시각 기준으로 묶어서 만듦).
 
 EA 규칙 그대로 (뉴욕 시각, 서버 = 뉴욕 + 7h, 하루 경계 = 뉴욕 17:00):
  모델 1 런던: 레인지 19~02 → 스윕 킬존 02~05 → 진입 마감 08 → 강제 청산 12
@@ -23,8 +24,9 @@ import zipfile
 import numpy as np
 import pandas as pd
 
-SPREAD_FLOOR = {"EURUSD": 8, "GBPUSD": 9, "USDJPY": 10, "AUDUSD": 8, "USDCAD": 10, "USDCHF": 9, "XAUUSD": 15}
-POINT = {"USDJPY": 0.001, "XAUUSD": 0.01}
+SPREAD_FLOOR = {"EURUSD": 8, "GBPUSD": 9, "USDJPY": 10, "AUDUSD": 8, "USDCAD": 10, "USDCHF": 9, "XAUUSD": 15,
+                "GBPJPY": 22, "EURJPY": 18}
+POINT = {"USDJPY": 0.001, "XAUUSD": 0.01, "GBPJPY": 0.001, "EURJPY": 0.001}
 SYMS = ["EURUSD", "GBPUSD", "USDJPY", "AUDUSD", "USDCAD", "USDCHF", "XAUUSD"]
 OOS = pd.Timestamp("2024-01-01")
 SRV_MINUS_NY = 7 * 3600
@@ -34,7 +36,23 @@ BASE = dict(min_score=5, min_rr=2.0, max_rr=8.0, buf_atr=0.2, len_c=2, wait_sec=
             models=((19, 2, 2, 5, 8, 12), (2, 7, 7, 10, 11, 15)))   # (RS, RE, KS, KE, EE, XE) 뉴욕 시각
 
 
+def _resample(m5, sec):
+    g = m5.groupby(m5.time // sec)
+    out = g.agg(open=("open", "first"), high=("high", "max"), low=("low", "min"), close=("close", "last"),
+                spread=("spread", "median")).reset_index(drop=True)
+    out.insert(0, "time", (g.time.first() // sec * sec).values)
+    return out
+
+
 def read(zp, name):
+    if os.path.isdir(zp):
+        path = os.path.join(zp, name)
+        if os.path.exists(path):
+            return pd.read_csv(path)
+        sym, tf = name[:-4].rsplit("_", 1)
+        if tf in ("H1", "D1"):        # 없으면 M5로 만든다 (서버시각 기준 1시간/1일)
+            return _resample(pd.read_csv(os.path.join(zp, f"{sym}_M5.csv")), 3600 if tf == "H1" else 86400)
+        raise FileNotFoundError(path)
     with zipfile.ZipFile(zp) as z:
         return pd.read_csv(io.BytesIO(z.read(name)))
 
@@ -275,13 +293,16 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("zip")
     ap.add_argument("--out", default=".")
+    ap.add_argument("--tf", default="", help="모든 종목에 쓸 시간프레임 (예: M5). 비우면 EURUSD M5 / 나머지 M15")
+    ap.add_argument("--syms", default="", help="쉼표로 구분한 종목 목록")
     a = ap.parse_args()
+    syms = [x.strip() for x in a.syms.split(",") if x.strip()] or SYMS
     work = os.path.join(a.out, "_sweepduo_work")
     os.makedirs(work, exist_ok=True)
     rows = []
     cache = {}
     # 0) 이식 검증: EURUSD M5 (EA와 같은 시간프레임) vs M15
-    for tf in ("M5", "M15"):
+    for tf in (("M5",) if a.tf == "M5" else ("M5", "M15")):
         d = prepare(a.zip, "EURUSD", tf)
         cache[("EURUSD", tf)] = d
         res = run(d)
@@ -294,8 +315,8 @@ def main():
             print(f"    {y}: {len(g):3d} {g.R.sum():+6.1f}R", end="")
         print("\n    exit kinds:", res.kind.value_counts().to_dict())
     # 1) 7종목 같은 파라미터 (EURUSD는 M5, 나머지 M15)
-    for sym in SYMS:
-        tf = "M5" if sym == "EURUSD" else "M15"
+    for sym in syms:
+        tf = a.tf or ("M5" if sym == "EURUSD" else "M15")
         d = cache.get((sym, tf)) or prepare(a.zip, sym, tf)
         cache[(sym, tf)] = d
         res = run(d)
