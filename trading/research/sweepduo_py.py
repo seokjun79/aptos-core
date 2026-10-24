@@ -276,7 +276,8 @@ def main():
     ap.add_argument("zip")
     ap.add_argument("--out", default=".")
     a = ap.parse_args()
-    os.makedirs(a.out, exist_ok=True)
+    work = os.path.join(a.out, "_sweepduo_work")
+    os.makedirs(work, exist_ok=True)
     rows = []
     cache = {}
     # 0) 이식 검증: EURUSD M5 (EA와 같은 시간프레임) vs M15
@@ -284,7 +285,7 @@ def main():
         d = prepare(a.zip, "EURUSD", tf)
         cache[("EURUSD", tf)] = d
         res = run(d)
-        res.to_csv(os.path.join(a.out, f"_eurusd_{tf}_trades.csv"), index=False)
+        res.to_csv(os.path.join(work, f"eurusd_{tf}_trades.csv"), index=False)
         i_, o_, all_ = split(res, d)
         print(f"EURUSD {tf} ALL {fmt(all_)}\n          IS  {fmt(i_)}\n          OOS {fmt(o_)}")
         for k, g in res.groupby("model"):
@@ -301,12 +302,14 @@ def main():
         i_, o_, _ = split(res, d)
         rows.append(dict(symbol=sym, tf=tf, **{f"IS_{k}": v for k, v in i_.items()},
                          **{f"OOS_{k}": v for k, v in o_.items()}))
-        res.to_csv(os.path.join(a.out, f"_trades_{sym}.csv"), index=False)
+        res.to_csv(os.path.join(work, f"trades_{sym}_{tf}.csv"), index=False)
         if i_["n"] and o_["n"] and i_["avgR"] > 0 and o_["avgR"] > 0:
             out = res[["entry_t", "exit_t", "symbol", "dir", "R"]].rename(columns={"entry_t": "entry_time", "exit_t": "exit_time"})
-            out.to_csv(os.path.join(a.out, f"sweepduo_{sym}.csv"), index=False)
+            # EA 원래 시간프레임(M5)으로 돈 종목만 포트폴리오 후보. M15 근사는 검증 실패라 작업 폴더에만.
+            name = f"sweepduo_{sym}.csv" if tf == "M5" else f"_sweepduo_work/m15proxy_{sym}.csv"
+            out.to_csv(os.path.join(a.out, name), index=False)
         print(f"{sym} {tf} IS {fmt(i_)} | OOS {fmt(o_)}")
-    pd.DataFrame(rows).to_csv(os.path.join(a.out, "_symbols.csv"), index=False)
+    pd.DataFrame(rows).to_csv(os.path.join(work, "symbols.csv"), index=False)
     # 2) 견고성 격자 (IS만, EURUSD M5): buf_atr, min_rr, max_rr 각 ±25% (미리 선언)
     d = cache[("EURUSD", "M5")]
     cut = int(np.searchsorted(np.asarray(d["t"]), int(OOS.timestamp())))
@@ -318,7 +321,7 @@ def main():
         s_ = stats(r.R, 1)
         grid.append(dict(buf_atr=b, min_rr=rr, max_rr=mx, n=s_["n"], avgR=s_["avgR"], sumR=s_["sumR"], PF=s_["PF"], DD=s_["DD"]))
         print(f"grid buf {b:.2f} minRR {rr:.1f} maxRR {mx:4.1f}: {fmt(s_)}")
-    pd.DataFrame(grid).to_csv(os.path.join(a.out, "_grid_is.csv"), index=False)
+    pd.DataFrame(grid).to_csv(os.path.join(work, "grid_is.csv"), index=False)
     # 2b) 빈도 늘리기 변형 (미리 선언, 1개): 최소 점수 4
     for sc in (4, 6):
         r = run(d, dict(BASE, min_score=sc))
