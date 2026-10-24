@@ -8,10 +8,11 @@
 //|   ④ 아시아장에는 알림 없음                                       |
 //|   ⑤ 고객님 수동 주문: 손절 없으면 자동 손절, 위험 과다면 랏 축소,  |
 //|      하루 손실 한도면 잠금                                       |
+//|   ⑥ 고객님 수동 매매 자동 기록 (VenusCRT_journal.csv, "기록" 명령) |
 //|  진입은 고객님이 결정한다. 이 EA는 신규 주문을 넣지 않는다.       |
 //+------------------------------------------------------------------+
 #property copyright "Venus"
-#property version   "1.47"
+#property version   "1.50"
 #property description "SMC+CRT 감시·확정 알림·위험관리 비서. 신규 주문은 넣지 않음."
 #include <Trade\Trade.mqh>
 
@@ -30,13 +31,14 @@ input double InpSLBufferPips   = 1.0;     // 손절 버퍼 (핍)
 input double InpRiskPct        = 1.0;     // 추천 랏 계산용 1회 위험 (잔고 %)
 input bool   InpPush           = true;    // 휴대폰 알림
 input bool   InpDraw           = true;    // 이 차트 종목에 선·박스 그리기
+input bool   InpShowGrade      = true;    // 확정 알림에 등급 표시 (등급표가 채워지면 나옴)
 input group "=== 텔레그램 ==="
 input string InpTgToken        = "";      // 텔레그램 봇 토큰 (@BotFather 에서 받은 것)
 input string InpTgChatId       = "";      // 채팅 ID (비워 두면 봇에게 보낸 첫 메시지에서 자동으로 찾음)
 input bool   InpTgChart        = true;    // 알림 때 차트 사진도 보내기
 input group "=== 위험 관리 (고객님 수동 주문) ==="
 input bool   InpGuard          = true;    // 위험 관리 켜기
-input double InpGuardMaxRisk   = 2.0;     // 1회 손실 한도 (잔고 %), 넘으면 랏을 줄임
+input double InpGuardMaxRisk   = 1.0;     // 1회 손실 한도 (잔고 %), 넘으면 랏을 줄임. 과거 시험에서 20연패까지 나와 2% → 1%로 낮춤
 input double InpGuardDefaultSL = 15.0;    // 손절이 없을 때 자동으로 거는 손절 (핍)
 input double InpDailyLossPct   = 3.0;     // 하루 손실 한도 (%), 넘으면 잠금
 
@@ -239,6 +241,12 @@ string TrendLine(string sym, int dir)
    return StringFormat("추세: 일봉 %s · 4H %s → %s", Arrow(d1), Arrow(h4), verdict);
   }
 
+// 일봉·4H 추세 중 셋업 방향과 같은 것의 개수 (0~2)
+int Aligned(string sym, int dir)
+  {
+   return (Bias(sym, PERIOD_D1) == dir ? 1 : 0) + (Bias(sym, PERIOD_H4) == dir ? 1 : 0);
+  }
+
 string Px(string s, double v) { return DoubleToString(v, (int)SymbolInfoInteger(s, SYMBOL_DIGITS)); }
 
 int FindWatch(string s)
@@ -347,6 +355,29 @@ bool AlreadySent(string sym, string kind, datetime h4)
    return false;
   }
 
+// 확정·확인 캔들 알림을 보낸 시각과 방향을 터미널에 기록 (재시작해도 매매 기록에서 씀)
+void MarkAlert(string sym, int dir)
+  {
+   GlobalVariableSet("VCRT_ALT_" + sym, (double)TimeCurrent());
+   GlobalVariableSet("VCRT_ALD_" + sym, (double)dir);
+  }
+
+// t 이전 4시간 안에 같은 방향 알림이 있었는지 (감시 종목이 아니면 기록이 없으니 false)
+bool AlertedRecently(string sym, int dir, datetime t)
+  {
+   string kt = "VCRT_ALT_" + sym, kd = "VCRT_ALD_" + sym;
+   if(!GlobalVariableCheck(kt) || !GlobalVariableCheck(kd)) return false;
+   datetime at = (datetime)GlobalVariableGet(kt);
+   int ad = (int)GlobalVariableGet(kd);
+   return ad == dir && (long)at <= (long)t + 60 && (long)t - (long)at <= 4 * 3600;
+  }
+
+// 등급 (자리). 나중에 등급표를 채운다. 지금은 빈칸 = 표시 안 함
+string GradeFor(string sym, int dir, int aligned, datetime t)
+  {
+   return "";
+  }
+
 //--- 감시 로직 -------------------------------------------------------
 void ResetCycle(Watch &w)
   {
@@ -452,8 +483,8 @@ void Track(Watch &w, int sh = 1)
         {
          w.stage = 2;
          w.snap = "OB 도달";
-         Notify(StringFormat("[CRT 비서] %s OB(M) %s~%s 도달! 지정가 자리예요.\n더 확실하게: %s 쪽 몸통 마감 캔들을 기다려요.",
-                                       w.sym, Px(w.sym, w.obL), Px(w.sym, w.obH), w.tdir == 1 ? "양봉" : "음봉"));
+         Notify(StringFormat("[CRT 비서] %s OB %s~%s 도달. 지정가는 과거 시험에서 가장 나빴어요 → '확인 캔들 마감' 알림을 기다리세요.\n(%s 쪽 몸통 마감 캔들)",
+                             w.sym, Px(w.sym, w.obL), Px(w.sym, w.obH), w.tdir == 1 ? "양봉" : "음봉"));
         }
       else return;   // 닿은 봉이 곧바로 확인 캔들일 수도 있어 아래로 이어서 본다
      }
@@ -462,7 +493,8 @@ void Track(Watch &w, int sh = 1)
    if(conf)
      {
       w.snap = "확인 캔들 마감";
-      Notify(StringFormat("[CRT 비서] %s %s 확인 캔들 마감 (%s). 다음 봉 시가가 진입 자리예요. 결정은 고객님!", w.sym, side, Px(w.sym, c)));
+      Notify(StringFormat("[CRT 비서] ▶ 진입 신호: %s %s 확인 캔들 마감 (%s). 다음 봉 시가가 진입 자리예요. 결정은 석준님!", w.sym, side, Px(w.sym, c)));
+      if(!g_quiet) MarkAlert(w.sym, w.tdir);
       w.stage = 0;
      }
   }
@@ -603,17 +635,24 @@ void OnNewM5(Watch &w)
    double risk = MathAbs(entry - sl);
    double rr = (risk > 0) ? w.dir * (tp - entry) / risk : 0;
    double lots = SuggestLots(w.sym, risk);
+   double rr3 = entry + w.dir * 3.0 * risk;                                    // 안전 손절 기준 3R 자리
    w.sugSL = sl; w.sugDir = w.dir;
    string msg = StringFormat("[CRT 비서] %s %s 확정! 몸통 마감으로 MSS %s 돌파\n"
-                             "OB(M) %s~%s / FVG %s\n지정가 %s · 손절 %s (%.1f핍, 타이트 %s) · 목표 %s (손익비 %.1f)\n추천 랏 %.2f (잔고 %.1f%% 위험)\n%s\n%s",
+                             "OB(M) %s~%s / FVG %s\n기준 진입가 %s · 손절 %s (%.1f핍, 타이트 %s) · 목표 %s (손익비 %.1f) · 손익비 3 목표 %s\n추천 랏 %.2f (잔고 %.1f%% 위험)\n%s\n%s",
                              w.sym, w.dir == 1 ? "매수" : "매도", Px(w.sym, w.mss),
                              obT > 0 ? Px(w.sym, obL) : "-", obT > 0 ? Px(w.sym, obH) : "-",
                              fvTm > 0 ? (Px(w.sym, fvB) + "~" + Px(w.sym, fvT)) : "없음",
-                             Px(w.sym, entry), Px(w.sym, sl), risk / w.pip, Px(w.sym, slT), Px(w.sym, tp), rr, lots, InpRiskPct,
+                             Px(w.sym, entry), Px(w.sym, sl), risk / w.pip, Px(w.sym, slT), Px(w.sym, tp), rr, Px(w.sym, rr3), lots, InpRiskPct,
                              TrendLine(w.sym, w.dir),
-                             obT > 0 ? "OB로 되돌아오면 다시 알려 드려요" : "OB를 못 찾았어요. 차트에서 직접 확인해 주세요");
+                             obT > 0 ? "OB로 되돌아오면 알려 드리고, 확인 캔들이 마감하면 '진입 신호'를 보내요" : "OB를 못 찾았어요. 차트에서 직접 확인해 주세요");
+   if(InpShowGrade)
+     {
+      string gr = GradeFor(w.sym, w.dir, Aligned(w.sym, w.dir), t1);
+      if(gr != "") msg += "\n" + gr;
+     }
    w.snap = "확정 (노란 박스 = OB, 주황 = 손절, 초록 = 목표)";
    Notify(msg);
+   MarkAlert(w.sym, w.dir);
    if(obT > 0) { w.stage = 1; w.tdir = w.dir; w.obH = obH; w.obL = obL; w.tp = tp; w.confT = t1; }
    if(w.sym == _Symbol)
      {
@@ -734,6 +773,171 @@ void Guard()
      }
   }
 
+//--- 매매 기록 (고객님 수동 주문, magic 0) ---------------------------
+// 열린 포지션을 처음 볼 때 정보를 기억하고, 사라지면(청산) 거래 내역에서 손익을 읽어 CSV에 한 줄 쓴다.
+// 기억은 VenusCRT_open.csv 에 저장해 EA를 다시 붙여도 처음 손절·알림 여부를 잃지 않는다.
+struct JPos
+  {
+   ulong    tk;      // 포지션 티켓
+   long     pid;     // 포지션 ID (거래 내역 찾기용)
+   string   sym;
+   int      dir;     // +1 매수, -1 매도
+   datetime ot;      // 진입 시각 (서버 시각)
+   double   op;      // 진입가
+   double   vol;     // 랏 (본 것 중 가장 큰 값)
+   double   isl;     // 처음 손절 (처음 본 0 아닌 손절, 0 = 아직 없음)
+   int      al;      // 진입 전 4시간 안에 같은 방향 비서 알림 (0/1)
+   int      ag;      // 일봉·4H 추세 일치 개수 (0~2)
+   datetime miss;    // 사라진 것을 처음 본 시각 (거래 내역을 아직 못 찾음, 저장 안 함)
+   bool     seen;
+  };
+JPos   g_jp[];
+bool   g_jLoaded = false;
+string J_FILE  = "VenusCRT_journal.csv";
+string JO_FILE = "VenusCRT_open.csv";
+
+void JSave()
+  {
+   int fh = FileOpen(JO_FILE, FILE_WRITE | FILE_TXT | FILE_ANSI);
+   if(fh == INVALID_HANDLE) { PrintFormat("[CRT 비서] %s 저장 실패 (%d)", JO_FILE, GetLastError()); return; }
+   for(int i = 0; i < ArraySize(g_jp); i++)
+      FileWriteString(fh, StringFormat("%I64u,%I64d,%s,%d,%I64d,%.6f,%.2f,%.6f,%d,%d\r\n",
+                                       g_jp[i].tk, g_jp[i].pid, g_jp[i].sym, g_jp[i].dir, (long)g_jp[i].ot,
+                                       g_jp[i].op, g_jp[i].vol, g_jp[i].isl, g_jp[i].al, g_jp[i].ag));
+   FileClose(fh);
+  }
+
+void JLoad()
+  {
+   g_jLoaded = true;
+   ArrayResize(g_jp, 0);
+   int fh = FileOpen(JO_FILE, FILE_READ | FILE_TXT | FILE_ANSI);
+   if(fh == INVALID_HANDLE) return;
+   while(!FileIsEnding(fh))
+     {
+      string line = FileReadString(fh), f[];
+      if(StringSplit(line, ',', f) < 10) continue;
+      int n = ArraySize(g_jp); ArrayResize(g_jp, n + 1);
+      g_jp[n].tk  = (ulong)StringToInteger(f[0]);
+      g_jp[n].pid = StringToInteger(f[1]);
+      g_jp[n].sym = f[2];
+      g_jp[n].dir = (int)StringToInteger(f[3]);
+      g_jp[n].ot  = (datetime)StringToInteger(f[4]);
+      g_jp[n].op  = StringToDouble(f[5]);
+      g_jp[n].vol = StringToDouble(f[6]);
+      g_jp[n].isl = StringToDouble(f[7]);
+      g_jp[n].al  = (int)StringToInteger(f[8]);
+      g_jp[n].ag  = (int)StringToInteger(f[9]);
+      g_jp[n].miss = 0; g_jp[n].seen = false;
+     }
+   FileClose(fh);
+  }
+
+// 청산된 포지션을 기록. 거래 내역이 아직 안 보이면 false (다음에 다시 시도)
+bool JClose(JPos &j)
+  {
+   if(!HistorySelectByPosition(j.pid)) return false;
+   double pnl = 0, outVol = 0, outPx = 0;
+   datetime ct = 0;
+   for(int k = 0; k < HistoryDealsTotal(); k++)
+     {
+      ulong d = HistoryDealGetTicket(k);
+      if(d == 0) continue;
+      pnl += HistoryDealGetDouble(d, DEAL_PROFIT) + HistoryDealGetDouble(d, DEAL_COMMISSION) + HistoryDealGetDouble(d, DEAL_SWAP);
+      long en = HistoryDealGetInteger(d, DEAL_ENTRY);
+      if(en != DEAL_ENTRY_OUT && en != DEAL_ENTRY_INOUT && en != DEAL_ENTRY_OUT_BY) continue;
+      double dv = HistoryDealGetDouble(d, DEAL_VOLUME);
+      outVol += dv;
+      outPx  += dv * HistoryDealGetDouble(d, DEAL_PRICE);
+      datetime dt = (datetime)HistoryDealGetInteger(d, DEAL_TIME);
+      if(dt > ct) ct = dt;
+     }
+   if(outVol <= 0) return false;
+   double cp = outPx / outVol;   // 여러 번 나눠 청산했으면 평균 청산가
+   // R = 확정 손익 ÷ 처음 위험 금액 (처음 손절 거리 × 랏)
+   double dist = j.dir * (j.op - j.isl);
+   bool hasR = (j.isl > 0 && dist > 0);
+   double riskM = hasR ? LossPerLot(j.sym, dist) * j.vol : 0;
+   if(riskM <= 0) hasR = false;
+   double R = hasR ? pnl / riskM : 0;
+   int hold = (int)(((long)ct - (long)j.ot) / 60);
+   int fh = FileOpen(J_FILE, FILE_READ | FILE_WRITE | FILE_TXT | FILE_ANSI);
+   if(fh == INVALID_HANDLE)
+      PrintFormat("[CRT 비서] %s 열기 실패 (%d)", J_FILE, GetLastError());
+   else
+     {
+      if(FileSize(fh) == 0)
+         FileWriteString(fh, "close_time,symbol,dir,volume,open_price,close_price,initial_sl,pnl,R,alerted,aligned,hold_minutes\r\n");
+      FileSeek(fh, 0, SEEK_END);
+      FileWriteString(fh, StringFormat("%s,%s,%s,%.2f,%s,%s,%s,%.2f,%s,%d,%d,%d\r\n",
+                                       TimeToString(ct, TIME_DATE | TIME_MINUTES), j.sym, j.dir == 1 ? "buy" : "sell", j.vol,
+                                       Px(j.sym, j.op), Px(j.sym, cp), j.isl > 0 ? Px(j.sym, j.isl) : "",
+                                       pnl, hasR ? DoubleToString(R, 2) : "", j.al, j.ag, hold));
+      FileClose(fh);
+     }
+   string rTxt = hasR ? StringFormat("%+.1fR", R) : "R 없음(손절 없음)";
+   Notify(StringFormat("[CRT 비서] 기록: %s %s %.2f랏 %s (%+.2f %s) · 비서 알림 %s · 추세 %d/2",
+                       j.sym, j.dir == 1 ? "매수" : "매도", j.vol, rTxt, pnl, AccountInfoString(ACCOUNT_CURRENCY),
+                       j.al > 0 ? "있음" : "없음", j.ag));
+   return true;
+  }
+
+void Journal()
+  {
+   if(!g_jLoaded) JLoad();
+   bool changed = false;
+   for(int i = 0; i < ArraySize(g_jp); i++) g_jp[i].seen = false;
+   for(int i = PositionsTotal() - 1; i >= 0; i--)
+     {
+      ulong tk = PositionGetTicket(i);
+      if(tk == 0 || PositionGetInteger(POSITION_MAGIC) != 0) continue;   // 고객님 수동 주문만
+      double sl = PositionGetDouble(POSITION_SL), vol = PositionGetDouble(POSITION_VOLUME);
+      int idx = -1;
+      for(int k = 0; k < ArraySize(g_jp) && idx < 0; k++)
+         if(g_jp[k].tk == tk) idx = k;
+      if(idx < 0)
+        {
+         idx = ArraySize(g_jp); ArrayResize(g_jp, idx + 1);
+         g_jp[idx].tk  = tk;
+         g_jp[idx].pid = PositionGetInteger(POSITION_IDENTIFIER);
+         g_jp[idx].sym = PositionGetString(POSITION_SYMBOL);
+         g_jp[idx].dir = (PositionGetInteger(POSITION_TYPE) == POSITION_TYPE_BUY) ? 1 : -1;
+         g_jp[idx].ot  = (datetime)PositionGetInteger(POSITION_TIME);
+         g_jp[idx].op  = PositionGetDouble(POSITION_PRICE_OPEN);
+         g_jp[idx].vol = vol;
+         g_jp[idx].isl = sl;
+         g_jp[idx].al  = AlertedRecently(g_jp[idx].sym, g_jp[idx].dir, g_jp[idx].ot) ? 1 : 0;
+         g_jp[idx].ag  = Aligned(g_jp[idx].sym, g_jp[idx].dir);
+         g_jp[idx].miss = 0;
+         changed = true;
+        }
+      else
+        {
+         if(g_jp[idx].isl == 0 && sl > 0) { g_jp[idx].isl = sl; changed = true; }
+         if(vol > g_jp[idx].vol + 1e-9)   { g_jp[idx].vol = vol; changed = true; }
+        }
+      g_jp[idx].seen = true;
+      g_jp[idx].miss = 0;
+     }
+   for(int i = ArraySize(g_jp) - 1; i >= 0; i--)
+     {
+      if(g_jp[i].seen) continue;
+      bool drop = JClose(g_jp[i]);
+      if(g_jp[i].miss == 0) g_jp[i].miss = TimeCurrent();
+      if(!drop && TimeCurrent() - g_jp[i].miss > 3600)   // 1시간 동안 거래 내역을 못 찾으면 포기
+        {
+         PrintFormat("[CRT 비서] #%I64u 청산 내역을 찾지 못해 기록하지 못했어요", g_jp[i].tk);
+         drop = true;
+        }
+      if(!drop) continue;
+      int n = ArraySize(g_jp);
+      for(int k = i; k < n - 1; k++) g_jp[k] = g_jp[k + 1];
+      ArrayResize(g_jp, n - 1);
+      changed = true;
+     }
+   if(changed) JSave();
+  }
+
 //--- 이벤트 ----------------------------------------------------------
 int OnInit()
   {
@@ -809,7 +1013,7 @@ void Hello()
    for(int i = 0; i < ArraySize(W); i++)
       if(!W[i].rebuilt) return;
    g_hello = true;
-   string m = StringFormat("[CRT 비서] 시작했어요 (v1.47, %s봉). 지금 상태:", StringSubstr(EnumToString(InpLTF), 7));
+   string m = StringFormat("[CRT 비서] 시작했어요 (v1.50, %s봉). 지금 상태:", StringSubstr(EnumToString(InpLTF), 7));
    for(int i = 0; i < ArraySize(W); i++)
      {
       string st;
@@ -838,6 +1042,7 @@ void Scan()
    Hello();
    UserBoxes();
    Guard();
+   Journal();   // 위험 관리가 자동 손절을 건 뒤에 봐야 그 손절을 처음 손절로 기록한다
   }
 
 void OnTick()  { Scan(); }
@@ -970,6 +1175,59 @@ void TgAccount()
    TgSend(m);
   }
 
+// "기록": 매매 기록 CSV 통계
+string JStat(string label, int n, int w, int nr, double sr)
+  {
+   if(n == 0) return StringFormat("\n%s: 0건", label);
+   string r = (nr > 0) ? StringFormat("평균 %+.2fR · 합계 %+.1fR", sr / nr, sr) : "R 없음";
+   return StringFormat("\n%s: %d건 · 승률 %.0f%% · %s", label, n, 100.0 * w / n, r);
+  }
+
+void TgJournal()
+  {
+   int fh = FileOpen(J_FILE, FILE_READ | FILE_TXT | FILE_ANSI);
+   if(fh == INVALID_HANDLE) { TgSend("[CRT 비서] 아직 매매 기록이 없어요."); return; }
+   // 0 전체, 1 비서 알림 있음, 2 없음, 3 추세 2/2, 4 그 외
+   int n[5], w[5], nr[5];
+   double sr[5];
+   ArrayInitialize(n, 0); ArrayInitialize(w, 0); ArrayInitialize(nr, 0); ArrayInitialize(sr, 0);
+   string last[];
+   while(!FileIsEnding(fh))
+     {
+      string line = FileReadString(fh), f[];
+      if(StringSplit(line, ',', f) < 12 || f[0] == "close_time") continue;
+      double pnl = StringToDouble(f[7]);
+      bool hasR = (f[8] != "");
+      double R = hasR ? StringToDouble(f[8]) : 0;
+      int g1 = (f[9] == "1") ? 1 : 2;
+      int g2 = (f[10] == "2") ? 3 : 4;
+      int gs[3];
+      gs[0] = 0; gs[1] = g1; gs[2] = g2;
+      for(int k = 0; k < 3; k++)
+        {
+         int g = gs[k];
+         n[g]++;
+         if(pnl > 0) w[g]++;
+         if(hasR) { nr[g]++; sr[g] += R; }
+        }
+      int m = ArraySize(last); ArrayResize(last, m + 1);
+      last[m] = StringFormat("\n• %s %s %s %s (%+.2f)", StringSubstr(f[0], 5), f[1], f[2] == "buy" ? "매수" : "매도",
+                             hasR ? StringFormat("%+.1fR", R) : "R 없음", pnl);
+     }
+   FileClose(fh);
+   if(n[0] == 0) { TgSend("[CRT 비서] 아직 매매 기록이 없어요."); return; }
+   string msg = "[CRT 비서] 매매 기록 (수동 주문, 서버 시각)";
+   msg += JStat("전체", n[0], w[0], nr[0], sr[0]);
+   msg += JStat("비서 알림 있음", n[1], w[1], nr[1], sr[1]);
+   msg += JStat("비서 알림 없음", n[2], w[2], nr[2], sr[2]);
+   msg += JStat("추세 2/2", n[3], w[3], nr[3], sr[3]);
+   msg += JStat("추세 그 외", n[4], w[4], nr[4], sr[4]);
+   msg += "\n최근 5건:";
+   int tot = ArraySize(last);
+   for(int i = (int)MathMax(0, tot - 5); i < tot; i++) msg += last[i];
+   TgSend(msg);
+  }
+
 void TgCommand(string text)
   {
    StringTrimLeft(text); StringTrimRight(text);
@@ -982,9 +1240,10 @@ void TgCommand(string text)
    PrintFormat("[CRT 비서] 텔레그램 명령 받음: %s", text);
    if(cmd == "잔고" || cmd == "계좌" || cmd == "balance") { TgAccount(); return; }
    if(cmd == "상태" || cmd == "status") { g_hello = false; Hello(); return; }
+   if(cmd == "기록" || cmd == "journal") { TgJournal(); return; }
    if(cmd != "박스" && cmd != "box")
      {
-      TgSend("[CRT 비서] 제가 알아듣는 말:\n잔고 (계좌·포지션·오늘 손익)\n상태 (4종목 감시 상태)\n박스 GBPUSD 1.3355 1.3370 (종목, 아래 가격, 위 가격)\n박스 목록\n박스 삭제");
+      TgSend("[CRT 비서] 제가 알아듣는 말:\n잔고 (계좌·포지션·오늘 손익)\n상태 (4종목 감시 상태)\n기록 (내 매매 기록 통계·최근 5건)\n박스 GBPUSD 1.3355 1.3370 (종목, 아래 가격, 위 가격)\n박스 목록\n박스 삭제");
       return;
      }
    if(n >= 2 && (w[1] == "목록" || w[1] == "list"))
