@@ -12,7 +12,7 @@
 //|  진입은 고객님이 결정한다. 이 EA는 신규 주문을 넣지 않는다.       |
 //+------------------------------------------------------------------+
 #property copyright "Venus"
-#property version   "1.50"
+#property version   "1.51"
 #property description "SMC+CRT 감시·확정 알림·위험관리 비서. 신규 주문은 넣지 않음."
 #include <Trade\Trade.mqh>
 
@@ -373,8 +373,23 @@ bool AlertedRecently(string sym, int dir, datetime t)
   }
 
 // 등급 (자리). 나중에 등급표를 채운다. 지금은 빈칸 = 표시 안 함
+// 과거 성적 등급 (trading/research/crt_grades.json, 7종목 2019~2026 M15 기계 시험).
+// 어느 칸도 기계 매매 합격선을 넘지 못했다 → 상대적으로 덜 나쁜/더 나쁜 자리 참고용 (A·B 없음).
 string GradeFor(string sym, int dir, int aligned, datetime t)
   {
+   // 추세 일치 수(0~2) × 시간대 별 과거 성적 (같은 순서의 배열)
+   static const int    gAl[] = {0,0,0,0,1,1,1,1,2,2,2,2};
+   static const string gSe[] = {"asia","london","ny","late","asia","london","ny","late","asia","london","ny","late"};
+   static const string gGr[] = {"C","D","D","C","C","D","C","C","D","C","C","D"};
+   static const int    gN[]  = {593,689,425,391,650,762,508,491,398,440,286,226};
+   static const double gWi[] = {31.5,30.5,32.2,35.8,32.2,26.9,34.3,36.7,26.4,34.1,38.8,31.9};
+   static const double gAv[] = {-0.078,-0.132,-0.122,-0.069,0.033,-0.186,-0.084,-0.017,-0.146,0.029,0.023,-0.174};
+   int h = NyHour(t);
+   string ses = (h >= 19 || h < 2) ? "asia" : (h < 8) ? "london" : (h < 12) ? "ny" : "late";
+   for(int i = 0; i < ArraySize(gAl); i++)
+      if(gAl[i] == aligned && gSe[i] == ses)
+         return StringFormat("과거 등급 %s · 같은 조건 %d번 승률 %.0f%% 평균 %+.2fR (손익비3)%s",
+                             gGr[i], gN[i], gWi[i], gAv[i], gGr[i] == "D" ? " ⚠ 특히 나빴던 조건" : "");
    return "";
   }
 
@@ -1013,7 +1028,7 @@ void Hello()
    for(int i = 0; i < ArraySize(W); i++)
       if(!W[i].rebuilt) return;
    g_hello = true;
-   string m = StringFormat("[CRT 비서] 시작했어요 (v1.50, %s봉). 지금 상태:", StringSubstr(EnumToString(InpLTF), 7));
+   string m = StringFormat("[CRT 비서] 시작했어요 (v1.51, %s봉). 지금 상태:", StringSubstr(EnumToString(InpLTF), 7));
    for(int i = 0; i < ArraySize(W); i++)
      {
       string st;
