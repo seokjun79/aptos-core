@@ -15,6 +15,7 @@
 필드: title, agent, status(running|waiting|needs_user|done|failed), summary, result, started, updated(ISO+09:00), steps[{t,text}].
 석준님은 카드의 **승인/보류/취소** 버튼(여러 개 선택 가능)으로 결정한다. 누르면 문서에 decision·decidedAt이 저장되고 "[현황판 결정]" 메시지가 이 세션에 온다.
 그 메시지를 받으면 ArtifactData로 해당 문서를 읽어 decision을 확인하고 그대로 처리한 뒤 decisionSeen: true와 status·steps를 갱신한다. 승인된 일은 다시 묻지 않고 진행한다.
+RC비너스 담당(agent "RC비너스") 카드는 RC비너스가 5분마다 현황판을 직접 읽어 승인된 카드를 실행하고 상태를 갱신한다. 매니저 비너스는 RC비너스 카드에 대해 따로 지시 메시지를 보내지 않고, 카드 내용(무엇을, 절대 건드리지 말 것)을 정확히 적는 데 집중한다.
 석준님 본인이 현황판에서 누른 승인은 돈이 걸린 일에도 최종 승인으로 본다 (다시 묻지 않는다). 현황판은 석준님만 열 수 있다. 처리하면 바로 카드 상태를 바꿔서 승인이 반영된 것이 보이게 한다.
 
 ## 조직도
