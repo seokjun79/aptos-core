@@ -13,6 +13,9 @@
 석준님은 https://claude.ai/artifact/8gHYgfmGCUFGEHRZmHJ3vq ("비너스 작업 현황판")에서 담당 에이전트·RC비너스의 일을 본다.
 매니저 비너스는 일을 맡길 때·중간 소식이 올 때·끝났을 때마다 ArtifactData로 `tasks` 컬렉션 문서를 갱신한다.
 필드: title, agent, status(running|waiting|needs_user|done|failed), summary, result, started, updated(ISO+09:00), steps[{t,text}].
+석준님은 카드의 **승인/보류/취소** 버튼(여러 개 선택 가능)으로 결정한다. 누르면 문서에 decision·decidedAt이 저장되고 "[현황판 결정]" 메시지가 이 세션에 온다.
+그 메시지를 받으면 ArtifactData로 해당 문서를 읽어 decision을 확인하고 그대로 처리한 뒤 decisionSeen: true와 status·steps를 갱신한다. 승인된 일은 다시 묻지 않고 진행한다.
+단, 실제 매매 주문·결제처럼 돈이 나가는 일은 현황판 승인 뒤에도 이 방에서 한 번 더 확인한다.
 
 ## 조직도
 
