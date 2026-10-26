@@ -9,10 +9,11 @@
 //|   ⑤ 고객님 수동 주문: 손절 없으면 자동 손절, 위험 과다면 랏 축소,  |
 //|      하루 손실 한도면 잠금                                       |
 //|   ⑥ 고객님 수동 매매 자동 기록 (VenusCRT_journal.csv, "기록" 명령) |
+//|   ⑦ 지정 종목 매수 신호에 "[특별지시사항]" 제목 ("이제 그만"으로 끔) |
 //|  진입은 고객님이 결정한다. 이 EA는 신규 주문을 넣지 않는다.       |
 //+------------------------------------------------------------------+
 #property copyright "Venus"
-#property version   "1.51"
+#property version   "1.52"
 #property description "SMC+CRT 감시·확정 알림·위험관리 비서. 신규 주문은 넣지 않음."
 #include <Trade\Trade.mqh>
 
@@ -36,6 +37,7 @@ input group "=== 텔레그램 ==="
 input string InpTgToken        = "";      // 텔레그램 봇 토큰 (@BotFather 에서 받은 것)
 input string InpTgChatId       = "";      // 채팅 ID (비워 두면 봇에게 보낸 첫 메시지에서 자동으로 찾음)
 input bool   InpTgChart        = true;    // 알림 때 차트 사진도 보내기
+input string InpSpecialSyms    = "GBPUSD,GBPJPY"; // 매수 신호에 "특별지시사항" 제목을 붙일 종목
 input group "=== 위험 관리 (고객님 수동 주문) ==="
 input bool   InpGuard          = true;    // 위험 관리 켜기
 input double InpGuardMaxRisk   = 1.0;     // 1회 손실 한도 (잔고 %), 넘으면 랏을 줄임. 과거 시험에서 20연패까지 나와 2% → 1%로 낮춤
@@ -171,6 +173,25 @@ void TgPhoto(string file, string caption)
    int code = WebRequest("POST", "https://api.telegram.org/bot" + InpTgToken + "/sendPhoto",
                          "Content-Type: multipart/form-data; boundary=" + bd + "\r\n", 10000, data, res, resHdr);
    if(code != 200) PrintFormat("[CRT 비서] 차트 사진 전송 실패 (%d): %s", code, CharArrayToString(res, 0, WHOLE_ARRAY, CP_UTF8));
+  }
+
+// 석준님 특별지시: 지정 종목의 매수 신호 제목에 "[특별지시사항]"을 붙인다.
+// 텔레그램 "이제 그만"으로 끄고 "특별지시 켜"로 다시 켠다 (모든 차트가 같이 따르도록 터미널 전역 변수에 저장)
+bool SpecialOn() { return !GlobalVariableCheck("VCRT_SPECIAL_OFF") || GlobalVariableGet("VCRT_SPECIAL_OFF") == 0; }
+string Special(string sym, int dir)
+  {
+   if(dir != 1 || !SpecialOn()) return "";
+   string base = sym;
+   if(InpSuffix != "") StringReplace(base, InpSuffix, "");
+   string list[];
+   int n = StringSplit(InpSpecialSyms, ',', list);
+   for(int i = 0; i < n; i++)
+     {
+      string s = list[i];
+      StringTrimLeft(s); StringTrimRight(s); StringToUpper(s);
+      if(s != "" && s == base) return "[특별지시사항] ";
+     }
+   return "";
   }
 
 bool g_quiet = false;   // 복원 중에는 알림을 보내지 않음
@@ -498,7 +519,7 @@ void Track(Watch &w, int sh = 1)
         {
          w.stage = 2;
          w.snap = "OB 도달";
-         Notify(StringFormat("[CRT 비서] %s OB %s~%s 도달. 지정가는 과거 시험에서 가장 나빴어요 → '확인 캔들 마감' 알림을 기다리세요.\n(%s 쪽 몸통 마감 캔들)",
+         Notify(Special(w.sym, w.tdir) + StringFormat("[CRT 비서] %s OB %s~%s 도달. 지정가는 과거 시험에서 가장 나빴어요 → '확인 캔들 마감' 알림을 기다리세요.\n(%s 쪽 몸통 마감 캔들)",
                              w.sym, Px(w.sym, w.obL), Px(w.sym, w.obH), w.tdir == 1 ? "양봉" : "음봉"));
         }
       else return;   // 닿은 봉이 곧바로 확인 캔들일 수도 있어 아래로 이어서 본다
@@ -508,7 +529,7 @@ void Track(Watch &w, int sh = 1)
    if(conf)
      {
       w.snap = "확인 캔들 마감";
-      Notify(StringFormat("[CRT 비서] ▶ 진입 신호: %s %s 확인 캔들 마감 (%s). 다음 봉 시가가 진입 자리예요. 결정은 석준님!", w.sym, side, Px(w.sym, c)));
+      Notify(Special(w.sym, w.tdir) + StringFormat("[CRT 비서] ▶ 진입 신호: %s %s 확인 캔들 마감 (%s). 다음 봉 시가가 진입 자리예요. 결정은 석준님!", w.sym, side, Px(w.sym, c)));
       if(!g_quiet) MarkAlert(w.sym, w.tdir);
       w.stage = 0;
      }
@@ -601,7 +622,7 @@ void OnNewM5(Watch &w)
       bool dup = AlreadySent(w.sym, "SW", w.h4);
       if(!asia && !dup) w.snap = "스윕 (파란 선 = 4H CRH/CRL, 빨간 점선 = 진짜 MSS 선)";
       if(!asia && !dup)
-         Notify(StringFormat("[CRT 비서] %s 4H %s 스윕 (%s) → %s 셋업 감시 시작. 진짜 MSS 선 %s\n%s",
+         Notify(Special(w.sym, w.dir) + StringFormat("[CRT 비서] %s 4H %s 스윕 (%s) → %s 셋업 감시 시작. 진짜 MSS 선 %s\n%s",
                              w.sym, w.dir == 1 ? "CRL" : "CRH", Px(w.sym, w.ext), w.dir == 1 ? "매수" : "매도", Px(w.sym, w.mss),
                              TrendLine(w.sym, w.dir)));
      }
@@ -666,7 +687,7 @@ void OnNewM5(Watch &w)
       if(gr != "") msg += "\n" + gr;
      }
    w.snap = "확정 (노란 박스 = OB, 주황 = 손절, 초록 = 목표)";
-   Notify(msg);
+   Notify(Special(w.sym, w.dir) + msg);
    MarkAlert(w.sym, w.dir);
    if(obT > 0) { w.stage = 1; w.tdir = w.dir; w.obH = obH; w.obL = obL; w.tp = tp; w.confT = t1; }
    if(w.sym == _Symbol)
@@ -1256,9 +1277,23 @@ void TgCommand(string text)
    if(cmd == "잔고" || cmd == "계좌" || cmd == "balance") { TgAccount(); return; }
    if(cmd == "상태" || cmd == "status") { g_hello = false; Hello(); return; }
    if(cmd == "기록" || cmd == "journal") { TgJournal(); return; }
+   if(text == "이제 그만" || text == "이제그만" || cmd == "그만")
+     {
+      GlobalVariableSet("VCRT_SPECIAL_OFF", 1);
+      TgSend("[CRT 비서] 알겠어요. 이제부터 매수 신호에 '특별지시사항' 표시를 빼고 보낼게요.\n다시 붙이려면 '특별지시 켜'라고 보내 주세요.");
+      return;
+     }
+   if(cmd == "특별지시")
+     {
+      if(n >= 2 && (w[1] == "켜" || w[1] == "다시" || w[1] == "on"))
+         GlobalVariableSet("VCRT_SPECIAL_OFF", 0);
+      TgSend(StringFormat("[CRT 비서] '특별지시사항' 표시: %s (%s 매수 신호)\n끄기: 이제 그만 / 켜기: 특별지시 켜",
+                          SpecialOn() ? "켜짐" : "꺼짐", InpSpecialSyms));
+      return;
+     }
    if(cmd != "박스" && cmd != "box")
      {
-      TgSend("[CRT 비서] 제가 알아듣는 말:\n잔고 (계좌·포지션·오늘 손익)\n상태 (4종목 감시 상태)\n기록 (내 매매 기록 통계·최근 5건)\n박스 GBPUSD 1.3355 1.3370 (종목, 아래 가격, 위 가격)\n박스 목록\n박스 삭제");
+      TgSend("[CRT 비서] 제가 알아듣는 말:\n잔고 (계좌·포지션·오늘 손익)\n상태 (4종목 감시 상태)\n기록 (내 매매 기록 통계·최근 5건)\n박스 GBPUSD 1.3355 1.3370 (종목, 아래 가격, 위 가격)\n박스 목록\n박스 삭제\n이제 그만 ('특별지시사항' 표시 끄기)\n특별지시 켜 (다시 켜기)");
       return;
      }
    if(n >= 2 && (w[1] == "목록" || w[1] == "list"))
