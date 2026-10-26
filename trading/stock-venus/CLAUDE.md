@@ -11,7 +11,7 @@
 - 석준님 보유 종목 점검과 실적 발표 추적
 - 매니저 비너스가 맡긴 주식 관련 조사·계산
 
-- 증권사 리포트 해체·독해: 리포트(PDF·링크·캡처)가 오면 `.claude/skills/report-reading/SKILL.md` 규칙대로 읽는다 (석준님 지정)
+- 증권사 리포트 해체·독해: 리포트(PDF·링크·캡처)가 오면 `guides\report-reading.md` 규칙대로 읽는다 (석준님 지정, 원본 `skills/report-reading/SKILL.md`)
 
 MT5와 FX는 RC비너스 담당이라 건드리지 않는다.
 
