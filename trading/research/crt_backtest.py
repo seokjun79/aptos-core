@@ -90,9 +90,11 @@ FILTERS = ["F1H", "F1D", "F2", "F3", "F4", "F5"]
 FILTER_DESC = {"F1H": "큰 흐름 H4 구조", "F1D": "큰 흐름 D1>EMA20", "F2": "확인 캔들 진입",
                "F3": "OB 몸통 이탈 무효", "F4": "런던/뉴욕오전 체결", "F5": "HTF 유동성 스윕"}
 SESSIONS = ["런던", "뉴욕", "아시아", "뉴욕마감후"]
-TRENDS = ["T_W1H4", "T_D1S", "T_W1S", "T_D1H4", "T_EMA", "T_PDA"]
-MAIN_TREND = "T_W1H4"        # 주 판정(사전 지정): 석준님 "주봉과 4H 방향 일치가 우선"
-TREND_DESC = {"T_W1H4": "W1+H4 구조 같은 방향(주판정)", "T_D1S": "D1 구조(BOS)", "T_W1S": "W1 구조(BOS)",
+TRENDS = ["T_W1H4EXT", "T_W1H4", "T_H4EXT", "T_D1S", "T_W1S", "T_D1H4", "T_EMA", "T_PDA"]
+MAIN_TREND = "T_W1H4EXT"     # 주 판정(사전 지정): 석준님 "주봉과 4H 방향 일치 우선, 4H는 외부(스윙) 구조"
+TREND_DESC = {"T_W1H4EXT": "W1+H4외부구조 같은 방향(주판정)", "T_W1H4": "W1+H4내부구조 같은 방향(비교)",
+              "T_H4EXT": "H4 외부 구조(보호 저점 종가 이탈)",
+              "T_D1S": "D1 구조(BOS)", "T_W1S": "W1 구조(BOS)",
               "T_D1H4": "D1+H4 구조 같은 방향",
               "T_EMA": "D1 EMA50 위+기울기", "T_PDA": "D1 구조+디스카운트/프리미엄", "NONE": "추세 조건 없음"}
 MSS_TFS = ["M15", "M5"]
@@ -440,7 +442,87 @@ def trend_context(t, o, h, l, c, n=2, ema_span=50, slope_days=5):
                 w1s=structure_states(w1["h"], w1["l"], w1["c"], w1["t"] + 7 * NS_D, n),
                 h4s=structure_states(h4["h"], h4["l"], h4["c"], h4["t"] + 4 * NS_H, n),
                 ema=ema_states(d1, ema_span, slope_days),
-                rng=h4_range_ctx(h4, n))
+                rng=h4_range_ctx(h4, n),
+                h4x=ext_structure(h4, h4["t"] + 4 * NS_H, n))
+
+
+def ext_structure(h4, close_t, n=2):
+    """H4 외부(스윙) 구조. 석준님 정의(2026-10-28): 추세 = 마지막 외부 BOS 방향.
+    보호 저점(상승 때) = 그 BOS를 만든 상승 다리가 시작된 저점. 추세는 H4 봉 '종가'가 보호 저점 아래로 마감할 때만 하락으로 바뀐다.
+    되돌림 안의 내부 저점이 깨지는 것(내부 CHoCH)은 추세 변화가 아니다. 꼬리로만 찌르면 그대로 상승.
+    상승 중 계속(BOS): 다리 최고가가 '확정'(그 뒤 n봉이 더 높지 않게 마감)된 뒤 종가가 그 위로 마감하면,
+      그 고점 이후 ~ 이번 봉까지의 최저가가 새 보호 저점. 하락은 대칭.
+    처음(판정 없음) = 내부 스윙(앞뒤 n봉) 고점 위 종가 마감 -> 상승, 보호 저점 = 그 고점 이후 최저가. 저점 쪽 대칭.
+    봉 b 마감 직후 상태: state, prot(보호 극값)/prot_i, lx(보호점 이후 다리 극값: 상승이면 최고가)/lx_i."""
+    H, L, C = (np.asarray(h4[k], float) for k in ("h", "l", "c"))
+    k = len(H)
+    st = np.zeros(k, np.int8)
+    pp, pi, xp, xi = np.full(k, np.nan), np.full(k, -1), np.full(k, np.nan), np.full(k, -1)
+    dr, prot_p, prot_i, lx_p, lx_i = 0, np.nan, -1, np.nan, -1
+    shv, shi, slv, sli = np.nan, -1, np.nan, -1
+    for b in range(k):
+        s = b - n
+        if s >= n:
+            if H[s] > H[s - n:s].max() and H[s] >= H[s + 1:b + 1].max():
+                shv, shi = H[s], s
+            if L[s] < L[s - n:s].min() and L[s] <= L[s + 1:b + 1].min():
+                slv, sli = L[s], s
+        if dr == 0:
+            if shi >= 0 and C[b] > shv:
+                dr = 1
+                prot_i = shi + int(np.argmin(L[shi:b + 1]))
+                prot_p = L[prot_i]
+                lx_i = prot_i + int(np.argmax(H[prot_i:b + 1]))
+                lx_p = H[lx_i]
+            elif sli >= 0 and C[b] < slv:
+                dr = -1
+                prot_i = sli + int(np.argmax(H[sli:b + 1]))
+                prot_p = H[prot_i]
+                lx_i = prot_i + int(np.argmin(L[prot_i:b + 1]))
+                lx_p = L[lx_i]
+        elif dr == 1:
+            if C[b] < prot_p:                                   # 보호 저점 아래 종가 = 하락 전환
+                hi = prot_i + int(np.argmax(H[prot_i:b + 1]))
+                dr, prot_p, prot_i = -1, H[hi], hi
+                lx_i = hi + int(np.argmin(L[hi:b + 1]))
+                lx_p = L[lx_i]
+            else:
+                if lx_i >= 0 and (b - 1) - lx_i >= n and C[b] > lx_p:   # 확정된 다리 고점 위 종가 = 상승 BOS
+                    lo = lx_i + 1 + int(np.argmin(L[lx_i + 1:b + 1]))
+                    prot_p, prot_i = L[lo], lo
+                if H[b] > lx_p:
+                    lx_p, lx_i = H[b], b
+        else:
+            if C[b] > prot_p:                                   # 보호 고점 위 종가 = 상승 전환
+                lo = prot_i + int(np.argmin(L[prot_i:b + 1]))
+                dr, prot_p, prot_i = 1, L[lo], lo
+                lx_i = lo + int(np.argmax(H[lo:b + 1]))
+                lx_p = H[lx_i]
+            else:
+                if lx_i >= 0 and (b - 1) - lx_i >= n and C[b] < lx_p:
+                    hi = lx_i + 1 + int(np.argmax(H[lx_i + 1:b + 1]))
+                    prot_p, prot_i = H[hi], hi
+                if L[b] < lx_p:
+                    lx_p, lx_i = L[b], b
+        st[b], pp[b], pi[b], xp[b], xi[b] = dr, prot_p, prot_i, lx_p, lx_i
+    return dict(close_t=np.asarray(close_t), state=st, prot=pp, prot_i=pi, lx=xp, lx_i=xi,
+                o=np.asarray(h4["o"], float), c=C, h=H, l=L)
+
+
+def ext_range(x, d, t):
+    """외부 구조 딜링 레인지(시각 t 까지 마감한 H4 기준). 외부 추세가 d 와 같을 때만:
+    기준점 = 보호 저점(매수), 먼 끝 = 그 뒤 최고가(SH). H4 OB = 보호 저점 봉부터 거꾸로 처음 만나는 음봉. 아니면 None."""
+    b = _last_closed(x, t)
+    if b < 0 or int(x["state"][b]) != d:
+        return None
+    s, O, C, H, L = int(x["prot_i"][b]), x["o"], x["c"], x["h"], x["l"]
+    ob = -1
+    for k in range(s, max(-1, s - 10), -1):
+        if (d == 1 and C[k] < O[k]) or (d == -1 and C[k] > O[k]):
+            ob = k
+            break
+    return dict(origin=float(x["prot"][b]), far=float(x["lx"][b]), origin_i=s, far_i=int(x["lx_i"][b]),
+                ob_l=float(L[ob]) if ob >= 0 else np.nan, ob_h=float(H[ob]) if ob >= 0 else np.nan)
 
 
 # ---------------------------------------------------------------- 위치(H4 딜링 레인지) / F_SLB
@@ -522,12 +604,16 @@ def ob_position(rg, d, ext):
     return "OB전(안닿음)" if before else "OB관통"
 
 
-def location_of(rc, d, ext, t):
-    rg = dealing_range(rc, d, t)
+def location_of(rc, d, ext, t, x=None):
+    """위치. x(외부 구조)가 있으면 주 위치 = 외부 레인지(보호 저점 ~ 그 뒤 최고가), 내부 스윙 레인지는 depth_int 로 따로."""
+    ri = dealing_range(rc, d, t) if rc is not None else None
+    rg = ext_range(x, d, t) if x is not None else ri
     dep = depth_of(rg, ext)
+    di = depth_of(ri, ext)
     return dict(rng=rg, depth=dep, bucket=depth_bucket(dep), ob_pos=ob_position(rg, d, ext),
                 origin=(rg["origin"] if rg else np.nan), far=(rg["far"] if rg else np.nan),
-                h4ob_l=(rg["ob_l"] if rg else np.nan), h4ob_h=(rg["ob_h"] if rg else np.nan))
+                h4ob_l=(rg["ob_l"] if rg else np.nan), h4ob_h=(rg["ob_h"] if rg else np.nan),
+                depth_int=di, bucket_int=depth_bucket(di))
 
 
 def slb_break(d, origin, t_from, CT4, C4):
@@ -558,7 +644,10 @@ def slb_apply(d, td, res, k, px, tbreak, pbreak, t, spread):
 def trend_align(tc, d, ext, t):
     """시각 t(스윕 시작)에 셋업 방향 d가 각 추세 정의와 맞는지. +1 같은 방향, -1 반대, 0 판정 없음."""
     sd, sw, s4, se = (state_at(tc[k], t) for k in ("d1s", "w1s", "h4s", "ema"))
-    out = {"T_W1H4": (sw * d) if (sw != 0 and sw == s4) else 0,
+    sx = state_at(tc["h4x"], t) if "h4x" in tc else 0
+    out = {"T_W1H4EXT": (sw * d) if (sw != 0 and sw == sx) else 0,
+           "T_W1H4": (sw * d) if (sw != 0 and sw == s4) else 0,
+           "T_H4EXT": sx * d,
            "T_D1S": sd * d, "T_W1S": sw * d, "T_EMA": se * d,
            "T_D1H4": (sd * d) if (sd != 0 and sd == s4) else 0}
     if sd == d:
@@ -753,10 +842,10 @@ def find_setups(m15, h4, n, pip, opt, ctx=None, side=0, step=15 * NS_MIN):
         tc = ctx.get("trend") if ctx else None
         tv = trend_align(tc, d, ext, T[sweep_j]) if tc is not None else {}
         if tc is not None:   # 위치: 스윕 시작 시각에 확정된 H4 스윙만 사용
-            loc = location_of(tc["rng"], d, ext, T[sweep_j])
+            loc = location_of(tc["rng"], d, ext, T[sweep_j], tc.get("h4x"))
         else:
             loc = dict(rng=None, depth=np.nan, bucket="없음", ob_pos="없음", origin=np.nan, far=np.nan,
-                       h4ob_l=np.nan, h4ob_h=np.nan)
+                       h4ob_l=np.nan, h4ob_h=np.nan, depth_int=np.nan, bucket_int="없음")
         for k_, v_ in tv.items():
             funnel[f"aligned_{k_}"] = funnel.get(f"aligned_{k_}", 0) + int(v_ == 1)
         funnel["setups"] += 1
@@ -825,8 +914,9 @@ def trend_list(opt):
         return []
     out = _list_opt(v, TRENDS + ["ALL"])
     out = list(TRENDS) if "ALL" in out else out
-    if MAIN_TREND not in out:          # 주 판정은 추세 모드에서 늘 같이 계산
-        out = [MAIN_TREND] + out
+    for k in ("T_W1H4", MAIN_TREND):   # 주 판정과 내부구조 비교판은 추세 모드에서 늘 같이 계산
+        if k not in out:
+            out = [k] + out
     return out
 
 
@@ -1000,6 +1090,7 @@ def run_symbol(sym, m5df, opt, pip, spread_pips):
                                 f1h=st["f1h"], f1d=st["f1d"], f3=f3, f4=f4, f5=st["f5"], f5_kind=st["f5_kind"],
                                 rng_origin=lc["origin"], rng_far=lc["far"], depth=lc["depth"],
                                 depth_bucket=lc["bucket"], h4ob_l=lc["h4ob_l"], h4ob_h=lc["h4ob_h"], ob_pos=lc["ob_pos"],
+                                depth_int=lc["depth_int"], depth_bucket_int=lc["bucket_int"],
                                 slb_break_server=(t2s(tbreak) if tbreak < NS_INF else ""),
                                 slb_cancel=(res2 == "cancel"), result_slb=res2, R_slb=r2,
                                 exit_slb_server=(t2s(t[k2]) if k2 >= 0 else ""),
@@ -1145,7 +1236,7 @@ def trend_table(tr, trends):
 
 
 def _scopes(closed):
-    """주판정·위치 표의 범위: T_W1H4 추세 일치 / 반대 / 추세 조건 없음."""
+    """주판정·위치 표의 범위: 주판정(T_W1H4EXT) 추세 일치 / 추세 조건 없음."""
     col = f"trend_{MAIN_TREND}"
     out = [(f"{MAIN_TREND} 일치", closed[closed[col] == 1] if col in closed else closed.iloc[0:0])]
     out.append(("추세없음", closed))
@@ -1171,7 +1262,7 @@ def _pstats(g, col="R"):
 
 
 def location_table(tr):
-    """위치 구간·H4 OB 위치·F_SLB 켬/끔별 x 조합 결과(CSV 용). scope = T_W1H4 일치 / 추세없음."""
+    """위치 구간·H4 OB 위치·F_SLB 켬/끔별 x 조합 결과(CSV 용). scope = 주판정 일치 / 추세없음."""
     if "depth_bucket" not in tr:
         return pd.DataFrame()
     closed = tr[tr["result"] != "open"]
@@ -1218,17 +1309,20 @@ def _hdr(first, w=18):
 
 
 def main_text(tr, opt):
-    """요약 맨 위: [주판정 T_W1H4] -> [위치 구간] -> [F_SLB 비교]."""
+    """요약 맨 위: [주판정 T_W1H4EXT] -> [위치 구간] -> [F_SLB 비교]."""
     L = []
     if tr is None or tr.empty or f"trend_{MAIN_TREND}" not in tr:
-        return ["[주판정 T_W1H4] 거래 없음", ""]
+        return [f"[주판정 {MAIN_TREND}] 거래 없음", ""]
     closed = tr[tr["result"] != "open"]
     tfs = [x for x in MSS_TFS if x in set(closed["mss_tf"])]
     min_n, min_oos = opt.min_trades, max(10, opt.min_trades // 3)
     col = f"trend_{MAIN_TREND}"
-    L.append("[주판정 T_W1H4] 주봉 구조와 H4 구조가 같은 방향일 때 그 방향 스윕만 (매수 = 둘 다 상승)")
-    L.append("  사전 지정 정의: 석준님 설명 '주봉과 4H 방향 일치가 우선, 중심은 4H'를 결과를 보기 전에 그대로 옮긴 것.")
-    L.append("  다른 추세 정의([T1])는 참고용이다. 결과를 보고 더 좋은 정의로 갈아타면 과최적화가 된다.")
+    L.append(f"[주판정 {MAIN_TREND}] 주봉 구조와 H4 외부(스윙) 구조가 같은 방향일 때 그 방향 스윕만 (매수 = 둘 다 상승)")
+    L.append("  사전 지정 정의: 석준님 설명 '주봉과 4H 방향 일치 우선, 4H는 외부 구조로 본다'를 결과를 보기 전에 옮긴 것.")
+    L.append("  H4 외부 구조: 추세 = 마지막 외부 BOS 방향. 보호 저점 = 그 BOS를 만든 다리가 시작된 저점.")
+    L.append("  H4 봉 종가가 보호 저점 아래로 마감할 때만 하락 전환(되돌림 안 내부 저점 깨짐 = 내부 CHoCH 는 추세 유지).")
+    L.append("  T_W1H4 = 같은 조건을 내부 구조(가장 최근 확정 스윙 BOS)로 본 것, 비교용. 다른 추세 정의(아래 추세 정의별 표)는 참고용이다.")
+    L.append("  결과를 보고 더 좋은 정의로 갈아타면 과최적화가 된다.")
     L.append("  MSS 시간봉: " + ", ".join(tfs) + ". 석준님 실제 진입은 1분봉이지만 데이터가 M5뿐이라 1분봉 진입은 시험하지 못했다.")
     L.append("  값 = 조합(N-진입-손절-목표)별 값의 평균, t = 평균 기대값 / 평균 표준오차, 셋업 = 겹치지 않게 센 셋업 수.")
     for tf in tfs:
@@ -1237,6 +1331,8 @@ def main_text(tr, opt):
         L.append(_hdr("구분"))
         rows = [(f"{MAIN_TREND} 일치", g[g[col] == 1]), (f"{MAIN_TREND} 반대", g[g[col] == -1]),
                 ("방향 엇갈림/없음", g[g[col] == 0]), ("추세없음(전체)", g)]
+        if "trend_T_W1H4" in g:
+            rows.append(("(비교)T_W1H4 내부 일치", g[g["trend_T_W1H4"] == 1]))
         for lab, gg in rows:
             L.append(_row(lab, _pstats(gg)))
         st = _pstats(rows[0][1])
@@ -1252,10 +1348,11 @@ def main_text(tr, opt):
         L.append(f"  판정(MSS {tf}): {verdict}")
     L.append("")
     # ---- 위치
-    L.append("[위치 구간] 스윕 극값이 H4 딜링 레인지의 어디였나 (스윕 시작 시각에 확정된 H4 스윙만 사용)")
-    L.append("  매수: 레인지 = 확정 H4 스윙 저점 SL(그 뒤 확정 고점이 있는 가장 최근 저점) ~ 그 뒤 최고 확정 스윙 고점 SH.")
+    L.append("[위치 구간] 스윕 극값이 H4 외부 딜링 레인지의 어디였나 (스윕 시작 시각까지 마감한 H4 봉만 사용)")
+    L.append("  매수: 레인지 = H4 외부 구조의 보호 저점 SL ~ 그 뒤 최고가 SH (외부 추세가 상승일 때만 있음).")
     L.append("  깊이 = (SH - 극값)/(SH - SL). 0% = SH, 100% = SL(딱 닿음은 75~100%), 100%+ = SL 아래 꼬리 스윕,")
-    L.append("  0%미만 = SH 위(새 고점 영역). 없음 = 레인지 못 만듦. 매도는 대칭.")
+    L.append("  0%미만 = SH 위(새 고점 영역). 없음 = H4 외부 추세가 셋업과 반대이거나 판정 없음. 매도는 대칭.")
+    L.append("  H4 OB = 보호 저점 봉부터 거꾸로 처음 만나는 음봉(SH로 가는 상승 직전 마지막 하락 H4봉). 내부 스윙 레인지 깊이는 CSV(depth_int).")
     for scope, g0 in _scopes(closed):
         for tf in tfs:
             g = g0[g0["mss_tf"] == tf]
@@ -1281,8 +1378,8 @@ def main_text(tr, opt):
     L.append("  미리 정한 비교는 '깊음 vs 얕음' 한 줄뿐이다. IS와 OOS가 같은 방향이고 t가 2 이상일 때만 의미 있게 본다.")
     L.append("")
     # ---- F_SLB
-    L.append("[F_SLB 비교] H4 봉이 딜링 레인지 SL(매수 기준) 아래로 몸통 마감하면: 체결 전이면 셋업 취소, 보유 중이면 그 봉 종가에 청산")
-    L.append("  판정 구간 = 스윕 시작 이후 마감한 H4 봉. 레인지가 없는 셋업(없음)은 규칙이 적용 안 돼 끔과 같다.")
+    L.append("[F_SLB 비교] H4 봉이 보호 저점 SL(매수 기준) 아래로 몸통 마감하면: 체결 전이면 셋업 취소, 보유 중이면 그 봉 종가에 청산")
+    L.append("  판정 구간 = 스윕 시작 이후 마감한 H4 봉. 레인지가 없는 셋업(외부 추세 반대·없음)은 규칙이 적용 안 돼 끔과 같다.")
     for scope, g0 in _scopes(closed):
         for tf in tfs:
             g = g0[g0["mss_tf"] == tf]
@@ -1591,8 +1688,8 @@ def build_parser():
     p.add_argument("--f5", action="store_true", help="F5: sweep must take fresh PDH/PDL or H4 equal highs/lows")
     p.add_argument("--f5-h4", choices=["cluster", "swing"], default="cluster", help="F5 H4 level type (default cluster)")
     p.add_argument("--all-filters", action="store_true", help="turn on F1H,F1D,F2,F3,F4,F5")
-    p.add_argument("--trend", default="", help="trend base conditions, comma list of T_W1H4,T_D1S,T_W1S,T_D1H4,T_EMA,T_PDA or ALL "
-                                               "(T_W1H4 = main verdict, always added)")
+    p.add_argument("--trend", default="", help="trend base conditions, comma list of T_W1H4EXT,T_W1H4,T_H4EXT,T_D1S,T_W1S,"
+                                               "T_D1H4,T_EMA,T_PDA or ALL (T_W1H4EXT main verdict and T_W1H4 always added)")
     p.add_argument("--mss-tf", default="M15", help="MSS/OB timeframe list: M15, M5 or M15,M5 (no M1 data)")
     p.add_argument("--trend-swing", type=int, default=2, help="swing bars each side for D1/W1/H4 structure (default 2)")
     p.add_argument("--trend-ema", type=int, default=50, help="D1 EMA length for T_EMA (default 50)")
@@ -1671,7 +1768,7 @@ def run_all(opt, files=None, quiet=False):
                    f"스프레드 {opt.spread}핍(+맵 {opt.spread_map or '없음'}), 손절버퍼 {opt.sl_buffer}핍, 같은높이 {opt.eq_tol}핍, 스윙 N={opt.swing}, "
                    f"진입 {opt.entries}{'+K' if (opt.f2 or trends) else ''}, 손절 {opt.stops}, 목표 {opt.targets}",
             "추세 설정": (f"--trend {','.join(trends)}, 스윙 앞뒤 {opt.trend_swing}봉, EMA{opt.trend_ema}, 기울기 {opt.trend_slope}일, "
-                       "판정 시각 = 스윕 봉 시작(그때까지 마감한 봉·확정 스윙만). 주판정 = T_W1H4(사전 지정)") if trends else "꺼짐",
+                       "판정 시각 = 스윕 봉 시작(그때까지 마감한 봉·확정 스윙만). 주판정 = T_W1H4EXT(사전 지정, H4 외부 구조)") if trends else "꺼짐",
             "MSS 시간봉": f"{','.join(tfs)} (석준님 실제 진입은 1분봉. 데이터가 M5뿐이라 1분봉 진입은 시험 못 함)",
             "필터 설정": f"켠 필터 {enabled or '없음'}, D1 EMA {opt.d1_ema}, F2 {opt.f2_tf}, F4 뉴욕 {opt.f4_windows}시, F5 H4={opt.f5_h4}",
             "만든 시각": pd.Timestamp.now().strftime("%Y-%m-%d %H:%M") + " (실행 PC 시각)"}
@@ -1680,7 +1777,7 @@ def run_all(opt, files=None, quiet=False):
                 "fill_server", "fill_kst", "entry", "sl", "tp", "risk_pips", "rr_planned",
                 "exit_server", "exit_kst", "exit_price", "result", "R", "s3_fallback", "t4_fallback",
                 "h4_trend", "d1_bias", "f1h", "f1d", "f3", "f4", "f5", "f5_kind", "setup_id", "mss_tf",
-                "rng_origin", "rng_far", "depth", "depth_bucket", "h4ob_l", "h4ob_h", "ob_pos",
+                "rng_origin", "rng_far", "depth", "depth_bucket", "h4ob_l", "h4ob_h", "ob_pos", "depth_int", "depth_bucket_int",
                 "slb_break_server", "slb_cancel", "result_slb", "R_slb", "exit_slb_server"]
     out_cols += [f"trend_{k}" for k in TRENDS if f"trend_{k}" in tr.columns]
     tr[out_cols].to_csv(os.path.join(opt.out, f"trades_{tag}.csv"), index=False, encoding="utf-8-sig", float_format="%.10g")
