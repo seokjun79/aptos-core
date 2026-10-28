@@ -90,9 +90,14 @@ FILTERS = ["F1H", "F1D", "F2", "F3", "F4", "F5"]
 FILTER_DESC = {"F1H": "큰 흐름 H4 구조", "F1D": "큰 흐름 D1>EMA20", "F2": "확인 캔들 진입",
                "F3": "OB 몸통 이탈 무효", "F4": "런던/뉴욕오전 체결", "F5": "HTF 유동성 스윕"}
 SESSIONS = ["런던", "뉴욕", "아시아", "뉴욕마감후"]
-TRENDS = ["T_D1S", "T_W1S", "T_D1H4", "T_EMA", "T_PDA"]
-TREND_DESC = {"T_D1S": "D1 구조(BOS)", "T_W1S": "W1 구조(BOS)", "T_D1H4": "D1+H4 구조 같은 방향",
+TRENDS = ["T_W1H4", "T_D1S", "T_W1S", "T_D1H4", "T_EMA", "T_PDA"]
+MAIN_TREND = "T_W1H4"        # 주 판정(사전 지정): 석준님 "주봉과 4H 방향 일치가 우선"
+TREND_DESC = {"T_W1H4": "W1+H4 구조 같은 방향(주판정)", "T_D1S": "D1 구조(BOS)", "T_W1S": "W1 구조(BOS)",
+              "T_D1H4": "D1+H4 구조 같은 방향",
               "T_EMA": "D1 EMA50 위+기울기", "T_PDA": "D1 구조+디스카운트/프리미엄", "NONE": "추세 조건 없음"}
+MSS_TFS = ["M15", "M5"]
+DEPTH_BUCKETS = ["0%미만", "0~25%", "25~50%", "50~75%", "75~100%", "100%+", "없음"]
+OB_POS = ["OB안", "OB전(안닿음)", "OB관통", "없음"]
 NS_D = 24 * NS_H
 
 
@@ -434,13 +439,127 @@ def trend_context(t, o, h, l, c, n=2, ema_span=50, slope_days=5):
     return dict(d1s=structure_states(d1["h"], d1["l"], d1["c"], d1["t"] + NS_D, n),
                 w1s=structure_states(w1["h"], w1["l"], w1["c"], w1["t"] + 7 * NS_D, n),
                 h4s=structure_states(h4["h"], h4["l"], h4["c"], h4["t"] + 4 * NS_H, n),
-                ema=ema_states(d1, ema_span, slope_days))
+                ema=ema_states(d1, ema_span, slope_days),
+                rng=h4_range_ctx(h4, n))
+
+
+# ---------------------------------------------------------------- 위치(H4 딜링 레인지) / F_SLB
+def h4_range_ctx(h4, n):
+    """H4 스윙 목록(앞 n봉보다 높고 뒤 n봉 이상, structure_states 와 같은 규칙). 확정 시각 = 봉 s+n 마감."""
+    H, L = np.asarray(h4["h"], float), np.asarray(h4["l"], float)
+    k = len(H)
+    hi, lo = [], []
+    for s in range(n, k - n):
+        if H[s] > H[s - n:s].max() and H[s] >= H[s + 1:s + n + 1].max():
+            hi.append(s)
+        if L[s] < L[s - n:s].min() and L[s] <= L[s + 1:s + n + 1].min():
+            lo.append(s)
+    hi, lo = np.array(hi, int), np.array(lo, int)
+    T4 = np.asarray(h4["t"])
+    conf = lambda idx: T4[idx + n] + 4 * NS_H if len(idx) else np.array([], np.int64)   # noqa: E731
+    return dict(t=T4, o=np.asarray(h4["o"], float), h=H, l=L, c=np.asarray(h4["c"], float), n=n,
+                hi_idx=hi, hi_conf=conf(hi), lo_idx=lo, lo_conf=conf(lo))
+
+
+def dealing_range(rc, d, t, max_back=50):
+    """시각 t 에 확정된 H4 스윙으로 만든 딜링 레인지. 매수(d=1):
+    기준점 = 확정 스윙 저점 중 그 뒤에 확정 스윙 고점이 있는 가장 최근 것(SL), 먼 끝 = 그 뒤 확정 스윙 고점 중 최고(SH).
+    (가장 최근 저점 뒤에 고점이 아직 없으면 = 되돌림 중 작은 저점, 그 앞 저점으로 간다.)
+    H4 OB = SL 봉부터 거꾸로 처음 만나는 음봉(SH로 가는 상승 직전 마지막 하락 H4봉). 매도는 대칭.
+    돌려줌 dict(origin, far, origin_i, far_i, ob_l, ob_h) 또는 None."""
+    H, L, O, C = rc["h"], rc["l"], rc["o"], rc["c"]
+    mh = int(np.searchsorted(rc["hi_conf"], t, side="right"))
+    ml = int(np.searchsorted(rc["lo_conf"], t, side="right"))
+    his, los = rc["hi_idx"][:mh], rc["lo_idx"][:ml]
+    origins, others = (los, his) if d == 1 else (his, los)
+    for s in origins[::-1][:max_back]:
+        after = others[np.searchsorted(others, s, side="right"):]
+        if len(after) == 0:
+            continue
+        far_i = int(after[np.argmax(H[after])]) if d == 1 else int(after[np.argmin(L[after])])
+        ob = -1
+        for k in range(s, max(-1, s - 10), -1):
+            if (d == 1 and C[k] < O[k]) or (d == -1 and C[k] > O[k]):
+                ob = k
+                break
+        return dict(origin=float(L[s] if d == 1 else H[s]), far=float(H[far_i] if d == 1 else L[far_i]),
+                    origin_i=int(s), far_i=far_i,
+                    ob_l=float(L[ob]) if ob >= 0 else np.nan, ob_h=float(H[ob]) if ob >= 0 else np.nan)
+    return None
+
+
+def depth_of(rg, ext):
+    """되돌림 깊이 = (먼 끝 - 극값)/(먼 끝 - 기준점). 매수: (SH-극값)/(SH-SL). 0 = SH, 1 = SL. 매도도 같은 식."""
+    if rg is None or rg["far"] == rg["origin"]:
+        return np.nan
+    return (rg["far"] - ext) / (rg["far"] - rg["origin"])
+
+
+def depth_bucket(depth):
+    """구간: 0%미만(먼 끝 너머), 0~25, 25~50, 50~75, 75~100(100% = 기준점 딱 닿음 포함), 100%+(기준점 너머 꼬리 스윕)."""
+    if depth is None or not np.isfinite(depth):
+        return "없음"
+    if depth < 0:
+        return "0%미만"
+    if depth > 1:
+        return "100%+"
+    if depth < 0.25:
+        return "0~25%"
+    if depth < 0.5:
+        return "25~50%"
+    if depth < 0.75:
+        return "50~75%"
+    return "75~100%"
+
+
+def ob_position(rg, d, ext):
+    """스윕 극값이 H4 OB 범위 안인지. 매수: 안 = ob_l<=극값<=ob_h, OB전 = 극값>ob_h, 관통 = 극값<ob_l."""
+    if rg is None or not np.isfinite(rg["ob_l"]):
+        return "없음"
+    if rg["ob_l"] <= ext <= rg["ob_h"]:
+        return "OB안"
+    before = ext > rg["ob_h"] if d == 1 else ext < rg["ob_l"]
+    return "OB전(안닿음)" if before else "OB관통"
+
+
+def location_of(rc, d, ext, t):
+    rg = dealing_range(rc, d, t)
+    dep = depth_of(rg, ext)
+    return dict(rng=rg, depth=dep, bucket=depth_bucket(dep), ob_pos=ob_position(rg, d, ext),
+                origin=(rg["origin"] if rg else np.nan), far=(rg["far"] if rg else np.nan),
+                h4ob_l=(rg["ob_l"] if rg else np.nan), h4ob_h=(rg["ob_h"] if rg else np.nan))
+
+
+def slb_break(d, origin, t_from, CT4, C4):
+    """F_SLB: 시각 t_from 이후 마감한 H4 봉 중 종가가 기준점 너머(매수: SL 아래)인 첫 봉. 돌려줌 (마감 시각, 종가).
+    꼬리만 찌르면 해당 없음(몸통 마감만). 없거나 기준점이 없으면 (NS_INF, nan)."""
+    if origin is None or not np.isfinite(origin):
+        return NS_INF, np.nan
+    a = int(np.searchsorted(CT4, t_from, side="right"))
+    seg = C4[a:]
+    k = first_true(seg < origin) if d == 1 else first_true(seg > origin)
+    return (int(CT4[a + k]), float(C4[a + k])) if k >= 0 else (NS_INF, np.nan)
+
+
+def slb_apply(d, td, res, k, px, tbreak, pbreak, t, spread):
+    """F_SLB 켬 결과. td = 체결(판단) 시각, (res, k, px) = 끔일 때 결과.
+    tbreak <= td -> 체결 전 무효 = 셋업 취소('cancel'). 보유 중 깨지면 그 H4 봉 마지막 M5(k_x)까지 손절·목표가 안 났을 때
+    그 봉 종가로 청산('slb'; 매수는 bid 종가, 매도는 ask = 종가+스프레드)."""
+    if tbreak <= td:
+        return "cancel", -1, np.nan
+    if tbreak >= NS_INF:
+        return res, k, px
+    kx = int(np.searchsorted(t, tbreak)) - 1
+    if res != "open" and k <= kx:
+        return res, k, px
+    return "slb", kx, (pbreak if d == 1 else pbreak + spread)
 
 
 def trend_align(tc, d, ext, t):
     """시각 t(스윕 시작)에 셋업 방향 d가 각 추세 정의와 맞는지. +1 같은 방향, -1 반대, 0 판정 없음."""
     sd, sw, s4, se = (state_at(tc[k], t) for k in ("d1s", "w1s", "h4s", "ema"))
-    out = {"T_D1S": sd * d, "T_W1S": sw * d, "T_EMA": se * d,
+    out = {"T_W1H4": (sw * d) if (sw != 0 and sw == s4) else 0,
+           "T_D1S": sd * d, "T_W1S": sw * d, "T_EMA": se * d,
            "T_D1H4": (sd * d) if (sd != 0 and sd == s4) else 0}
     if sd == d:
         out["T_PDA"] = 1 if pda_ok(tc["d1s"], d, ext, t) else 0
@@ -520,12 +639,13 @@ def confirm_entry(d, bo, bh, bl, bc, b0, b1, edge, target, spread=0.0):
 
 
 # ---------------------------------------------------------------- 셋업 찾기
-def find_setups(m15, h4, n, pip, opt, ctx=None, side=0):
-    """M15·H4 배열에서 셋업(주문 직전까지)을 찾는다. 돌려주는 값: 셋업 목록, 깔때기 집계.
-    side=0: C2 안에서 먼저 난 스윕 방향(기본). side=1: CRL 스윕(매수)만 찾음, side=-1: CRH 스윕(매도)만."""
+def find_setups(m15, h4, n, pip, opt, ctx=None, side=0, step=15 * NS_MIN):
+    """MSS 시간봉(기본 M15, --mss-tf M5 면 M5)·H4 배열에서 셋업(주문 직전까지)을 찾는다. 돌려주는 값: 셋업 목록, 깔때기 집계.
+    side=0: C2 안에서 먼저 난 스윕 방향(기본). side=1: CRL 스윕(매수)만 찾음, side=-1: CRH 스윕(매도)만.
+    step = MSS 시간봉 길이(ns). 변수 이름은 m15 지만 M5 봉도 같은 방식으로 받는다."""
     T, O, H, L, C = m15["t"], m15["o"], m15["h"], m15["l"], m15["c"]
     T4, H4h, H4l, H4c = h4["t"], h4["h"], h4["l"], h4["c"]
-    step15 = 15 * NS_MIN
+    step15 = step
     funnel = dict(c2=0, asia_skip=0, sweep=0, c2_close_ok=0, mss_line=0, mss_confirm=0,
                   no_ob=0, target_before_order=0, setups=0)
     if ctx and ctx.get("trend") is not None:
@@ -632,6 +752,11 @@ def find_setups(m15, h4, n, pip, opt, ctx=None, side=0):
             f5, f5k = False, ""
         tc = ctx.get("trend") if ctx else None
         tv = trend_align(tc, d, ext, T[sweep_j]) if tc is not None else {}
+        if tc is not None:   # 위치: 스윕 시작 시각에 확정된 H4 스윙만 사용
+            loc = location_of(tc["rng"], d, ext, T[sweep_j])
+        else:
+            loc = dict(rng=None, depth=np.nan, bucket="없음", ob_pos="없음", origin=np.nan, far=np.nan,
+                       h4ob_l=np.nan, h4ob_h=np.nan)
         for k_, v_ in tv.items():
             funnel[f"aligned_{k_}"] = funnel.get(f"aligned_{k_}", 0) + int(v_ == 1)
         funnel["setups"] += 1
@@ -639,7 +764,7 @@ def find_setups(m15, h4, n, pip, opt, ctx=None, side=0):
                            t_conf=T[conf_j], conf_j=conf_j, ob_i=ob, ob_h=H[ob], ob_l=L[ob], ob_o=O[ob],
                            brk=brk, t_order=t_order, px_order=px_order, t4=t4, sweep_j=sweep_j,
                            h4_trend=h4tr, d1_bias=d1b, f1h=(h4tr == d), f1d=(d1b == d), f5=f5, f5_kind=f5k,
-                           c2_sess=c2_session(c2s), trend=tv, t_sweep=T[sweep_j]))
+                           c2_sess=c2_session(c2s), trend=tv, t_sweep=T[sweep_j], loc=loc))
     return setups, funnel
 
 
@@ -699,12 +824,19 @@ def trend_list(opt):
     if not v:
         return []
     out = _list_opt(v, TRENDS + ["ALL"])
-    return list(TRENDS) if "ALL" in out else out
+    out = list(TRENDS) if "ALL" in out else out
+    if MAIN_TREND not in out:          # 주 판정은 추세 모드에서 늘 같이 계산
+        out = [MAIN_TREND] + out
+    return out
 
 
 def enabled_filters(opt):
     on = {"F1H": opt.f1h4, "F1D": opt.f1d1, "F2": opt.f2, "F3": opt.f3, "F4": opt.f4, "F5": opt.f5}
     return [f for f in FILTERS if on[f]]
+
+
+def mss_tf_list(opt):
+    return _list_opt(getattr(opt, "mss_tf", "M15"), MSS_TFS)
 
 
 def run_symbol(sym, m5df, opt, pip, spread_pips):
@@ -717,6 +849,12 @@ def run_symbol(sym, m5df, opt, pip, spread_pips):
     trends = trend_list(opt)
     if trends:
         ctx["trend"] = trend_context(t, o, h, l, c, opt.trend_swing, opt.trend_ema, opt.trend_slope)
+        rc = ctx["trend"]["rng"]
+        CT4 = rc["t"] + 4 * NS_H
+        okc = CT4 <= t[-1] + 5 * NS_MIN            # 끝의 덜 끝난 H4봉은 F_SLB 판정에 안 씀
+        CT4, C4 = CT4[okc], rc["c"][okc]
+    else:
+        CT4, C4 = np.array([], np.int64), np.array([], float)
     spread = spread_pips * pip
     buf = opt.sl_buffer * pip
     tol = opt.eq_tol * pip
@@ -727,134 +865,150 @@ def run_symbol(sym, m5df, opt, pip, spread_pips):
     use_k = bool(opt.f2) or bool(trends)
     all_e = entries + (["K"] if use_k else [])
     windows = parse_windows(opt.f4_windows)
-    if opt.f2_tf.upper() == "M5":
-        KB, kstep = M, 5 * NS_MIN
-    else:
-        KB, kstep = m15, step15
-    # M15 1봉 프랙탈 저점/고점 (확정 시각 = 다음 봉 마감)
-    L15, H15, T15, C15 = m15["l"], m15["h"], m15["t"], m15["c"]
-    fl = np.zeros(len(L15), bool)
-    fh = np.zeros(len(H15), bool)
-    fl[1:-1] = (L15[1:-1] < L15[:-2]) & (L15[1:-1] <= L15[2:])
-    fh[1:-1] = (H15[1:-1] > H15[:-2]) & (H15[1:-1] >= H15[2:])
     trades, funnels = [], []
-    for n in opt.swing:
-        if trends:
-            # 추세 모드: 매수 쪽·매도 쪽 스윕을 각각 따로 찾는다(먼저 난 쪽만 보면 추세 방향 셋업을 놓침)
-            sb, fb_ = find_setups(m15, h4, n, pip, opt, ctx, side=1)
-            ss_, fs_ = find_setups(m15, h4, n, pip, opt, ctx, side=-1)
-            setups = sorted(sb + ss_, key=lambda x: x["t_order"])
-            fun = {k: (fb_[k] if k in ("c2", "asia_skip") else fb_[k] + fs_[k]) for k in fb_}
+    for tf in mss_tf_list(opt):
+        # MSS 시간봉: M15(기본) 또는 M5. 유효시간·만료는 시간으로 같게(expiry_bars x 15분).
+        B, stp = (m15, step15) if tf == "M15" else (M, 5 * NS_MIN)
+        pre = "" if tf == "M15" else f"{tf}-"
+        if tf == "M5" or opt.f2_tf.upper() == "M5":
+            KB, kstep = M, 5 * NS_MIN          # MSS를 M5로 보면 확인 캔들도 M5
         else:
-            setups, fun = find_setups(m15, h4, n, pip, opt, ctx)
-        fun.update(symbol=sym, swing=n)
-        cnt = {k: {e: 0 for e in all_e} for k in ("fill", "skip_px", "expired", "cancel_tp", "f3_invalid")}
-        for st in setups:
-            d = st["d"]
-            ent = {"A": st["ob_h"] if d == 1 else st["ob_l"],
-                   "B": st["ob_o"],
-                   "C": st["ext"] + 0.5 * (st["brk"] - st["ext"])}
-            struct_tp = st["crh"] if d == 1 else st["crl"]
-            edge = st["ob_h"] if d == 1 else st["ob_l"]     # 가격이 먼저 닿는 OB 끝
-            far = st["ob_l"] if d == 1 else st["ob_h"]      # 이 너머로 마감하면 무효(F3)
-            t_end = st["t_order"] + opt.expiry_bars * step15
-            i0 = int(np.searchsorted(t, st["t_order"]))
-            i1 = int(np.searchsorted(t, t_end))
-            if i0 >= len(t):
-                continue
-            j1 = int(np.searchsorted(T15, t_end + step15))
-            inv_t = first_invalid_close(d, C15, T15, st["conf_j"] + 1, j1, far, step15)
-            fills = []   # (진입 종류, 진입 M5 인덱스, 진입가, 판단 시각, 체결 봉 손절 검사)
-            for e in entries:
-                E = ent[e]
-                # 지정가는 현재가보다 유리한 쪽에만 걸 수 있다
-                if (d == 1 and E >= st["px_order"]) or (d == -1 and E <= st["px_order"]):
-                    cnt["skip_px"][e] += 1
+            KB, kstep = m15, step15
+        # MSS 시간봉 1봉 프랙탈 저점/고점 (확정 시각 = 다음 봉 마감), S3 재료
+        L15, H15, T15, C15 = B["l"], B["h"], B["t"], B["c"]
+        fl = np.zeros(len(L15), bool)
+        fh = np.zeros(len(H15), bool)
+        fl[1:-1] = (L15[1:-1] < L15[:-2]) & (L15[1:-1] <= L15[2:])
+        fh[1:-1] = (H15[1:-1] > H15[:-2]) & (H15[1:-1] >= H15[2:])
+        for n in opt.swing:
+            if trends:
+                # 추세 모드: 매수 쪽·매도 쪽 스윕을 각각 따로 찾는다(먼저 난 쪽만 보면 추세 방향 셋업을 놓침)
+                sb, fb_ = find_setups(B, h4, n, pip, opt, ctx, side=1, step=stp)
+                ss_, fs_ = find_setups(B, h4, n, pip, opt, ctx, side=-1, step=stp)
+                setups = sorted(sb + ss_, key=lambda x: x["t_order"])
+                fun = {k: (fb_[k] if k in ("c2", "asia_skip") else fb_[k] + fs_[k]) for k in fb_}
+            else:
+                setups, fun = find_setups(B, h4, n, pip, opt, ctx, step=stp)
+            fun.update(symbol=sym, swing=n, mss_tf=tf)
+            cnt = {k: {e: 0 for e in all_e} for k in ("fill", "skip_px", "expired", "cancel_tp", "f3_invalid", "slb_cancel")}
+            for st in setups:
+                d = st["d"]
+                lc = st["loc"]
+                ent = {"A": st["ob_h"] if d == 1 else st["ob_l"],
+                       "B": st["ob_o"],
+                       "C": st["ext"] + 0.5 * (st["brk"] - st["ext"])}
+                struct_tp = st["crh"] if d == 1 else st["crl"]
+                edge = st["ob_h"] if d == 1 else st["ob_l"]     # 가격이 먼저 닿는 OB 끝
+                far = st["ob_l"] if d == 1 else st["ob_h"]      # 이 너머로 마감하면 무효(F3)
+                t_end = st["t_order"] + opt.expiry_bars * step15
+                i0 = int(np.searchsorted(t, st["t_order"]))
+                i1 = int(np.searchsorted(t, t_end))
+                if i0 >= len(t):
                     continue
-                if d == 1:
-                    fill_m = l[i0:i1] + spread <= E
-                    canc_m = h[i0:i1] >= struct_tp
-                else:
-                    fill_m = h[i0:i1] >= E
-                    canc_m = l[i0:i1] + spread <= struct_tp
-                fi, ci = first_true(fill_m), first_true(canc_m)
-                if fi < 0 or (0 <= ci < fi):
-                    if 0 <= ci and (fi < 0 or ci < fi):
-                        cnt["cancel_tp"][e] += 1
-                    else:
-                        cnt["expired"][e] += 1
-                    continue
-                f = i0 + fi
-                if opt.block_asia_fill and session_of(t[f]) == "아시아":
-                    cnt["expired"][e] += 1
-                    continue
-                fill = min(E, o[f] + spread) if d == 1 else max(E, o[f])   # 갭이면 더 좋은 값
-                fills.append((e, f, fill, int(t[f]), True))
-            if use_k:
-                b0 = int(np.searchsorted(KB["t"], st["t_order"]))
-                b1 = int(np.searchsorted(KB["t"], t_end))
-                res_k, b = confirm_entry(d, KB["o"], KB["h"], KB["l"], KB["c"], b0, b1, edge, struct_tp, spread)
-                if res_k == "entry":
-                    tc = int(KB["t"][b] + kstep)                      # 확인 캔들 마감 시각
-                    f = int(np.searchsorted(t, tc)) - 1               # 그 봉의 마지막 M5
-                    if opt.block_asia_fill and session_of(tc) == "아시아":
-                        cnt["expired"]["K"] += 1
-                    elif f + 1 < len(t):
-                        fills.append(("K", f, KB["c"][b] + (spread if d == 1 else 0.0), tc, False))
-                else:
-                    cnt["expired" if res_k == "expired" else "cancel_tp"]["K"] += 1
-            for e, f, fill, td, chk in fills:
-                cnt["fill"][e] += 1
-                f3 = not (inv_t <= td)
-                if not f3:
-                    cnt["f3_invalid"][e] += 1
-                f4 = f4_ok(td, windows)
-                # S3 재료: 극값 다음 봉 ~ 판단 시각 전에 확정된 M15 프랙탈
-                j_end = int(np.searchsorted(T15, td - step15, side="right"))  # 판단 시각까지 마감된 봉 수
-                js = np.arange(st["ext_i"] + 1, max(st["ext_i"] + 1, j_end - 1))
-                lv = (L15[js][fl[js]] if d == 1 else H15[js][fh[js]]) if len(js) else np.array([])
-                stops = {"S1": (st["ob_l"] - buf) if d == 1 else (st["ob_h"] + buf),
-                         "S2": st["ext"] - d * buf}
-                s3 = equal_level_stop(d, lv, fill, tol, buf)
-                stops["S3"] = s3 if s3 is not None else stops["S2"]
-                for s in stops_on:
-                    SL = stops[s]
-                    risk = d * (fill - SL)
-                    if risk <= 0 or risk < opt.min_risk_pips * pip:
+                j1 = int(np.searchsorted(T15, t_end + stp))
+                inv_t = first_invalid_close(d, C15, T15, st["conf_j"] + 1, j1, far, stp)
+                # F_SLB: 스윕 시작 이후 처음으로 H4 몸통이 딜링 레인지 기준점(SL) 너머 마감한 시각
+                tbreak, pbreak = slb_break(d, lc["origin"], st["t_sweep"], CT4, C4) if trends else (NS_INF, np.nan)
+                fills = []   # (진입 종류, 진입 M5 인덱스, 진입가, 판단 시각, 체결 봉 손절 검사)
+                for e in entries:
+                    E = ent[e]
+                    # 지정가는 현재가보다 유리한 쪽에만 걸 수 있다
+                    if (d == 1 and E >= st["px_order"]) or (d == -1 and E <= st["px_order"]):
+                        cnt["skip_px"][e] += 1
                         continue
-                    for tg in targets_on:
-                        if tg == "T1":
-                            TP, fb = struct_tp, False
-                        elif tg == "T2":
-                            TP, fb = fill + d * 2 * risk, False
-                        elif tg == "T3":
-                            TP, fb = fill + d * 3 * risk, False
+                    if d == 1:
+                        fill_m = l[i0:i1] + spread <= E
+                        canc_m = h[i0:i1] >= struct_tp
+                    else:
+                        fill_m = h[i0:i1] >= E
+                        canc_m = l[i0:i1] + spread <= struct_tp
+                    fi, ci = first_true(fill_m), first_true(canc_m)
+                    if fi < 0 or (0 <= ci < fi):
+                        if 0 <= ci and (fi < 0 or ci < fi):
+                            cnt["cancel_tp"][e] += 1
                         else:
-                            TP, fb = (st["t4"], False) if st["t4"] is not None else (struct_tp, True)
-                        if d * (TP - fill) <= 0:
+                            cnt["expired"][e] += 1
+                        continue
+                    f = i0 + fi
+                    if opt.block_asia_fill and session_of(t[f]) == "아시아":
+                        cnt["expired"][e] += 1
+                        continue
+                    fill = min(E, o[f] + spread) if d == 1 else max(E, o[f])   # 갭이면 더 좋은 값
+                    fills.append((e, f, fill, int(t[f]), True))
+                if use_k:
+                    b0 = int(np.searchsorted(KB["t"], st["t_order"]))
+                    b1 = int(np.searchsorted(KB["t"], t_end))
+                    res_k, b = confirm_entry(d, KB["o"], KB["h"], KB["l"], KB["c"], b0, b1, edge, struct_tp, spread)
+                    if res_k == "entry":
+                        tc = int(KB["t"][b] + kstep)                      # 확인 캔들 마감 시각
+                        f = int(np.searchsorted(t, tc)) - 1               # 그 봉의 마지막 M5
+                        if opt.block_asia_fill and session_of(tc) == "아시아":
+                            cnt["expired"]["K"] += 1
+                        elif f + 1 < len(t):
+                            fills.append(("K", f, KB["c"][b] + (spread if d == 1 else 0.0), tc, False))
+                    else:
+                        cnt["expired" if res_k == "expired" else "cancel_tp"]["K"] += 1
+                for e, f, fill, td, chk in fills:
+                    cnt["fill"][e] += 1
+                    f3 = not (inv_t <= td)
+                    if not f3:
+                        cnt["f3_invalid"][e] += 1
+                    if tbreak <= td:
+                        cnt["slb_cancel"][e] += 1
+                    f4 = f4_ok(td, windows)
+                    # S3 재료: 극값 다음 봉 ~ 판단 시각 전에 확정된 프랙탈 (MSS 시간봉)
+                    j_end = int(np.searchsorted(T15, td - stp, side="right"))  # 판단 시각까지 마감된 봉 수
+                    js = np.arange(st["ext_i"] + 1, max(st["ext_i"] + 1, j_end - 1))
+                    lv = (L15[js][fl[js]] if d == 1 else H15[js][fh[js]]) if len(js) else np.array([])
+                    stops = {"S1": (st["ob_l"] - buf) if d == 1 else (st["ob_h"] + buf),
+                             "S2": st["ext"] - d * buf}
+                    s3 = equal_level_stop(d, lv, fill, tol, buf)
+                    stops["S3"] = s3 if s3 is not None else stops["S2"]
+                    for s in stops_on:
+                        SL = stops[s]
+                        risk = d * (fill - SL)
+                        if risk <= 0 or risk < opt.min_risk_pips * pip:
                             continue
-                        res, k, px = simulate_exit(d, f, fill, SL, TP, spread, M, opt.max_hold_bars, chk)
-                        r = np.nan if res == "open" else d * (px - fill) / risk
-                        trades.append(dict(
-                            symbol=sym, swing=n, entry_v=e, stop_v=s, target_v=tg,
-                            combo=f"N{n}-{e}-{s}-{tg}", dir="BUY" if d == 1 else "SELL",
-                            c1_server=t2s(st["c1"]), c2_server=t2s(st["c2"]), c2_session=st["c2_sess"],
-                            crh=st["crh"], crl=st["crl"], sweep_ext=st["ext"], mss=st["mss"],
-                            ob_h=st["ob_h"], ob_l=st["ob_l"],
-                            mss_confirm_server=t2s(st["t_conf"]), order_server=t2s(st["t_order"]),
-                            fill_server=t2s(td if not chk else t[f]), entry=fill, sl=SL, tp=TP,
-                            risk_pips=risk / pip, rr_planned=d * (TP - fill) / risk,
-                            exit_server=t2s(t[k]), exit_price=px, result=res, R=r,
-                            s3_fallback=(s == "S3" and s3 is None), t4_fallback=(tg == "T4" and fb),
-                            session=session_of(td), t_fill_ns=td,
-                            h4_trend=st["h4_trend"], d1_bias=st["d1_bias"],
-                            f1h=st["f1h"], f1d=st["f1d"], f3=f3, f4=f4, f5=st["f5"], f5_kind=st["f5_kind"],
-                            setup_id=f"{sym}|{n}|{t2s(st['c2'])}|{d}",
-                            **{f"trend_{k_}": v_ for k_, v_ in st["trend"].items()}))
-        for k, v in cnt.items():
-            for e in all_e:
-                fun[f"{k}_{e}"] = v[e]
-        funnels.append(fun)
+                        for tg in targets_on:
+                            if tg == "T1":
+                                TP, fb = struct_tp, False
+                            elif tg == "T2":
+                                TP, fb = fill + d * 2 * risk, False
+                            elif tg == "T3":
+                                TP, fb = fill + d * 3 * risk, False
+                            else:
+                                TP, fb = (st["t4"], False) if st["t4"] is not None else (struct_tp, True)
+                            if d * (TP - fill) <= 0:
+                                continue
+                            res, k, px = simulate_exit(d, f, fill, SL, TP, spread, M, opt.max_hold_bars, chk)
+                            r = np.nan if res == "open" else d * (px - fill) / risk
+                            res2, k2, px2 = slb_apply(d, td, res, k, px, tbreak, pbreak, t, spread)
+                            r2 = np.nan if res2 in ("open", "cancel") else d * (px2 - fill) / risk
+                            trades.append(dict(
+                                symbol=sym, swing=n, mss_tf=tf, entry_v=e, stop_v=s, target_v=tg,
+                                combo=f"{pre}N{n}-{e}-{s}-{tg}", dir="BUY" if d == 1 else "SELL",
+                                c1_server=t2s(st["c1"]), c2_server=t2s(st["c2"]), c2_session=st["c2_sess"],
+                                crh=st["crh"], crl=st["crl"], sweep_ext=st["ext"], mss=st["mss"],
+                                ob_h=st["ob_h"], ob_l=st["ob_l"],
+                                mss_confirm_server=t2s(st["t_conf"]), order_server=t2s(st["t_order"]),
+                                fill_server=t2s(td if not chk else t[f]), entry=fill, sl=SL, tp=TP,
+                                risk_pips=risk / pip, rr_planned=d * (TP - fill) / risk,
+                                exit_server=t2s(t[k]), exit_price=px, result=res, R=r,
+                                s3_fallback=(s == "S3" and s3 is None), t4_fallback=(tg == "T4" and fb),
+                                session=session_of(td), t_fill_ns=td,
+                                h4_trend=st["h4_trend"], d1_bias=st["d1_bias"],
+                                f1h=st["f1h"], f1d=st["f1d"], f3=f3, f4=f4, f5=st["f5"], f5_kind=st["f5_kind"],
+                                rng_origin=lc["origin"], rng_far=lc["far"], depth=lc["depth"],
+                                depth_bucket=lc["bucket"], h4ob_l=lc["h4ob_l"], h4ob_h=lc["h4ob_h"], ob_pos=lc["ob_pos"],
+                                slb_break_server=(t2s(tbreak) if tbreak < NS_INF else ""),
+                                slb_cancel=(res2 == "cancel"), result_slb=res2, R_slb=r2,
+                                exit_slb_server=(t2s(t[k2]) if k2 >= 0 else ""),
+                                setup_id=f"{sym}|{tf}|{n}|{t2s(st['c2'])}|{d}",
+                                **{f"trend_{k_}": v_ for k_, v_ in st["trend"].items()}))
+            for k, v in cnt.items():
+                for e in all_e:
+                    fun[f"{k}_{e}"] = v[e]
+            funnels.append(fun)
     return trades, funnels, (t[0], t[-1])
 
 
@@ -988,6 +1142,163 @@ def trend_table(tr, trends):
             ab.insert(2, "align", lab)
             rows.append(ab)
     return pd.concat(rows, ignore_index=True) if rows else pd.DataFrame()
+
+
+def _scopes(closed):
+    """주판정·위치 표의 범위: T_W1H4 추세 일치 / 반대 / 추세 조건 없음."""
+    col = f"trend_{MAIN_TREND}"
+    out = [(f"{MAIN_TREND} 일치", closed[closed[col] == 1] if col in closed else closed.iloc[0:0])]
+    out.append(("추세없음", closed))
+    return out
+
+
+def _cstat(g, col="R"):
+    """조합별 n·기대값·승률·표준오차를 구해 조합끼리 평균. t = 평균 기대값 / 평균 표준오차. 셋업 = 겹치지 않게 센 셋업 수."""
+    g = g[g[col].notna()]
+    if g.empty:
+        return dict(setups=0, n=0.0, exp=np.nan, wr=np.nan, t=np.nan)
+    a = g.groupby("combo")[col].agg(["count", "mean", "std"])
+    a["wr"] = g.assign(_w=(g[col] > 0).astype(float)).groupby("combo")["_w"].mean()
+    se = (a["std"] / np.sqrt(a["count"])).mean()
+    e = a["mean"].mean()
+    return dict(setups=int(g["setup_id"].nunique()), n=float(a["count"].mean()), exp=e, wr=a["wr"].mean() * 100,
+                t=(e / se) if (np.isfinite(se) and se > 0) else np.nan)
+
+
+def _pstats(g, col="R"):
+    """전체·IS·OOS 묶음."""
+    return {p: _cstat(g if p == "ALL" else g[g["period"] == p], col) for p in ("ALL", "IS", "OOS")}
+
+
+def location_table(tr):
+    """위치 구간·H4 OB 위치·F_SLB 켬/끔별 x 조합 결과(CSV 용). scope = T_W1H4 일치 / 추세없음."""
+    if "depth_bucket" not in tr:
+        return pd.DataFrame()
+    closed = tr[tr["result"] != "open"]
+    rows = []
+    for scope, g in _scopes(closed):
+        if g.empty:
+            continue
+        for kind, key in (("depth", "depth_bucket"), ("h4ob", "ob_pos")):
+            a = _agg(g, ["mss_tf", key, "combo"]).rename(columns={key: "cat"})
+            a.insert(0, "scope", scope)
+            a.insert(1, "kind", kind)
+            rows.append(a)
+        gs = g[~g["slb_cancel"] & g["R_slb"].notna()].assign(R=lambda x: x["R_slb"])
+        for lab, gg in (("F_SLB 끔", g), ("F_SLB 켬", gs)):
+            if gg.empty:
+                continue
+            a = _agg(gg, ["mss_tf", "combo"])
+            a.insert(0, "scope", scope)
+            a.insert(1, "kind", "f_slb")
+            a.insert(3, "cat", lab)
+            rows.append(a)
+    return pd.concat(rows, ignore_index=True) if rows else pd.DataFrame()
+
+
+def _row(label, st, w=18):
+    a, i, o = st["ALL"], st["IS"], st["OOS"]
+    wr = f"{a['wr']:.1f}" if np.isfinite(a["wr"]) else "-"
+    return (f"  {_wpad(label, w)}{a['setups']:>6}{fmt(a['exp'], 3):>8}{wr:>7}"
+            f"{fmt(a['t'], 1):>6} |{i['setups']:>6}{fmt(i['exp'], 3):>8}{fmt(i['t'], 1):>6} |"
+            f"{o['setups']:>7}{fmt(o['exp'], 3):>8}{fmt(o['t'], 1):>6}")
+
+
+def _rpad(s, w):
+    """한글 폭 2를 고려해 오른쪽 정렬."""
+    import unicodedata
+    n = sum(2 if unicodedata.east_asian_width(ch) in "WF" else 1 for ch in s)
+    return " " * max(1, w - n) + s
+
+
+def _hdr(first, w=18):
+    return (f"  {_wpad(first, w)}" + "".join(_rpad(x, k) for x, k in (("셋업", 6), ("기대R", 8), ("승률%", 7), ("t", 6)))
+            + " |" + "".join(_rpad(x, k) for x, k in (("IS셋업", 6), ("IS기대", 8), ("IS t", 6)))
+            + " |" + "".join(_rpad(x, k) for x, k in (("OOS셋업", 7), ("OOS기대", 8), ("OOS t", 6))))
+
+
+def main_text(tr, opt):
+    """요약 맨 위: [주판정 T_W1H4] -> [위치 구간] -> [F_SLB 비교]."""
+    L = []
+    if tr is None or tr.empty or f"trend_{MAIN_TREND}" not in tr:
+        return ["[주판정 T_W1H4] 거래 없음", ""]
+    closed = tr[tr["result"] != "open"]
+    tfs = [x for x in MSS_TFS if x in set(closed["mss_tf"])]
+    min_n, min_oos = opt.min_trades, max(10, opt.min_trades // 3)
+    col = f"trend_{MAIN_TREND}"
+    L.append("[주판정 T_W1H4] 주봉 구조와 H4 구조가 같은 방향일 때 그 방향 스윕만 (매수 = 둘 다 상승)")
+    L.append("  사전 지정 정의: 석준님 설명 '주봉과 4H 방향 일치가 우선, 중심은 4H'를 결과를 보기 전에 그대로 옮긴 것.")
+    L.append("  다른 추세 정의([T1])는 참고용이다. 결과를 보고 더 좋은 정의로 갈아타면 과최적화가 된다.")
+    L.append("  MSS 시간봉: " + ", ".join(tfs) + ". 석준님 실제 진입은 1분봉이지만 데이터가 M5뿐이라 1분봉 진입은 시험하지 못했다.")
+    L.append("  값 = 조합(N-진입-손절-목표)별 값의 평균, t = 평균 기대값 / 평균 표준오차, 셋업 = 겹치지 않게 센 셋업 수.")
+    for tf in tfs:
+        g = closed[closed["mss_tf"] == tf]
+        L.append(f"  -- MSS {tf} --")
+        L.append(_hdr("구분"))
+        rows = [(f"{MAIN_TREND} 일치", g[g[col] == 1]), (f"{MAIN_TREND} 반대", g[g[col] == -1]),
+                ("방향 엇갈림/없음", g[g[col] == 0]), ("추세없음(전체)", g)]
+        for lab, gg in rows:
+            L.append(_row(lab, _pstats(gg)))
+        st = _pstats(rows[0][1])
+        i, o = st["IS"], st["OOS"]
+        if i["n"] < min_n or o["n"] < min_oos:
+            verdict = f"표본 적음(조합당 IS {i['n']:.0f}건 / OOS {o['n']:.0f}건) -> 결론 못 냄"
+        elif i["exp"] > 0 and o["exp"] > 0 and np.isfinite(o["t"]) and o["t"] >= 2:
+            verdict = "IS·OOS 모두 + 이고 OOS t>=2 -> 전진 시험 후보(확정 아님)"
+        elif i["exp"] > 0 and o["exp"] > 0:
+            verdict = "IS·OOS 모두 + 지만 t<2 -> 우연과 구분 안 됨"
+        else:
+            verdict = "비용 후 엣지 확인 안 됨"
+        L.append(f"  판정(MSS {tf}): {verdict}")
+    L.append("")
+    # ---- 위치
+    L.append("[위치 구간] 스윕 극값이 H4 딜링 레인지의 어디였나 (스윕 시작 시각에 확정된 H4 스윙만 사용)")
+    L.append("  매수: 레인지 = 확정 H4 스윙 저점 SL(그 뒤 확정 고점이 있는 가장 최근 저점) ~ 그 뒤 최고 확정 스윙 고점 SH.")
+    L.append("  깊이 = (SH - 극값)/(SH - SL). 0% = SH, 100% = SL(딱 닿음은 75~100%), 100%+ = SL 아래 꼬리 스윕,")
+    L.append("  0%미만 = SH 위(새 고점 영역). 없음 = 레인지 못 만듦. 매도는 대칭.")
+    for scope, g0 in _scopes(closed):
+        for tf in tfs:
+            g = g0[g0["mss_tf"] == tf]
+            if g.empty:
+                continue
+            L.append(f"  -- {scope}, MSS {tf} --")
+            L.append(_hdr("깊이 구간"))
+            for b in DEPTH_BUCKETS:
+                gb = g[g["depth_bucket"] == b]
+                if not gb.empty:
+                    L.append(_row(b, _pstats(gb)))
+            sh = g[g["depth_bucket"].isin(["0%미만", "0~25%", "25~50%"])]
+            dp = g[g["depth_bucket"].isin(["50~75%", "75~100%", "100%+"])]
+            a, b_ = _pstats(dp), _pstats(sh)
+            L.append(f"  사전 가설(깊을수록 좋다) 확인: 깊음(50%+) - 얕음(50% 미만) 기대값 차이  "
+                     f"IS {fmt(a['IS']['exp'] - b_['IS']['exp'], 3)}, OOS {fmt(a['OOS']['exp'] - b_['OOS']['exp'], 3)}")
+            L.append(_hdr("H4 OB 위치"))
+            for b in OB_POS:
+                gb = g[g["ob_pos"] == b]
+                if not gb.empty:
+                    L.append(_row(b, _pstats(gb)))
+    L.append("  주의: 구간 x 범위 x 시간봉으로 칸이 많다. 칸마다 표본이 작아 가장 좋은 칸을 골라 규칙으로 삼으면 과최적화다.")
+    L.append("  미리 정한 비교는 '깊음 vs 얕음' 한 줄뿐이다. IS와 OOS가 같은 방향이고 t가 2 이상일 때만 의미 있게 본다.")
+    L.append("")
+    # ---- F_SLB
+    L.append("[F_SLB 비교] H4 봉이 딜링 레인지 SL(매수 기준) 아래로 몸통 마감하면: 체결 전이면 셋업 취소, 보유 중이면 그 봉 종가에 청산")
+    L.append("  판정 구간 = 스윕 시작 이후 마감한 H4 봉. 레인지가 없는 셋업(없음)은 규칙이 적용 안 돼 끔과 같다.")
+    for scope, g0 in _scopes(closed):
+        for tf in tfs:
+            g = g0[g0["mss_tf"] == tf]
+            if g.empty:
+                continue
+            gs = g[~g["slb_cancel"] & g["R_slb"].notna()]
+            L.append(f"  -- {scope}, MSS {tf} --")
+            L.append(_hdr("F_SLB"))
+            L.append(_row("끔", _pstats(g)))
+            L.append(_row("켬", _pstats(gs, "R_slb")))
+            ns = g["setup_id"].nunique()
+            nc = g[g["slb_cancel"]]["setup_id"].nunique()
+            nx = gs[gs["result_slb"] == "slb"]
+            L.append(f"  켬: 체결 전 취소 셋업 {nc}/{ns}, 보유 중 강제 청산 거래 비율 {100 * len(nx) / max(len(gs), 1):.1f}%")
+    L.append("")
+    return L
 
 
 def _wpad(s, w):
@@ -1157,6 +1468,7 @@ def write_text(path, summ, funnels, meta, opt, ft=None, enabled=(), tt=None, tr=
     if trends:
         L.append("추세 정의: " + ", ".join(f"{k}={TREND_DESC[k]}" for k in trends))
         L.append("")
+        L += main_text(tr, opt)
         L += trend_text(tt if tt is not None else pd.DataFrame(), tr, list(trends), opt)
     if enabled:
         L.append("필터: " + ", ".join(f"{f}={FILTER_DESC[f]}" for f in enabled))
@@ -1172,12 +1484,14 @@ def write_text(path, summ, funnels, meta, opt, ft=None, enabled=(), tt=None, tr=
     fdf = pd.DataFrame(funnels)
     ecols = [c[5:] for c in fdf.columns if c.startswith("fill_")]
     for _, f in fdf.iterrows():
-        L.append(f"  {f['symbol']:<8} N{f['swing']}: C2 {f['c2']}, 아시아제외 {f['asia_skip']}, 스윕 {f['sweep']}, "
+        L.append(f"  {f['symbol']:<8} {f.get('mss_tf', 'M15')} N{f['swing']}: C2 {f['c2']}, 아시아제외 {f['asia_skip']}, 스윕 {f['sweep']}, "
                  f"C2마감OK {f['c2_close_ok']}, MSS확정 {f['mss_confirm']}, OB없음 {f['no_ob']}, "
                  f"주문전목표도달 {f['target_before_order']}, 주문 {f['setups']} | 체결 " +
                  " ".join(f"{e} {f['fill_' + e]}" for e in ecols) +
                  (" | 추세일치 주문 " + " ".join(f"{k} {int(f['aligned_' + k])}" for k in trends)
-                  if trends and 'aligned_T_D1S' in f else ""))
+                  if trends and 'aligned_T_D1S' in f else "") +
+                 (" | F_SLB 체결전취소 " + " ".join(f"{e} {f['slb_cancel_' + e]}" for e in ecols)
+                  if trends and 'slb_cancel_K' in f else ""))
     L.append("")
     min_n = opt.min_trades
 
@@ -1277,7 +1591,9 @@ def build_parser():
     p.add_argument("--f5", action="store_true", help="F5: sweep must take fresh PDH/PDL or H4 equal highs/lows")
     p.add_argument("--f5-h4", choices=["cluster", "swing"], default="cluster", help="F5 H4 level type (default cluster)")
     p.add_argument("--all-filters", action="store_true", help="turn on F1H,F1D,F2,F3,F4,F5")
-    p.add_argument("--trend", default="", help="trend base conditions, comma list of T_D1S,T_W1S,T_D1H4,T_EMA,T_PDA or ALL")
+    p.add_argument("--trend", default="", help="trend base conditions, comma list of T_W1H4,T_D1S,T_W1S,T_D1H4,T_EMA,T_PDA or ALL "
+                                               "(T_W1H4 = main verdict, always added)")
+    p.add_argument("--mss-tf", default="M15", help="MSS/OB timeframe list: M15, M5 or M15,M5 (no M1 data)")
     p.add_argument("--trend-swing", type=int, default=2, help="swing bars each side for D1/W1/H4 structure (default 2)")
     p.add_argument("--trend-ema", type=int, default=50, help="D1 EMA length for T_EMA (default 50)")
     p.add_argument("--trend-slope", type=int, default=5, help="T_EMA slope lookback in D1 bars (default 5)")
@@ -1330,7 +1646,9 @@ def run_all(opt, files=None, quiet=False):
         all_fun += fun
         print(f"  setups {[f['setups'] for f in fun]} (N={opt.swing}), trade rows {len(tr):,}, {(_time.time() - t0):.0f}s")
     tr = pd.DataFrame(all_tr)
-    tag = f"c2{opt.c2_close}" + (("_" + "".join(f.lower() for f in enabled)) if enabled else "") + ("_trend" if trends else "")
+    tfs = mss_tf_list(opt)
+    tag = (f"c2{opt.c2_close}" + (("_" + "".join(f.lower() for f in enabled)) if enabled else "") + ("_trend" if trends else "")
+           + ("" if tfs == ["M15"] else "_" + "".join(x.lower() for x in tfs)))
     if tr.empty:
         print("! no trades.")
         pd.DataFrame(all_fun).to_csv(os.path.join(opt.out, f"funnel_{tag}.csv"), index=False, encoding="utf-8-sig")
@@ -1353,19 +1671,25 @@ def run_all(opt, files=None, quiet=False):
                    f"스프레드 {opt.spread}핍(+맵 {opt.spread_map or '없음'}), 손절버퍼 {opt.sl_buffer}핍, 같은높이 {opt.eq_tol}핍, 스윙 N={opt.swing}, "
                    f"진입 {opt.entries}{'+K' if (opt.f2 or trends) else ''}, 손절 {opt.stops}, 목표 {opt.targets}",
             "추세 설정": (f"--trend {','.join(trends)}, 스윙 앞뒤 {opt.trend_swing}봉, EMA{opt.trend_ema}, 기울기 {opt.trend_slope}일, "
-                       "판정 시각 = 스윕 M15봉 시작(그때까지 마감한 봉·확정 스윙만)") if trends else "꺼짐",
+                       "판정 시각 = 스윕 봉 시작(그때까지 마감한 봉·확정 스윙만). 주판정 = T_W1H4(사전 지정)") if trends else "꺼짐",
+            "MSS 시간봉": f"{','.join(tfs)} (석준님 실제 진입은 1분봉. 데이터가 M5뿐이라 1분봉 진입은 시험 못 함)",
             "필터 설정": f"켠 필터 {enabled or '없음'}, D1 EMA {opt.d1_ema}, F2 {opt.f2_tf}, F4 뉴욕 {opt.f4_windows}시, F5 H4={opt.f5_h4}",
             "만든 시각": pd.Timestamp.now().strftime("%Y-%m-%d %H:%M") + " (실행 PC 시각)"}
     out_cols = ["symbol", "combo", "swing", "entry_v", "stop_v", "target_v", "dir", "period", "session", "c2_session",
                 "c1_server", "c2_server", "crh", "crl", "sweep_ext", "mss", "ob_h", "ob_l", "mss_confirm_server", "order_server",
                 "fill_server", "fill_kst", "entry", "sl", "tp", "risk_pips", "rr_planned",
                 "exit_server", "exit_kst", "exit_price", "result", "R", "s3_fallback", "t4_fallback",
-                "h4_trend", "d1_bias", "f1h", "f1d", "f3", "f4", "f5", "f5_kind", "setup_id"]
+                "h4_trend", "d1_bias", "f1h", "f1d", "f3", "f4", "f5", "f5_kind", "setup_id", "mss_tf",
+                "rng_origin", "rng_far", "depth", "depth_bucket", "h4ob_l", "h4ob_h", "ob_pos",
+                "slb_break_server", "slb_cancel", "result_slb", "R_slb", "exit_slb_server"]
     out_cols += [f"trend_{k}" for k in TRENDS if f"trend_{k}" in tr.columns]
     tr[out_cols].to_csv(os.path.join(opt.out, f"trades_{tag}.csv"), index=False, encoding="utf-8-sig", float_format="%.10g")
     summ.to_csv(os.path.join(opt.out, f"summary_{tag}.csv"), index=False, encoding="utf-8-sig", float_format="%.4f")
     if not tt.empty:
         tt.to_csv(os.path.join(opt.out, f"trends_{tag}.csv"), index=False, encoding="utf-8-sig", float_format="%.4f")
+        lt = location_table(tr)
+        if not lt.empty:
+            lt.to_csv(os.path.join(opt.out, f"location_{tag}.csv"), index=False, encoding="utf-8-sig", float_format="%.4f")
     if not ft.empty:
         ft.to_csv(os.path.join(opt.out, f"filters_{tag}.csv"), index=False, encoding="utf-8-sig", float_format="%.4f")
     pd.DataFrame(all_fun).to_csv(os.path.join(opt.out, f"funnel_{tag}.csv"), index=False, encoding="utf-8-sig")
@@ -1610,6 +1934,7 @@ def selftest():
                 f"filter table: no-filter + every single filter present, {len(labels)} of 64 on/off combos have trades")
     print("  F5 kinds on random walk:", cl.drop_duplicates(["fill_server", "swing"])["f5_kind"].value_counts().to_dict())
     ok = selftest_trend(ok, out_dir)
+    ok = selftest_location(ok, out_dir)
     print("\nSELFTEST:", "ALL PASS" if ok else "SOME FAILED")
     return ok
 
@@ -1756,6 +2081,177 @@ def selftest_trend(ok, out_dir):
         enc = False
         print("   cp949 problem:", e)
     ok = _check(ok, enc, "summary text encodable in cp949 (Windows console safe)")
+    return ok
+
+
+def _h4_hand(mirror=False):
+    """손으로 만든 H4 봉 (o,h,l,c). SL = 봉2 저가 100, SH = 봉6 고가 120, H4 OB = 봉1(음봉 102~105).
+    봉9 = 되돌림 중 작은 스윙 저점 110(뒤에 스윙 고점 없음). mirror=True 면 가격을 뒤집어 매도 시나리오."""
+    bars = [(105, 106, 103, 104),     # 0
+            (104, 105, 102, 102.5),   # 1 음봉 = H4 OB (SL 봉2는 양봉이라 한 칸 앞)
+            (101, 103, 100, 102.5),   # 2 스윙 저점 100 (봉4 마감에 확정)
+            (102.5, 104, 100.5, 103.5),
+            (103.5, 108, 103, 107.5),
+            (107.5, 112, 107, 111.5),
+            (111.5, 120, 111, 119),   # 6 스윙 고점 120 (봉8 마감에 확정)
+            (119, 119.5, 115, 116),
+            (116, 117, 112, 113),
+            (113, 114, 110, 111),     # 9 작은 스윙 저점 110 (봉11 마감에 확정)
+            (111, 113, 111, 112.5),
+            (112.5, 114, 112, 113),
+            (113, 113, 111.5, 112),
+            (112, 112, 111.5, 111.8)]
+    o, h, l, c = (np.array(x, float) for x in zip(*bars))
+    if mirror:
+        o, h, l, c = -o, -l, -h, -c
+    T4 = pd.Timestamp("2024-01-08").value + np.arange(len(bars)) * 4 * NS_H
+    return dict(t=T4, o=o, h=h, l=l, c=c)
+
+
+def selftest_location(ok, out_dir):
+    S = lambda s: pd.Timestamp(s).value   # noqa: E731
+    print("=== Test 16: T_W1H4 = weekly AND H4 structure same direction ===")
+    mk = lambda v: dict(close_t=np.array([0]), state=np.array([v], np.int8))   # noqa: E731
+    cases = {(1, 1, 1): 1, (1, 1, -1): -1, (1, -1, 1): 0, (-1, 1, 1): 0, (-1, -1, 1): -1, (-1, -1, -1): 1,
+             (0, 1, 1): 0, (1, 0, 1): 0, (0, 0, 1): 0}
+    got = {}
+    for (w, h4, d), want in cases.items():
+        tc = dict(d1s=mk(0), w1s=mk(w), h4s=mk(h4), ema=mk(0))
+        got[(w, h4, d)] = trend_align(tc, d, 1.0, 1)["T_W1H4"]
+    ok = _check(ok, got == cases, "(W1, H4, setup dir) -> T_W1H4: both up & buy +1, both up & sell -1, mixed or none 0")
+    ok = _check(ok, trend_list(default_opts(trend="T_D1S")) == ["T_W1H4", "T_D1S"] and trend_list(default_opts(trend="ALL")) == TRENDS,
+                "T_W1H4 (main verdict) always added in trend mode")
+    tc = dict(d1s=mk(0), w1s=dict(close_t=np.array([0, 10]), state=np.array([1, -1], np.int8)), h4s=mk(1), ema=mk(0))
+    ok = _check(ok, trend_align(tc, 1, 1.0, 9)["T_W1H4"] == 1 and trend_align(tc, 1, 1.0, 10)["T_W1H4"] == 0,
+                "weekly flip counts only from the weekly close time (t=9 still +1, t=10 -> mixed 0)")
+
+    print("=== Test 17: H4 dealing range depth by hand (boundaries, OB, no look-ahead, mirror) ===")
+    h4 = _h4_hand()
+    rc = h4_range_ctx(h4, 2)
+    ok = _check(ok, rc["lo_idx"].tolist() == [2, 9] and rc["hi_idx"].tolist() == [6],
+                f"swings: lows {rc['lo_idx'].tolist()} (expect [2, 9]), highs {rc['hi_idx'].tolist()} (expect [6])")
+    T4 = h4["t"]
+    t_end = T4[-1] + 4 * NS_H
+    rg = dealing_range(rc, 1, t_end)
+    ok = _check(ok, rg is not None and rg["origin"] == 100 and rg["far"] == 120 and rg["ob_l"] == 102 and rg["ob_h"] == 105,
+                f"range SL 100 ~ SH 120, H4 OB 102~105 (bar 1, last bearish bar before rally) -> {rg and (rg['origin'], rg['far'], rg['ob_l'], rg['ob_h'])}")
+    ok = _check(ok, rg is not None and rg["origin_i"] == 2,
+                "minor pullback low 110 (no swing high after it) skipped -> SL stays the low that started the leg to SH")
+    want = {121: "0%미만", 120: "0~25%", 116: "0~25%", 115: "25~50%", 110: "50~75%", 105: "75~100%",
+            100: "75~100%", 99.99: "100%+"}
+    got = {x: depth_bucket(depth_of(rg, x)) for x in want}
+    ok = _check(ok, got == want, f"buckets: 120->0%, 115->25% (=25~50), 110->50%, 105->75%, 100(=SL)->75~100, 99.99->100%+ : {got}")
+    ok = _check(ok, abs(depth_of(rg, 104) - 0.8) < 1e-12, "depth (120-104)/(120-100) = 0.80")
+    pos = {x: ob_position(rg, 1, x) for x in (103, 105, 102, 106, 101.9)}
+    ok = _check(ok, pos == {103: "OB안", 105: "OB안", 102: "OB안", 106: "OB전(안닿음)", 101.9: "OB관통"},
+                f"H4 OB position (edges inclusive): {pos}")
+    r7 = dealing_range(rc, 1, T4[8] + 4 * NS_H - 1)
+    r8 = dealing_range(rc, 1, T4[8] + 4 * NS_H)
+    ok = _check(ok, r7 is None and r8 is not None,
+                "SH (bar 6) confirmed only when bar 8 closes: 1ns before -> no range ('없음'), at close -> range")
+    ok = _check(ok, location_of(rc, 1, 110.0, T4[8] + 4 * NS_H - 1)["bucket"] == "없음", "no range -> bucket 없음")
+    rs = dealing_range(rc, -1, t_end)
+    ok = _check(ok, rs is not None and rs["origin"] == 120 and rs["far"] == 110 and abs(depth_of(rs, 115) - 0.5) < 1e-12,
+                "sell view on same bars: SH 120 ~ later swing low 110, sweep 115 -> depth 50%")
+    hm = _h4_hand(mirror=True)
+    rcm = h4_range_ctx(hm, 2)
+    rgm = dealing_range(rcm, -1, hm["t"][-1] + 4 * NS_H)
+    gm = {x: depth_bucket(depth_of(rgm, -x)) for x in want}
+    ok = _check(ok, rgm is not None and rgm["origin"] == -100 and rgm["far"] == -120 and gm == want
+                and (rgm["ob_l"], rgm["ob_h"]) == (-105, -102) and ob_position(rgm, -1, -106) == "OB전(안닿음)"
+                and ob_position(rgm, -1, -101.9) == "OB관통",
+                "sell mirror: same depths/buckets/OB with prices flipped")
+
+    print("=== Test 18: F_SLB (H4 body close beyond SL) cancel / exit ===")
+    base = S("2024-01-08")
+    t = base + np.arange(4 * 48) * 5 * NS_MIN                # M5 16시간
+    CT4 = base + np.arange(1, 5) * 4 * NS_H                  # H4 마감 04,08,12,16시
+    C4 = np.array([101.0, 99.5, 102.0, 103.0])               # 08시 마감 봉이 SL 100 아래 몸통 마감
+    tb, pb = slb_break(1, 100.0, base, CT4, C4)
+    ok = _check(ok, tb == CT4[1] and pb == 99.5, "first H4 close below SL -> 08:00, close 99.5")
+    ok = _check(ok, slb_break(1, 100.0, CT4[1], CT4, C4)[0] == NS_INF, "closes at/before sweep start are ignored")
+    ok = _check(ok, slb_break(1, 99.0, base, CT4, C4)[0] == NS_INF, "wick/close above SL 99 -> no break (body close needed)")
+    ok = _check(ok, slb_break(1, 99.5, base, CT4, C4)[0] == NS_INF, "close exactly at SL is not a break (strict)")
+    kx = int(np.searchsorted(t, CT4[1])) - 1
+    fill, risk = 100.8, 1.0
+    r = slb_apply(1, base + NS_H, "win", kx + 5, 102.8, tb, pb, t, 0.0)
+    ok = _check(ok, r == ("slb", kx, 99.5) and t[kx] == CT4[1] - 5 * NS_MIN,
+                f"holding, TP would come after the break -> exit at 08:00 H4 close 99.5 (M5 idx {kx}), R {(99.5 - fill) / risk:+.2f}")
+    r = slb_apply(1, base + NS_H, "loss", kx - 3, 99.8, tb, pb, t, 0.0)
+    ok = _check(ok, r == ("loss", kx - 3, 99.8), "stop hit before the break -> unchanged")
+    r = slb_apply(1, base + NS_H, "win", kx, 102.8, tb, pb, t, 0.0)
+    ok = _check(ok, r == ("win", kx, 102.8), "target hit inside the last M5 of the breaking H4 bar -> target kept (it came before the close)")
+    r = slb_apply(1, base + NS_H, "open", len(t) - 1, np.nan, tb, pb, t, 0.0)
+    ok = _check(ok, r == ("slb", kx, 99.5), "open trade + break -> exit at break")
+    r = slb_apply(1, CT4[1], "win", kx + 5, 102.8, tb, pb, t, 0.0)
+    ok = _check(ok, r[0] == "cancel", "fill at the same instant the breaking H4 closes -> setup cancelled (known before fill)")
+    r = slb_apply(1, base + NS_H, "win", kx + 5, 102.8, NS_INF, np.nan, t, 0.0)
+    ok = _check(ok, r == ("win", kx + 5, 102.8), "no break -> unchanged")
+    tbs, pbs = slb_break(-1, 120.0, base, CT4, np.array([119.0, 120.5, 118.0, 117.0]))
+    r = slb_apply(-1, base + NS_H, "open", len(t) - 1, np.nan, tbs, pbs, t, 0.3)
+    ok = _check(ok, tbs == CT4[1] and r[0] == "slb" and abs(r[2] - 120.8) < 1e-12,
+                "sell mirror: H4 close 120.5 above SH 120 -> exit at ask 120.5 + spread 0.3")
+
+    print("=== Test 19: no look-ahead, whole pipeline (full data vs data cut at a date) ===")
+    rw = _random_walk(5, "2019-01-01", "2021-06-30 23:55", 0.0001)
+    cut = pd.Timestamp("2020-10-01")
+    kw = dict(oos_start="2020-06-01", min_trades=1, out=out_dir, trend="ALL", stops="S2", targets="T2", mss_tf="M15,M5")
+    full = run_all(default_opts(**kw), files={"RW": rw}, quiet=True)["trades"]
+    part = run_all(default_opts(**kw), files={"RW": rw[rw.index < cut]}, quiet=True)["trades"]
+    lim = (cut - pd.Timedelta(days=1)).strftime("%Y-%m-%d %H:%M")
+
+    def done(x):
+        e2 = x["exit_slb_server"].where(x["exit_slb_server"] != "", x["exit_server"])
+        return x[(x["result"] != "open") & (x["exit_server"] < lim) & (e2 < lim)]
+    cols = ["R", "R_slb", "depth", "depth_bucket", "ob_pos", "slb_cancel", "rng_origin", "rng_far"] + [f"trend_{k}" for k in TRENDS]
+    a = done(full).set_index(["setup_id", "combo"])[cols].sort_index()
+    b = done(part).set_index(["setup_id", "combo"])[cols].sort_index()
+    same_keys = a.index.equals(b.index)
+    same_vals = same_keys and all(((a[c] == b[c]) | (a[c].isna() & b[c].isna())).all() for c in cols)
+    ok = _check(ok, len(a) > 50 and same_keys and same_vals,
+                f"{len(a)} trades finished before the cut: identical keys and values (R, R_slb, depth, OB, trends) = {same_vals}")
+    ok = _check(ok, set(a.reset_index()["combo"].str[:3]) >= {"N5-", "N3-", "M5-"}, "both MSS timeframes (M15, M5) present")
+
+    print("=== Test 20: random walk -> new definitions near 0 (spread 0) ===")
+    rw2 = _random_walk(11, "2016-01-01", "2023-12-31 23:55", 0.0001)
+    res = run_all(default_opts(oos_start="2021-01-01", min_trades=30, out=out_dir, spread=0.0, trend="T_W1H4",
+                               stops="S2", targets="T2,T3", mss_tf="M15,M5"), files={"RW": rw2}, quiet=True)
+    tr = res["trades"]
+    cl = tr[tr["result"] != "open"]
+    groups = [(f"{tf} {MAIN_TREND} with", cl[(cl["mss_tf"] == tf) & (cl[f"trend_{MAIN_TREND}"] == 1)]) for tf in MSS_TFS]
+    groups += [(f"{tf} F_SLB on", cl[(cl["mss_tf"] == tf) & ~cl["slb_cancel"]].assign(R=lambda x: x["R_slb"])) for tf in MSS_TFS]
+    groups += [(f"M15 depth {b}", cl[(cl["mss_tf"] == "M15") & (cl["depth_bucket"] == b)]) for b in DEPTH_BUCKETS[:-1]]
+    for name, g in groups:
+        g = g[g["R"].notna()]
+        nset = g["setup_id"].nunique()
+        if nset < 20:
+            print(f"  {name:<22} only {nset} setups, skipped")
+            continue
+        se = g["R"].std(ddof=1) / np.sqrt(nset)
+        ok = _check(ok, abs(g["R"].mean()) < max(0.15, 3 * se),
+                    f"{name:<22} rows {len(g):>5}, setups {nset:>4}, mean R {g['R'].mean():+.3f} (3*SE {3 * se:.3f})")
+    sl = tr[tr["result_slb"] == "slb"]
+    okx = (sl["exit_slb_server"] <= sl["exit_server"].where(sl["result"] != "open", "9999")).all()
+    cn = tr[tr["slb_cancel"]]
+    okc = (cn["slb_break_server"] <= cn["fill_server"]).all() if len(cn) else True
+    same = tr[~tr["result_slb"].isin(["slb", "cancel"])]
+    oks = ((same["R"] == same["R_slb"]) | (same["R"].isna() & same["R_slb"].isna())).all()
+    ok = _check(ok, len(sl) > 0 and len(cn) > 0 and okx and okc and oks,
+                f"F_SLB consistency: {len(sl)} forced exits all earlier than normal exit, {len(cn)} cancels after a break, others unchanged")
+    txt = open(os.path.join(out_dir, "summary_c2required_trend_m15m5.txt"), encoding="utf-8-sig").read()
+    order = [txt.find(x) for x in ("[주판정 T_W1H4]", "[위치 구간]", "[F_SLB 비교]", "[T1]", "[T2]", "[셋업 깔때기]")]
+    ok = _check(ok, -1 not in order and order == sorted(order),
+                "summary order: [주판정 T_W1H4] -> [위치 구간] -> [F_SLB 비교] -> [T1] -> [T2] -> funnel")
+    ok = _check(ok, "1분봉" in txt and "사전 지정" in txt and "과최적화" in txt, "summary says: no 1-min data, pre-specified, overfitting warning")
+    try:
+        txt.encode("cp949")
+        enc = True
+    except UnicodeEncodeError as e:
+        enc = False
+        print("   cp949 problem:", e)
+    ok = _check(ok, enc, "new summary text encodable in cp949")
+    lt = location_table(tr)
+    ok = _check(ok, {"depth", "h4ob", "f_slb"} <= set(lt["kind"]), "location CSV has depth / h4ob / f_slb rows")
     return ok
 
 
