@@ -23,3 +23,11 @@
 | 날짜 | 영상 | 노트 |
 |---|---|---|
 | 2026-10-28 | NQ Futures Price Action Commentary (56분) | `learning/2026-10-28-NQ-price-action.md` |
+
+## 2차: 바이어스 정확도 (2026-10-29 규칙 고정, 실행 대기)
+1차 결과(56개 중 합격 0, 결과 `results/2026-10-29_ict_backtest_v1.md`): ICT 진입 자리에는 우위가 없고, 양봉일의 89%가 10시 전에 자정 시가 아래로 내려갔다
+→ 돈이 되려면 **오늘 방향(바이어스)을 맞혀야** 한다. 그래서 2차는:
+- **A. 몇 % 맞혀야 본전인가:** 정답을 확률 p로 안다고 놓고 Power of 3·아시아 박스 돌파 거래 5개 모델의 손익분기 정확도 p*를 구함.
+- **B. 미리 알 수 있는 규칙이 몇 % 맞히나:** ICT식 바이어스 규칙 15개의 적중률(IS/OOS, Bonferroni). p*를 IS·OOS 모두 넘는 규칙만 실제 거래로 위 합격 기준 판정.
+- 규칙: [`rules_bias.md`](rules_bias.md) / 코드: `trading/research/ict_bias.py` (PC에서 `ict_backtest.py`와 같은 폴더에 두고 실행, 결과 → PC `C:\Users\kun00\venus\ict_bias_out`)
+- 석준님 본인의 바이어스 판단도 같은 정의(자정 시가 → NY 16시 종가)로 적어 두면 `daily_bias_table.csv`와 p*에 바로 비교 가능.
