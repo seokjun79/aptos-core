@@ -55,11 +55,26 @@
  결과 열 trend_{정의}: +1 추세와 같은 방향, -1 반대, 0 판정 없음. 요약 맨 위에 추세 정의별 표와 상위 5 표.
  --trend 를 켜면 확인 캔들 진입 K도 같이 계산한다(F2 필터 표와는 별개).
 
+2026-10-28 추가 (석준님 설명: 주봉+4H 방향 일치 우선, 4H는 외부 구조, 되돌림 위치, 4H 스윙로우 몸통 이탈 = 하락 신호)
+ T_H4EXT   H4 외부(스윙) 구조. 추세 = 마지막 외부 BOS 방향. 보호 저점 = 그 BOS를 만든 다리가 시작된 저점.
+           H4 종가가 보호 저점 아래로 마감할 때만 하락 전환(되돌림 안 내부 저점 깨짐은 무시). ext_structure() 참고.
+ T_W1H4EXT 주판정(사전 지정). W1 구조 = H4 외부 구조 방향일 때만 그 방향 셋업. 추세 모드에서 늘 계산.
+ T_W1H4    같은 조건을 H4 내부 구조(structure_states)로 본 비교판. 늘 계산.
+ 위치      스윕 시작 시각까지 마감한 H4 기준 외부 딜링 레인지(매수: 보호 저점 SL ~ 그 뒤 최고가 SH).
+           깊이 = (SH-극값)/(SH-SL), 구간 0%미만/0~25/25~50/50~75/75~100(100% 포함)/100%+/없음(외부 추세 반대·없음).
+           H4 OB = 보호 저점 봉부터 거꾸로 처음 만나는 음봉. 극값이 OB 안/전(안닿음)/관통. 내부 스윙 레인지 깊이는 depth_int.
+ F_SLB     스윕 시작 이후 H4 종가가 보호 저점 너머로 마감하면: 그 시각이 체결 이전(같은 시각 포함)이면 셋업 취소,
+           보유 중이면 그 H4봉 마지막 M5까지 손절·목표가 없을 때 그 봉 종가로 청산. 켬/끔 둘 다 계산(R, R_slb).
+ --mss-tf  M15(기본), M5, 또는 M15,M5. MSS·OB·F3·S3를 그 시간봉으로 본다. M5면 확인 캔들 K도 M5. 조합 이름 앞에 'M5-'.
+           석준님 실제 진입은 1분봉이지만 데이터가 M5뿐이라 1분봉은 시험 못 함.
+ 요약 맨 위 순서: [주판정 T_W1H4EXT] -> [위치 구간] -> [F_SLB 비교] -> [T1] -> [T2] -> 기존 표. 위치·F_SLB 상세는 location_*.csv.
+
 읽기 전용 분석 스크립트다. MT5 연결·주문 없음. 필요한 것: Python 3.10+, pandas, numpy.
 사용 예:
   py -3.12 crt_backtest.py --data-dir C:\\Users\\kun00\\venus\\mt5_m5_data --out C:\\Users\\kun00\\venus\\crt_bt_out
   py -3.12 crt_backtest.py --data-dir ... --out ... --all-filters --stops S2 --targets T2,T3
   py -3.12 crt_backtest.py --data-dir ... --out ... --trend T_D1S,T_W1S,T_D1H4,T_EMA,T_PDA --stops S2 --targets T2,T3
+  py -3.12 crt_backtest.py --data-dir ... --out ... --trend ALL --mss-tf M15,M5 --stops S2 --targets T2,T3
   py -3.12 crt_backtest.py --selftest
 """
 import argparse
@@ -2205,6 +2220,24 @@ def _h4_hand(mirror=False):
     return dict(t=T4, o=o, h=h, l=l, c=c)
 
 
+def _gbpusd_shape():
+    """석준님 GBPUSD 4H 예시(2026-10-28) 모양. 앞 고점 1.3400 -> 하락 저점 1.3296(봉7, 음봉 = H4 OB 1.3296~1.3312)
+    -> 상승해 봉11 종가 1.3405로 1.3400 위 BOS -> 고점 1.3419(봉12) -> 되돌림 중 내부 저점 1.3355(봉15)·1.3328(봉19)을
+    종가로 깸(내부 CHoCH) -> 1.3303(봉23, OB 안). 봉24 = 1.3290까지 꼬리만, 봉25 = 1.3290 종가 마감."""
+    bars = [(1.3360, 1.3370, 1.3350, 1.3365), (1.3365, 1.3385, 1.3360, 1.3380), (1.3380, 1.3400, 1.3375, 1.3390),
+            (1.3390, 1.3392, 1.3370, 1.3372), (1.3372, 1.3375, 1.3345, 1.3350), (1.3350, 1.3355, 1.3320, 1.3325),
+            (1.3325, 1.3330, 1.3305, 1.3310), (1.3310, 1.3312, 1.3296, 1.3300), (1.3300, 1.3330, 1.3298, 1.3328),
+            (1.3328, 1.3360, 1.3325, 1.3355), (1.3355, 1.3385, 1.3350, 1.3380), (1.3380, 1.3410, 1.3375, 1.3405),
+            (1.3405, 1.3419, 1.3400, 1.3415), (1.3415, 1.3416, 1.3390, 1.3395), (1.3395, 1.3400, 1.3370, 1.3375),
+            (1.3375, 1.3380, 1.3355, 1.3360), (1.3360, 1.3378, 1.3358, 1.3372), (1.3372, 1.3376, 1.3360, 1.3365),
+            (1.3365, 1.3366, 1.3335, 1.3340), (1.3340, 1.3345, 1.3328, 1.3332), (1.3332, 1.3342, 1.3330, 1.3338),
+            (1.3338, 1.3340, 1.3331, 1.3335), (1.3335, 1.3336, 1.3305, 1.3308), (1.3308, 1.3312, 1.3299, 1.3303),
+            (1.3303, 1.3306, 1.3290, 1.3301), (1.3301, 1.3302, 1.3285, 1.3290)]
+    o, h, l, c = (np.array(v, float) for v in zip(*bars))
+    T4 = pd.Timestamp("2026-10-15").value + np.arange(len(bars)) * 4 * NS_H
+    return dict(t=T4, o=o, h=h, l=l, c=c)
+
+
 def selftest_location(ok, out_dir):
     S = lambda s: pd.Timestamp(s).value   # noqa: E731
     print("=== Test 16: T_W1H4 = weekly AND H4 structure same direction ===")
@@ -2216,11 +2249,45 @@ def selftest_location(ok, out_dir):
         tc = dict(d1s=mk(0), w1s=mk(w), h4s=mk(h4), ema=mk(0))
         got[(w, h4, d)] = trend_align(tc, d, 1.0, 1)["T_W1H4"]
     ok = _check(ok, got == cases, "(W1, H4, setup dir) -> T_W1H4: both up & buy +1, both up & sell -1, mixed or none 0")
-    ok = _check(ok, trend_list(default_opts(trend="T_D1S")) == ["T_W1H4", "T_D1S"] and trend_list(default_opts(trend="ALL")) == TRENDS,
-                "T_W1H4 (main verdict) always added in trend mode")
+    ok = _check(ok, trend_list(default_opts(trend="T_D1S")) == ["T_W1H4EXT", "T_W1H4", "T_D1S"]
+                and trend_list(default_opts(trend="ALL")) == TRENDS,
+                "T_W1H4EXT (main verdict) and T_W1H4 (internal, comparison) always added in trend mode")
+    gx = {}
+    for (w, h4, d), want in cases.items():
+        tc = dict(d1s=mk(0), w1s=mk(w), h4s=mk(-h4), h4x=mk(h4), ema=mk(0))   # 내부 구조는 일부러 반대로
+        gx[(w, h4, d)] = trend_align(tc, d, 1.0, 1)["T_W1H4EXT"]
+    ok = _check(ok, gx == cases, "T_W1H4EXT uses H4 EXTERNAL state (internal state set opposite on purpose, ignored)")
     tc = dict(d1s=mk(0), w1s=dict(close_t=np.array([0, 10]), state=np.array([1, -1], np.int8)), h4s=mk(1), ema=mk(0))
     ok = _check(ok, trend_align(tc, 1, 1.0, 9)["T_W1H4"] == 1 and trend_align(tc, 1, 1.0, 10)["T_W1H4"] == 0,
                 "weekly flip counts only from the weekly close time (t=9 still +1, t=10 -> mixed 0)")
+
+    print("=== Test 16b: H4 external structure, GBPUSD 10/28 shape (internal CHoCH down, protected low intact) ===")
+    gb = _gbpusd_shape()
+    x = ext_structure(gb, gb["t"] + 4 * NS_H, 2)
+    ins = structure_states(gb["h"], gb["l"], gb["c"], gb["t"] + 4 * NS_H, 2)
+    b23 = 23
+    ok = _check(ok, int(x["state"][11]) == 1 and abs(x["prot"][11] - 1.3296) < 1e-9,
+                f"bar 11 closes 1.3405 above swing high 1.3400 -> external UP, protected low {x['prot'][11]:.4f} (expect 1.3296)")
+    ok = _check(ok, int(ins["state"][18]) == -1 and int(ins["state"][22]) == -1,
+                "internal structure: close below 1.3355 (bar 18) and 1.3328 (bar 22) -> internal DOWN (CHoCH)")
+    ok = _check(ok, all(int(v) == 1 for v in x["state"][11:b23 + 1]) and abs(x["prot"][b23] - 1.3296) < 1e-9
+                and abs(x["lx"][b23] - 1.3419) < 1e-9,
+                "external stays UP through the pullback to 1.3303; protected low 1.3296, swing high 1.3419")
+    rgx = ext_range(x, 1, gb["t"][b23] + 4 * NS_H)
+    dpx = depth_of(rgx, 1.3303)
+    ok = _check(ok, rgx is not None and abs(rgx["ob_l"] - 1.3296) < 1e-9 and abs(rgx["ob_h"] - 1.3312) < 1e-9
+                and abs(dpx - (1.3419 - 1.3303) / (1.3419 - 1.3296)) < 1e-9 and depth_bucket(dpx) == "75~100%"
+                and ob_position(rgx, 1, 1.3303) == "OB안",
+                f"external range 1.3296~1.3419, H4 OB 1.3296~1.3312, sweep 1.3303 -> depth {dpx:.3f} (75~100%), in OB")
+    ok = _check(ok, ext_range(x, -1, gb["t"][b23] + 4 * NS_H) is None, "sell setup against external UP -> no range (bucket 없음)")
+    ok = _check(ok, int(x["state"][24]) == 1, "bar 24 wick to 1.3290 but closes 1.3301 -> still UP (wick = sweep, not break)")
+    ok = _check(ok, int(x["state"][25]) == -1 and abs(x["prot"][25] - 1.3419) < 1e-9,
+                "bar 25 CLOSES 1.3290 below 1.3296 -> external DOWN, protected high 1.3419")
+    t24 = gb["t"][25]   # 봉 25 진행 중
+    ok = _check(ok, state_at(x, t24) == 1 and state_at(x, t24 + 4 * NS_H) == -1,
+                "flip known only after bar 25 closes (during bar 25 still UP)")
+    tb, pb = slb_break(1, 1.3296, gb["t"][23], gb["t"] + 4 * NS_H, gb["c"])
+    ok = _check(ok, tb == gb["t"][25] + 4 * NS_H and abs(pb - 1.3290) < 1e-9, "F_SLB on this shape: break at bar 25 close 1.3290")
 
     print("=== Test 17: H4 dealing range depth by hand (boundaries, OB, no look-ahead, mirror) ===")
     h4 = _h4_hand()
@@ -2311,13 +2378,12 @@ def selftest_location(ok, out_dir):
 
     print("=== Test 20: random walk -> new definitions near 0 (spread 0) ===")
     rw2 = _random_walk(11, "2016-01-01", "2023-12-31 23:55", 0.0001)
-    res = run_all(default_opts(oos_start="2021-01-01", min_trades=30, out=out_dir, spread=0.0, trend="T_W1H4",
+    res = run_all(default_opts(oos_start="2021-01-01", min_trades=30, out=out_dir, spread=0.0, trend="T_D1S",
                                stops="S2", targets="T2,T3", mss_tf="M15,M5"), files={"RW": rw2}, quiet=True)
     tr = res["trades"]
     cl = tr[tr["result"] != "open"]
     groups = [(f"{tf} {MAIN_TREND} with", cl[(cl["mss_tf"] == tf) & (cl[f"trend_{MAIN_TREND}"] == 1)]) for tf in MSS_TFS]
     groups += [(f"{tf} F_SLB on", cl[(cl["mss_tf"] == tf) & ~cl["slb_cancel"]].assign(R=lambda x: x["R_slb"])) for tf in MSS_TFS]
-    groups += [(f"M15 depth {b}", cl[(cl["mss_tf"] == "M15") & (cl["depth_bucket"] == b)]) for b in DEPTH_BUCKETS[:-1]]
     for name, g in groups:
         g = g[g["R"].notna()]
         nset = g["setup_id"].nunique()
@@ -2336,9 +2402,9 @@ def selftest_location(ok, out_dir):
     ok = _check(ok, len(sl) > 0 and len(cn) > 0 and okx and okc and oks,
                 f"F_SLB consistency: {len(sl)} forced exits all earlier than normal exit, {len(cn)} cancels after a break, others unchanged")
     txt = open(os.path.join(out_dir, "summary_c2required_trend_m15m5.txt"), encoding="utf-8-sig").read()
-    order = [txt.find(x) for x in ("[주판정 T_W1H4]", "[위치 구간]", "[F_SLB 비교]", "[T1]", "[T2]", "[셋업 깔때기]")]
+    order = [txt.find("\n" + x) for x in (f"[주판정 {MAIN_TREND}]", "[위치 구간]", "[F_SLB 비교]", "[T1]", "[T2]", "[셋업 깔때기]")]
     ok = _check(ok, -1 not in order and order == sorted(order),
-                "summary order: [주판정 T_W1H4] -> [위치 구간] -> [F_SLB 비교] -> [T1] -> [T2] -> funnel")
+                f"summary order: [주판정 {MAIN_TREND}] -> [위치 구간] -> [F_SLB 비교] -> [T1] -> [T2] -> funnel")
     ok = _check(ok, "1분봉" in txt and "사전 지정" in txt and "과최적화" in txt, "summary says: no 1-min data, pre-specified, overfitting warning")
     try:
         txt.encode("cp949")
@@ -2349,6 +2415,21 @@ def selftest_location(ok, out_dir):
     ok = _check(ok, enc, "new summary text encodable in cp949")
     lt = location_table(tr)
     ok = _check(ok, {"depth", "h4ob", "f_slb"} <= set(lt["kind"]), "location CSV has depth / h4ob / f_slb rows")
+    # 구간별: 한 시드는 칸마다 표본이 작아 우연히 3SE를 넘을 수 있다(시드 11의 100%+ 가 그랬음) -> 시드 3개를 합쳐 본다
+    files = {f"RW{sd}": _random_walk(sd, "2016-01-01", "2023-12-31 23:55", 0.0001) for sd in (11, 21, 22)}
+    cl3 = run_all(default_opts(oos_start="2021-01-01", min_trades=30, out=out_dir, spread=0.0, trend="T_D1S",
+                               stops="S2", targets="T2,T3", mss_tf="M15"), files=files, quiet=True)["trades"]
+    cl3 = cl3[cl3["result"] != "open"]
+    for kind, col in (("ext depth", "depth_bucket"), ("int depth", "depth_bucket_int")):
+        for bk in DEPTH_BUCKETS[:-1]:
+            g = cl3[cl3[col] == bk]
+            nset = g["setup_id"].nunique()
+            if nset < 30:
+                print(f"  {kind} {bk:<8} only {nset} setups, skipped")
+                continue
+            se = g["R"].std(ddof=1) / np.sqrt(nset)
+            ok = _check(ok, abs(g["R"].mean()) < max(0.15, 3 * se),
+                        f"{kind} {bk:<8} (3 seeds pooled) setups {nset:>4}, mean R {g['R'].mean():+.3f} (3*SE {3 * se:.3f})")
     return ok
 
 
