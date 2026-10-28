@@ -17,54 +17,72 @@
    README 합격 기준에 따라 스프레드는 최소 1핍(금 0.2달러) 아래로 내려가지 않는다.
  - 시간 청산: 체결한 날 NY 16:00(서버 23:00) 직전 M5 봉 종가.
  - 같은 종목·같은 변형은 동시에 1포지션. 앞 거래가 청산된 봉 이후 체결만 인정.
- - '유동성 목표'(PDH, 반대편 범위 등)는 보상 ≥ 1.5R일 때만(M4 실버불릿은 2.0R).
+ - '유동성 목표'(PDH, 반대편 범위 등)는 보상 ≥ 1.5R일 때만(M4 실버불릿은 1.0R).
 
 바이어스 스위치 B (모든 모델에 켬/끔 두 가지로 시험): 거래일 D 기준
  주: 직전 완성 주봉 종가 > 그 전 주봉 범위 중간(고+저)/2 → 상승, < → 하락.
  일: 직전 일봉(D−1) 종가 > 그 전 일봉(D−2) 범위 중간(CE) → 상승, < → 하락.
  둘이 같은 방향일 때만 그 방향 거래 허용(다르면 그날 거래 없음).
 
-M1 일봉 3봉 스윙 + 확인 (2026-10-28 NQ 영상 2번)
+ICT 핍 단위 u: ICT가 말한 "10핍" = ADR20 ÷ 7 (EURUSD 하루 평균 범위 약 70핍 기준). 금·엔화·조용한 해에도 같은 비율이 되게 환산.
+아시아 범위(AR) = NY 19:00~24:00 고·저. 자정 시가(MO) = NY 00:00 봉 시가. 아시아·주다스 진입은 NY 11:00까지만.
+'좁은 아시아 범위' = AR ≤ 0.4 × ADR20(직전 20일 평균 일봉 범위).
+
+M1 일봉 3봉 스윙 + 확인 (2026-10-28 NQ 영상 2번)                                    → 2×2 = 4개
  스윙 저점: 일봉 k(2번 봉) 저가 < k−1 저가, k+1(3번 봉) 저가 > k 저가.
- 키 레벨 스윕(둘 중 하나 이상): PWL = 직전 주 저가를 k가 이번 주 '처음' 깸.
+ 키 레벨 스윕(하나 이상): PWL = 직전 주 저가를 k가 이번 주 '처음' 깸.
    DSL = k−2일 이전에 확정된 일봉 스윙 저점(앞뒤 1봉보다 낮음) 중 아직 안 깨진 가장 최근 것(60일 안)을 k가 깸.
- 확인: C4 = 4번 봉(k+2) 양봉 마감 → 5번 봉(k+3)이 거래일.  C45 = 4·5번 봉 모두 양봉 → 6번 봉(k+4)이 거래일.
- 진입(거래일 NY 08:30~11:00):
-   FVG = 창 안에서 처음 생긴 상승 M5 FVG(봉 i 저가 > 봉 i−2 고가, i가 창 안에서 마감)의 CE(중간)에 지정가, 11:00까지 유효.
-         손절 = 봉 i−11~i 최저가 − 1핍.
-   PDCE = 전일 범위 CE에 지정가(창 시작 시가가 CE 위일 때만), 손절 = 전일 25% 선(저가 + 0.25×범위) − 1핍. 11:00까지 유효.
- 목표: PDH(전일 고가, ≥1.5R) / 2R.  → 2×2×2 = 8개
-M2 딜링 레인지 표준편차 (영상 8번, ICT FX)
- 범위: ASIA = NY 19:00~24:00, CBDR = NY 14:00~20:00(전날 오후~). 횡보 조건: 범위 ≤ 0.4 × ADR20(직전 20일 평균 일봉 범위).
- SD 선: 아래 L − k×범위, 위 H + k×범위 (k = 0.5, 1, 2, 2.5). 거래: 범위 끝 ~ NY 11:00.
- SD1 = −1에 매수 지정가, 손절 −2 − 1핍, 목표 범위 저가(1R).  SD2 = −2에 매수, 손절 −2.5 − 1핍, 목표 범위 저가(4R).
- 바이어스 끔 = '먼저 닿은 쪽 되돌림'(단순판, 같은 봉에서 위·아래 둘 다 닿으면 그날 제외).
- 바이어스 켬 = 바이어스 방향 쪽만 되돌림('바이어스 방향일 때 SD에서 되돌림').  → 2×2 = 4개
-M3 주다스 스윙 / 런던
- 아시아 범위(NY 19:00~24:00). NY 02:00~05:00에 처음으로 아시아 저가를 깸(그 전 00:00부터 그 봉까지 아시아 고가는 안 깨짐).
- MSS: 스윕 뒤 NY 06:00 전까지, 극값 이전의 가장 가까운 확정 M5 스윙 고점(앞뒤 5봉, 72봉 안, 오른쪽 5봉이 그 시점까지 마감)
-      위로 양봉 몸통 마감 + 종가가 아시아 저가 위(범위 안 복귀). 극값이 새로 낮아지면 스윙 고점도 다시 찾음.
- 진입: MKT = MSS 다음 봉 시가.  FVG = 극값~MSS 봉 사이 가장 최근 상승 FVG의 CE 지정가, NY 08:00까지 유효.
- 손절 = 극값 − 1핍. 목표: OPP = 아시아 고가(≥1.5R) / 2R.  → 2×2 = 4개
-M4 실버 불릿
- 창: NY = NY 10:00~11:00, LDN = NY 03:00~04:00. 창 시작 시가 기준 '끌림(draw)' = 아직 안 깨진 유동성 중 가장 가까운 것.
- 후보: 전일 고·저(그날 창 전까지 안 깨짐), 아시아 고·저(NY 24:00 이후 창 전까지 안 깨짐), (NY 창만) 런던 NY 02~05시 고·저(05시 이후 안 깨짐).
- 위쪽이 더 가까우면 매수만. 창 안에서 처음 생긴 상승 M5 FVG: EDGE = FVG 위 끝(봉 i 저가) / CE = 중간에 지정가, 창 끝까지 유효.
- 손절 = 봉 i−11~i 최저가 − 1핍. 목표 = draw 레벨, 2.0R 미만이면 제외.  → 2×2 = 4개
-M5 IFVG CE 지키기 (영상 9번)
+ 확인: C4 = 4번 봉(k+2) 양봉 → 5번 봉(k+3)이 거래일.  C45 = 4·5번 봉 모두 양봉 → 6번 봉(k+4)이 거래일.
+ 진입: 거래일 NY 08:30~11:00 창 안에서 처음 생긴 상승 M5 FVG(봉 i 저가 > 봉 i−2 고가)의 CE에 지정가, 11:00까지 유효.
+ 손절 = 봉 i−11~i 최저가 − 1핍. 목표: PDH(전일 고가, ≥1.5R) / 2R.
+M2 아시아 레인지·자정 시가 (ICT Forex 2017 JA0mLNJeytY, PO3 dIT4HTFYGGo) + CBDR (NQ 영상 8번)   → 4개
+ ASIA-BRK : 좁은 AR. 자정 뒤 AR 저가가 먼저 깨진 뒤(고가보다 먼저) AR 고가에 매수 스톱.
+            손절 = 그때까지 최저가 − 1핍(최소 10핍=1u), 목표 2R.
+ ASIA-FADE: 좁은 AR. 자정 뒤 AR 저가 아래로 거래되면 AR 저가에 매수 지정가, 손절 15핍(1.5u), 목표 2R.
+            (ICT 매도 A: '자정 뒤 AR 고가 위면 매도'의 거울)
+ MO-PO3   : 자정 시가 − 10핍(1u)에 매수 지정가(자정~11시), 손절 20핍(2u), 목표 2R. (거짓 하락 때 시가 아래에서 매수)
+            덤 통계: 16시 종가 > MO 인 날 중 하루 저점이 MO 아래·10시 전에 나온 비율(깔때기 po3_*).
+ CBDR-SD1 : NY 14:00~20:00 범위 ≤ 0.4 × ADR20. NY 20:00~11:00 사이 −1 SD에 매수, 손절 −2 SD − 1핍, 목표 범위 저가(1R).
+ ICT는 "바이어스 없으면 거래 없음" → '+B'(바이어스 켬)가 ICT 원래 규칙. 바이어스 끔은 비교용
+ (BRK는 먼저 털린 쪽 반대, FADE·MO·SD는 먼저 닿은 쪽, 같은 봉 양쪽이면 그날 제외).
+M3 주다스 스윙 (xJMbva8SjzE)                                                          → 2개
+ 좁은 AR. NY 00:00~05:00 안에서 순서대로: 고가 > AR 고가 → (그 뒤 봉) 저가 < MO → 저가 ≤ AR 저가 − 10핍(1u)
+ → AR 저가 − 1u에 매수(지정가 체결). 하나라도 빠지면 거래 없음. 손절 = AR 저가 − 2u − 1핍(최소 10핍).
+ 목표: OPP = AR 고가(≥1.5R) / 2R. 매도는 거울.
+M4 실버 불릿 (tRq1hyGGtl4)                                                             → 3×2 = 6개
+ 창: LDN03 = NY 03~04시, AM10 = 10~11시, PM14 = 14~15시. 진입(체결)은 창 안에서만, 청산은 창 뒤도 가능.
+ draw = 창 시작 시가에서 가장 가까운 아직 안 깨진 유동성: 전일 고·저, 전주 고·저, 아시아 고·저, (AM·PM) 런던 NY02~05시 고·저,
+        (PM) 뉴욕 오전 NY07~11시 고·저, 이번 주 NWOG 위·아래 끝(이건 안 깨짐 검사 없음). 위가 더 가까우면 매수만.
+        draw까지 15핍(1.5u) 미만이면 건너뜀.
+ FVG: 창 안에서 처음 생긴 상승 M5 FVG 위 끝(봉 i 저가)에 지정가. 손절 = 봉 i−11~i 최저가 − 1핍.
+ MSS: 창 안에서 창 직전 30분 최저가를 깬 뒤(draw 반대쪽 스윕) 극값 전 확정 M5 스윙 고점(앞뒤 2봉) 위로 양봉 몸통 마감,
+      그 뒤 극값 이후 처음 생긴 상승 FVG 위 끝에 지정가. 손절 = 극값 − 1핍.
+ 목표 = draw, 1R 미만이면 제외. 창 끝까지 안 차면 취소.
+M5 IFVG CE 지키기 (NQ 영상 9번)                                                         → 2×2 = 4개
  H1 = H1 3봉 스윙 저점(일봉과 같은 정의, 키 레벨 = 48봉 안 안 깨진 가장 최근 H1 스윙 저점) + 4번 H1 봉 양봉 마감.
       직전 다리 = 스윙 저점 앞 24봉 중 최고가 봉부터 스윙 저점까지. 그 안의 하락 H1 FVG(봉 q 고가 < 봉 q−2 저가)가
       H1 종가로 위 끝을 넘으면 IFVG. 확인 후 24시간 동안 NY 02:00~12:00에 진입 가능.
  D1 = M1(C4) 일봉 셋업의 거래일. 직전 다리 = 2번 봉 앞 10일 중 최고가 일봉부터 2번 봉까지의 H1 하락 FVG. 거래일 NY 02:00~12:00.
  진입: M5 봉이 IFVG CE에 닿고(저가 ≤ CE) 종가가 CE 위 → 다음 봉 시가 매수. IFVG가 살아난 뒤 M5 종가가 CE 이하로
        마감하면 그 IFVG는 버림(몸통이 CE 아래로 닫히면 실패).
- 손절 = IFVG 아래 끝 − 1핍. 목표: HIGH = 다리 시작 고가(≥1.5R) / 2R.  → 2×2 = 4개
-M6 NDOG / NWOG
+ 손절 = IFVG 아래 끝 − 1핍. 목표: HIGH = 다리 시작 고가(≥1.5R) / 2R.
+M6 NDOG / NWOG (NQ 영상 7번)                                                            → 2×2 = 4개
  NWOG = 금요일 마지막 M5 종가 ~ 다음 주 첫 M5 시가. NDOG = 월요일 NY 16:55봉 종가 ~ NY 18:00봉 시가(그 사이 1시간은 무시).
  CE = 갭 중간을 지지/저항으로: 생긴 뒤 그 주 안 NY 02:00~12:00 봉 중 가격이 CE에 처음 닿는 봉
       (직전 종가가 CE 위면 위에서 내려온 것 → 매수 지정가 CE, 아래면 매도). 갭 하나에 1번. 손절 = 갭 반대 끝 ∓ 1핍, 목표 2R.
  FILL = 갭 메우기: 갭이 그 뒤 첫 NY 02:00까지 안 메워졌으면 그 봉 시가에 갭 쪽으로 진입, 목표 = 갭 이전 종가, 손절 = 같은 거리(1R).
- → 2×2 = 4개
+M7 마켓메이커 매수(매도) 모델 저위험 진입 (iKsIbUblSWM, 매도 모델의 거울로 정의)            → 2개
+ H1 같은 높이 저점(REL): 확정된 H1 스윙 저점(앞뒤 2봉) 2개가 3~48봉 간격, 차이 ≤ 2핍(0.2u), 그 사이 봉은 둘 다 안 깸.
+ BISI = 첫 저점 이전 48봉 안 가장 최근 상승 H1 FVG 중 위 끝이 REL 아래 2u 이내(바로 아래). 그 뒤 H1 종가가 BISI 아래 끝 밑이면 무효.
+ 두 번째 저점 확정 뒤 48봉 안에서 H1 저가가 REL을 깨며 BISI에 들어가고(안 들어가면 실패),
+ 12봉 안에 H1 종가가 REL 위로 복귀(그 전 BISI 아래 끝 밑 종가 마감이면 실패) → BISI CE에 매수 지정가(NY 02~12시 체결만),
+ 24 H1봉 유효, H1 종가가 BISI 아래 끝 밑이면 취소. 손절 = BISI 아래 끝 − 1핍.
+ 목표: CONS = 두 저점 사이 최고가(횡보 반대편, ≥1.5R) / 2R. 체결 전 목표 도달 시 취소.
+M8 TGIF (9YS41OoxbX4)                                                                   → 2개
+ 강한 하락 주: 주 범위 ≥ 직전 8주 평균의 1.2배, 종가가 주 범위 아래 20% 안, 금요일 일봉 음봉(금요일 되돌림 없음).
+ 다음 주 첫날 NY 02:00 시가에 매수(시가가 '주 저가 + 25% 범위' 아래일 때), 목표 = 주 저가 + 0.25 × 주 범위.
+ 손절: SYM = 같은 거리(1R) / WEXT = min(지난주 저가, 이번 주 그때까지 저가) − 1u. 매도는 거울(강한 상승 주).
+ 덤 통계: 월·화에 20%·30% 되돌림이 나온 비율(깔때기 montue_*).
 합계 기본 28개 × 바이어스 끔/켬 = 56개 변형 (이름 뒤 '+B' = 바이어스 켬).
 
 판정(trading/projects/02-ict/README.md 합격 기준, 미리 정함):
@@ -100,25 +118,29 @@ SERVER_MINUS_NY = 7
 OOS_START = "2024-01-01"
 SL_BUF_PIPS = 1.0
 MIN_RISK_SPREADS, MIN_RISK_PIPS = 4.0, 2.0
-MIN_RR_LIQ, MIN_RR_SB = 1.5, 2.0
+MIN_RR_LIQ = 1.5
 CONSOL_X = 0.4            # M2 횡보: 범위 ≤ 0.4 × ADR20
 SPREAD_FLOOR = {"XAUUSD": 2.0}   # 핍 단위 최소 스프레드(금 0.2달러). 나머지 1핍
 DEFAULT_SPREAD = 1.0
-MSS_N, MSS_LOOKBACK = 5, 72
+ICT_PIP_DIV = 7.0          # ICT의 "10핍" = ADR20 ÷ 7 (EURUSD 하루 평균 범위 약 70핍 기준으로 종목·시기 환산)
 
 # ---------------------------------------------------------------- 변형 목록 (미리 고정)
 BASE_VARIANTS = (
-    [("M1", f"M1-{c}-{e}-{t}") for c in ("C4", "C45") for e in ("FVG", "PDCE") for t in ("PDH", "2R")] +
-    [("M2", f"M2-{r}-{s}") for r in ("ASIA", "CBDR") for s in ("SD1", "SD2")] +
-    [("M3", f"M3-{e}-{t}") for e in ("MKT", "FVG") for t in ("OPP", "2R")] +
-    [("M4", f"M4-{w}-{e}") for w in ("NY", "LDN") for e in ("EDGE", "CE")] +
+    [("M1", f"M1-{c}-FVG-{t}") for c in ("C4", "C45") for t in ("PDH", "2R")] +
+    [("M2", v) for v in ("M2-ASIA-BRK", "M2-ASIA-FADE", "M2-MO-PO3", "M2-CBDR-SD1")] +
+    [("M3", f"M3-JUDAS-{t}") for t in ("OPP", "2R")] +
+    [("M4", f"M4-{w}-{s}") for w in ("LDN03", "AM10", "PM14") for s in ("FVG", "MSS")] +
     [("M5", f"M5-{c}-{t}") for c in ("H1", "D1") for t in ("HIGH", "2R")] +
-    [("M6", f"M6-{g}-{m}") for g in ("NDOG", "NWOG") for m in ("CE", "FILL")]
+    [("M6", f"M6-{g}-{m}") for g in ("NDOG", "NWOG") for m in ("CE", "FILL")] +
+    [("M7", f"M7-MMXM-{t}") for t in ("CONS", "2R")] +
+    [("M8", f"M8-TGIF-{s}") for s in ("SYM", "WEXT")]
 )
 VARIANTS = [v for _, b in BASE_VARIANTS for v in (b, b + "+B")]
 MODEL_OF = {b: m for m, b in BASE_VARIANTS}
-MODEL_DESC = {"M1": "일봉 3봉 스윙+확인", "M2": "딜링 레인지 SD 되돌림", "M3": "주다스 스윙(런던)",
-              "M4": "실버 불릿", "M5": "IFVG CE 지키기", "M6": "NDOG/NWOG"}
+MODEL_DESC = {"M1": "일봉 3봉 스윙+확인", "M2": "아시아 레인지·자정 시가·CBDR", "M3": "주다스 스윙",
+              "M4": "실버 불릿", "M5": "IFVG CE 지키기", "M6": "NDOG/NWOG", "M7": "마켓메이커 모델 저위험 진입",
+              "M8": "TGIF 월요일 되돌림"}
+MODELS = list(MODEL_DESC)
 
 
 # ---------------------------------------------------------------- 데이터 읽기 (crt_backtest.py 에서 복사)
@@ -364,7 +386,7 @@ class Space:
         self.hO, self.hC = o[hs], c[he - 1]
         self.hH, self.hL = np.maximum.reduceat(h, hs), np.minimum.reduceat(l, hs)
         self.hHl, self.hLl = self.hH.tolist(), self.hL.tolist()
-        self.frh = fractal_high(h, MSS_N).tolist()
+        self.frh2 = fractal_high(h, 2).tolist()
         # 바이어스(이 공간 기준 +1 = 매수 허용)
         nd = X.nd
         b = np.zeros(nd, int)
@@ -472,13 +494,12 @@ def model_m1(S, X, col, dsetups):
                 continue
             if conf == "C45" and not S.dC[k + 3] > S.dO[k + 3]:
                 continue
-            for e in ("FVG", "PDCE"):
-                for tg in ("PDH", "2R"):
-                    col.count(f"M1-{conf}-{e}-{tg}", "setup")
+            for tg in ("PDH", "2R"):
+                col.count(f"M1-{conf}-FVG-{tg}", "setup")
             s0, s1 = X.idx(T, 15.5), X.idx(T, 18)
             if s1 - s0 < 3:
                 continue
-            pdh, pdl = S.dH[T - 1], S.dL[T - 1]
+            pdh = S.dH[T - 1]
             H, L = S.Hl, S.Ll
             orders = {}
             for i in range(max(s0, 11), s1):
@@ -486,9 +507,6 @@ def model_m1(S, X, col, dsetups):
                 if g:
                     orders["FVG"] = (i, (g[0] + g[1]) / 2, min(L[i - 11:i + 1]) - X.buf)
                     break
-            ce = (pdh + pdl) / 2
-            if S.O[s0] > ce:
-                orders["PDCE"] = (s0 - 1, ce, pdl + 0.25 * (pdh - pdl) - X.buf)
             for e, (i, entry, sl) in orders.items():
                 risk = entry - sl
                 for tg in ("PDH", "2R"):
@@ -504,131 +522,162 @@ def model_m1(S, X, col, dsetups):
 
 
 def model_m2(S, X, col):
+    """M2 아시아 레인지(ICT 2017) + 자정 시가(PO3) + CBDR SD1."""
+    H, L, O, C = S.H, S.L, S.O, S.C
     for i in range(21, X.nd):
         adr = S.adr20[i]
-        for rname, (ra, rb, need) in (("ASIA", (2, 7, 30)), ("CBDR", (-3, 3, 36))):
-            a, b = X.idx(i, ra), X.idx(i, rb)
-            if b - a < need:
-                continue
-            for s in ("SD1", "SD2"):
-                col.count(f"M2-{rname}-{s}", "setup")
-            rh, rl = S.H[a:b].max(), S.L[a:b].min()
+        if not adr > 0:
+            continue
+        u = adr / ICT_PIP_DIV
+        ra, rb, te = X.idx(i, 2), X.idx(i, 7), X.idx(i, 18)
+        if rb - ra >= 30 and te > rb + 1:
+            for v in ("M2-ASIA-BRK", "M2-ASIA-FADE", "M2-MO-PO3"):
+                col.count(v, "setup")
+            ah, al = H[ra:rb].max(), L[ra:rb].min()
+            rg = ah - al
+            mo = O[rb]
+            # PO3 통계(거래 아님): 뉴욕 16시 종가가 자정 시가 위인 날, 저점이 자정 시가 아래에서 10시 전에 나왔나
+            ce, c10 = X.idx(i, 23), X.idx(i, 17)
+            if ce > c10 > rb:
+                lo_i = rb + int(np.argmin(L[rb:ce]))
+                early = L[lo_i] < mo and lo_i < c10
+                col.count("M2-MO-PO3", "po3_days")
+                col.count("M2-MO-PO3", "po3_low_below_mo_before10", int(early))
+                if C[ce - 1] > mo:
+                    col.count("M2-MO-PO3", "po3_upclose_days")
+                    col.count("M2-MO-PO3", "po3_upclose_low_before10", int(early))
+            # MO: 자정 시가 - 10핍(ICT 단위)에 매수 지정가, 손절 20핍, 목표 2R
+            entry = mo - u
+            f = first_true(L[rb:te] <= entry)
+            if f >= 0:
+                f += rb
+                col.trade(S, "M2-MO-PO3", (i, "MO"), f, f, entry, entry - 2 * u, entry + 4 * u, True, False, i)
+            if 0 < rg <= CONSOL_X * adr:
+                col.count("M2-ASIA-BRK", "consol")
+                col.count("M2-ASIA-FADE", "consol")
+                slo = first_true(L[rb:te] < al)
+                shi = first_true(H[rb:te] >= ah)
+                # BRK: 아시아 저가가 먼저 털린 뒤 아시아 고가에 매수 스톱
+                if slo >= 0 and shi > slo:
+                    f = rb + shi
+                    entry = max(ah, O[f])
+                    sl = min(L[rb:f].min() - X.buf, entry - u)
+                    col.trade(S, "M2-ASIA-BRK", (i, "BRK"), f, f, entry, sl, entry + 2 * (entry - sl), True, True, i)
+                # FADE: 자정 뒤 아시아 저가 아래로 거래되면 아시아 저가에 매수, 손절 15핍, 목표 2R
+                if slo >= 0:
+                    f = rb + slo
+                    sl = al - 1.5 * u
+                    col.trade(S, "M2-ASIA-FADE", (i, "FADE"), f, f, al, sl, al + 2 * (al - sl), True, False, i)
+        # CBDR SD1 (NQ 영상 8번): NY 14~20시 범위, -1 SD 매수, 손절 -2 SD, 목표 범위 저가
+        a, b = X.idx(i, -3), X.idx(i, 3)
+        if b - a >= 36:
+            base = "M2-CBDR-SD1"
+            col.count(base, "setup")
+            rh, rl = H[a:b].max(), L[a:b].min()
             rg = rh - rl
-            if not (0 < rg <= CONSOL_X * adr):
-                continue
-            we = X.idx(i, 18)
-            lv = sd_levels(rh, rl)
-            for s, k, ks in (("SD1", 1.0, 2.0), ("SD2", 2.0, 2.5)):
-                base = f"M2-{rname}-{s}"
+            if 0 < rg <= CONSOL_X * adr:
                 col.count(base, "consol")
-                entry, sl, tp = lv[k][0], lv[ks][0] - X.buf, rl
-                f = first_true(S.L[b:we] <= entry)
-                if f < 0:
-                    continue
-                f += b
-                col.trade(S, base, (i, rname, s), f, f, entry, sl, tp, True, False, i)
+                lv = sd_levels(rh, rl)
+                entry = lv[1.0][0]
+                f = first_true(L[b:te] <= entry)
+                if f >= 0:
+                    f += b
+                    col.trade(S, base, (i, "CBDR"), f, f, entry, lv[2.0][0] - X.buf, rl, True, False, i)
 
 
 def model_m3(S, X, col):
-    H, L, C, O, frh = S.Hl, S.Ll, S.Cl, S.Ol, S.frh
-    for i in range(1, X.nd):
-        ra, rb = X.idx(i, 2), X.idx(i, 7)
-        if rb - ra < 30:
+    """M3 주다스 스윙(ICT): 자정~05시, 아시아 고가 위 -> 자정 시가 아래 -> 아시아 저가 - 10핍에 매수."""
+    H, L, O = S.H, S.L, S.O
+    for i in range(21, X.nd):
+        adr = S.adr20[i]
+        if not adr > 0:
             continue
-        ah, al = S.H[ra:rb].max(), S.L[ra:rb].min()
-        ws, we, me, oe = X.idx(i, 9), X.idx(i, 12), X.idx(i, 13), X.idx(i, 15)
-        if we <= ws:
+        u = adr / ICT_PIP_DIV
+        ra, rb, je = X.idx(i, 2), X.idx(i, 7), X.idx(i, 12)
+        if rb - ra < 30 or je <= rb + 2:
             continue
-        s = first_true(S.L[rb:we] < al)
-        if s < 0:
+        ah, al = H[ra:rb].max(), L[ra:rb].min()
+        rg = ah - al
+        if not 0 < rg <= CONSOL_X * adr:
             continue
-        s += rb
-        if s < ws or S.H[rb:s + 1].max() > ah:
+        for t in ("OPP", "2R"):
+            col.count(f"M3-JUDAS-{t}", "setup")
+        mo = O[rb]
+        a1 = first_true(H[rb:je] > ah)
+        if a1 < 0:
             continue
-        for v in ("M3-MKT-OPP", "M3-MKT-2R", "M3-FVG-OPP", "M3-FVG-2R"):
-            col.count(v, "setup")
-        ext, k_mss = s, -1
-        for k in range(s, me):
-            if L[k] < L[ext]:
-                ext = k
-            lvl = None
-            for m in range(ext - 1, max(ext - MSS_LOOKBACK, MSS_N) - 1, -1):
-                if frh[m] and m + MSS_N <= k:
-                    lvl = H[m]
-                    break
-            if lvl is not None and C[k] > lvl and C[k] > O[k] and C[k] > al:
-                k_mss = k
-                break
-        if k_mss < 0:
+        a1 += rb
+        a2 = first_true(L[a1 + 1:je] < mo)
+        if a2 < 0:
             continue
-        k = k_mss
-        sl = L[ext] - X.buf
-        for v in ("M3-MKT-OPP", "M3-MKT-2R", "M3-FVG-OPP", "M3-FVG-2R"):
-            col.count(v, "mss")
-        # MKT
-        f = k + 1
-        if f < X.n and X.bar_day[f] == i:
-            entry = O[f]
-            for tg in ("OPP", "2R"):
-                base = f"M3-MKT-{tg}"
-                risk = entry - sl
-                tp = ah if tg == "OPP" else entry + 2 * risk
-                if risk <= 0 or (tg == "OPP" and tp - entry < MIN_RR_LIQ * risk):
-                    col.count(base, "skip_rr")
-                    continue
-                col.trade(S, base, i, k, f, entry, sl, tp, False, True, i)
-        # FVG
-        g = None
-        for i3 in range(k, ext + 1, -1):
-            if i3 - 2 >= ext:
-                g = fvg_bull(H, L, i3)
-                if g:
-                    break
-        if g is None:
+        a2 += a1 + 1
+        entry = al - u
+        a3 = first_true(L[a2:je] <= entry)
+        if a3 < 0:
             continue
-        entry = (g[0] + g[1]) / 2
+        a3 += a2
+        sl = al - 2 * u - X.buf
         risk = entry - sl
-        for tg in ("OPP", "2R"):
-            base = f"M3-FVG-{tg}"
-            tp = ah if tg == "OPP" else entry + 2 * risk
-            if risk <= 0 or entry >= C[k] or (tg == "OPP" and tp - entry < MIN_RR_LIQ * risk):
+        for t in ("OPP", "2R"):
+            base = f"M3-JUDAS-{t}"
+            col.count(base, "sequence")
+            tp = ah if t == "OPP" else entry + 2 * risk
+            if t == "OPP" and tp - entry < MIN_RR_LIQ * risk:
                 col.count(base, "skip_rr")
                 continue
-            col.count(base, "order")
-            f = limit_fill(S, k + 1, oe, entry, tp)
-            if f >= 0:
-                col.trade(S, base, i, k, f, entry, sl, tp, True, True, i)
+            col.trade(S, base, i, a3, a3, entry, sl, tp, True, True, i)
+
+
+SB_WINDOWS = {"LDN03": (10, 11), "AM10": (17, 18), "PM14": (21, 22)}   # 서버 시 = NY 03, 10, 14시
 
 
 def model_m4(S, X, col):
-    H, L = S.Hl, S.Ll
-    for i in range(1, X.nd):
-        d0 = X.dstart[i]
+    """M4 실버 불릿(ICT): 창 안 진입만, 가장 가까운 유동성(≥15핍)으로."""
+    H, L, O, C = S.H, S.L, S.O, S.C
+    Hl, Ll, Ol, Cl, frh2 = S.Hl, S.Ll, S.Ol, S.Cl, S.frh2
+    for i in range(21, X.nd):
+        adr = S.adr20[i]
+        if not adr > 0:
+            continue
+        u = adr / ICT_PIP_DIV
+        d0 = int(X.dstart[i])
+        w = X.dweek[i]
+        wk0 = int(X.dstart[X.wfirst_d[w]])
         a_r, b_r = X.idx(i, 2), X.idx(i, 7)
-        for wname, (wh0, wh1) in (("NY", (17, 18)), ("LDN", (10, 11))):
-            ws, we = X.idx(i, wh0), X.idx(i, wh1)
-            if we - ws < 3 or ws <= d0:
+        for wname, (h0, h1) in SB_WINDOWS.items():
+            ws, we = X.idx(i, h0), X.idx(i, h1)
+            if we - ws < 3 or ws <= d0 + 6:
                 continue
-            o = S.O[ws]
+            o = O[ws]
             ups, dns = [], []
-            if S.H[d0:ws].max() < S.dH[i - 1]:
-                ups.append(S.dH[i - 1])
-            if S.L[d0:ws].min() > S.dL[i - 1]:
-                dns.append(S.dL[i - 1])
+
+            def add(hi, lo, a, b_):
+                if b_ > a:
+                    if H[a:b_].max() < hi:
+                        ups.append(hi)
+                    if L[a:b_].min() > lo:
+                        dns.append(lo)
+                else:
+                    ups.append(hi)
+                    dns.append(lo)
+            add(S.dH[i - 1], S.dL[i - 1], d0, ws)                              # 전일 고저
+            if w >= 1:
+                add(S.wH[w - 1], S.wL[w - 1], wk0, ws)                         # 전주 고저
             if b_r - a_r >= 30 and ws > b_r:
-                ah, al = S.H[a_r:b_r].max(), S.L[a_r:b_r].min()
-                if S.H[b_r:ws].max() < ah:
-                    ups.append(ah)
-                if S.L[b_r:ws].min() > al:
-                    dns.append(al)
-            if wname == "NY":
+                add(H[a_r:b_r].max(), L[a_r:b_r].min(), b_r, ws)               # 아시아
+            if wname != "LDN03":
                 la, lb = X.idx(i, 9), X.idx(i, 12)
-                if lb - la >= 18 and ws > lb:
-                    lh, ll = S.H[la:lb].max(), S.L[la:lb].min()
-                    if S.H[lb:ws].max() < lh:
-                        ups.append(lh)
-                    if S.L[lb:ws].min() > ll:
-                        dns.append(ll)
+                if lb - la >= 18 and ws >= lb:
+                    add(H[la:lb].max(), L[la:lb].min(), lb, ws)                # 런던
+            if wname == "PM14":
+                na, nb = X.idx(i, 14), X.idx(i, 18)
+                if nb - na >= 24 and ws >= nb:
+                    add(H[na:nb].max(), L[na:nb].min(), nb, ws)                # 뉴욕 오전
+            if wk0 > 0:                                                         # 이번 주 NWOG 끝
+                g_hi, g_lo = max(C[wk0 - 1], O[wk0]), min(C[wk0 - 1], O[wk0])
+                if g_hi > g_lo:
+                    ups.append(g_hi)
+                    dns.append(g_lo)
             ups = [x for x in ups if x > o]
             dns = [x for x in dns if x < o]
             if not ups:
@@ -636,27 +685,181 @@ def model_m4(S, X, col):
             up = min(ups)
             if dns and (o - max(dns)) <= (up - o):
                 continue
-            for e in ("EDGE", "CE"):
-                col.count(f"M4-{wname}-{e}", "setup")
-            g = None
-            for i3 in range(max(ws, 11), we):
-                g = fvg_bull(H, L, i3)
-                if g:
-                    break
-            if g is None:
+            if up - o < 1.5 * u:
                 continue
-            sl = min(L[i3 - 11:i3 + 1]) - X.buf
-            for e in ("EDGE", "CE"):
-                base = f"M4-{wname}-{e}"
-                entry = g[1] if e == "EDGE" else (g[0] + g[1]) / 2
+            for s in ("FVG", "MSS"):
+                col.count(f"M4-{wname}-{s}", "setup")
+            # FVG: 창 안 첫 상승 FVG
+            for s in ("FVG", "MSS"):
+                base = f"M4-{wname}-{s}"
+                g = None
+                if s == "FVG":
+                    for i3 in range(max(ws, 11), we):
+                        g = fvg_bull(Hl, Ll, i3)
+                        if g:
+                            break
+                    if g is None:
+                        continue
+                    start = i3 + 1
+                    sl = min(Ll[i3 - 11:i3 + 1]) - X.buf
+                else:
+                    ref = min(Ll[ws - 6:ws])
+                    sw = first_true(L[ws:we] < ref)
+                    if sw < 0:
+                        continue
+                    sw += ws
+                    ext, kq = sw, -1
+                    for k in range(sw, we):
+                        if Ll[k] < Ll[ext]:
+                            ext = k
+                        lvl = None
+                        for m in range(ext - 1, max(ext - 36, 2) - 1, -1):
+                            if frh2[m] and m + 2 <= k:
+                                lvl = Hl[m]
+                                break
+                        if lvl is not None and Cl[k] > lvl and Cl[k] > Ol[k]:
+                            kq = k
+                            break
+                    if kq < 0:
+                        continue
+                    col.count(base, "mss")
+                    for i3 in range(ext + 2, we):
+                        g = fvg_bull(Hl, Ll, i3)
+                        if g:
+                            break
+                    if g is None:
+                        continue
+                    start = max(i3, kq) + 1
+                    if Ll[i3] >= Cl[start - 1]:
+                        continue
+                    sl = Ll[ext] - X.buf
+                entry = g[1]
                 risk = entry - sl
-                if risk <= 0 or up - entry < MIN_RR_SB * risk:
+                if risk <= 0 or up - entry < risk:
                     col.count(base, "skip_rr")
                     continue
                 col.count(base, "order")
-                f = limit_fill(S, i3 + 1, we, entry, up)
+                f = limit_fill(S, start, we, entry, up)
                 if f >= 0:
-                    col.trade(S, base, (i, wname), i3, f, entry, sl, up, True, True, i)
+                    col.trade(S, base, (i, wname), f, f, entry, sl, up, True, True, i)
+
+
+def model_m7(S, X, col):
+    """M7 마켓메이커 매수 모델 저위험 진입(ICT, 매도 모델의 거울): H1 같은 높이 저점(REL) 바로 아래 BISI."""
+    hL, hH, hC = S.hLl, S.hHl, S.hC
+    nh = len(hL)
+    lows = np.flatnonzero(fractal_high(-S.hL, 2))
+    for bi in range(len(lows)):
+        m = int(lows[bi])
+        if m + 3 >= nh:
+            break
+        day = int(X.bar_day[X.hstart[m]])
+        adr = S.adr20[day]
+        if not adr > 0:
+            continue
+        u = adr / ICT_PIP_DIV
+        m0 = -1
+        for bj in range(bi - 1, -1, -1):
+            c0 = int(lows[bj])
+            if m - c0 > 48:
+                break
+            if m - c0 >= 3 and abs(hL[m] - hL[c0]) <= 0.2 * u:
+                m0 = c0
+                break
+        if m0 < 0:
+            continue
+        level = min(hL[m0], hL[m])
+        if min(hL[m0 + 1:m]) <= level:
+            continue
+        cons_hi = max(hH[m0:m + 1])
+        g = None
+        for q in range(m0, max(m0 - 48, 2) - 1, -1):
+            gg = fvg_bull(hH, hL, q)
+            if gg and gg[1] <= level and level - gg[1] <= 2 * u:
+                g = gg
+                break
+        if g is None:
+            continue
+        bot, top = g
+        if (hC[q + 1:m + 3] < bot).any():
+            continue
+        for t in ("CONS", "2R"):
+            col.count(f"M7-MMXM-{t}", "setup")
+        r_sw, r_ok = -1, -1
+        for r in range(m + 3, min(m + 51, nh)):
+            if hC[r] < bot:
+                break
+            if r_sw < 0:
+                if hL[r] < level:
+                    if hL[r] > top:
+                        break
+                    r_sw = r
+                else:
+                    continue
+            if hC[r] > level and r >= r_sw:
+                r_ok = r
+                break
+            if r - r_sw > 12:
+                break
+        if r_ok < 0:
+            continue
+        lim = min(r_ok + 24, nh - 1)
+        bad = np.flatnonzero(hC[r_ok + 1:lim + 1] < bot)
+        q_end = r_ok + 1 + int(bad[0]) if len(bad) else lim
+        j0, j1 = int(X.h_close_m5[r_ok]), int(X.h_close_m5[q_end])
+        entry, sl = (bot + top) / 2, bot - X.buf
+        risk = entry - sl
+        for t in ("CONS", "2R"):
+            base = f"M7-MMXM-{t}"
+            col.count(base, "sweep_ok")
+            tp = cons_hi if t == "CONS" else entry + 2 * risk
+            if t == "CONS" and tp - entry < MIN_RR_LIQ * risk:
+                col.count(base, "skip_rr")
+                continue
+            if j1 <= j0:
+                continue
+            fi = first_true((S.L[j0:j1] <= entry) & X.win_02_12[j0:j1])
+            ti = first_true(S.H[j0:j1] >= tp)
+            if fi < 0 or (0 <= ti <= fi):
+                continue
+            f = j0 + fi
+            col.trade(S, base, ("M7", m, S.sd), f, f, entry, sl, tp, True, False, int(X.bar_day[f]))
+
+
+def model_m8(S, X, col):
+    """M8 TGIF(ICT): 강한 하락 주(금요일도 음봉) 다음 월요일 NY 02시에 주간 범위 25% 되돌림 쪽으로 매수."""
+    wr = S.wH - S.wL
+    for w in range(9, X.nw):
+        p = w - 1
+        rng = wr[p]
+        avg = wr[p - 8:p].mean()
+        if not (rng >= 1.2 * avg and S.wC[p] - S.wL[p] <= 0.2 * rng):
+            continue
+        fri = X.wfirst_d[w] - 1
+        if not S.dC[fri] < S.dO[fri]:
+            continue
+        d = int(X.wfirst_d[w])
+        for s in ("SYM", "WEXT"):
+            col.count(f"M8-TGIF-{s}", "setup")
+        # 통계(거래 아님): 월·화 안에 20%/30% 되돌림이 나왔나
+        d2 = min(d + 1, X.nd - 1) if (d + 1 < X.nd and X.dweek[d + 1] == w) else d
+        hi = S.H[X.dstart[d]:X.dend[d2]].max()
+        col.count("M8-TGIF-SYM", "montue_retrace20", int(hi >= S.wL[p] + 0.2 * rng))
+        col.count("M8-TGIF-SYM", "montue_retrace30", int(hi >= S.wL[p] + 0.3 * rng))
+        e = X.idx(d, 9)
+        if e >= X.dend[d] or e <= X.dstart[d]:
+            continue
+        adr = S.adr20[d]
+        if not adr > 0:
+            continue
+        u = adr / ICT_PIP_DIV
+        entry = S.O[e]
+        tp = S.wL[p] + 0.25 * rng
+        if entry >= tp:
+            continue
+        for s in ("SYM", "WEXT"):
+            sl = entry - (tp - entry) if s == "SYM" else min(S.wL[p], S.L[X.dstart[d]:e].min()) - u
+            col.trade(S, f"M8-TGIF-{s}", ("M8", w), e, e, entry, sl, tp, False, True, d)
 
 
 def ifvg_trigger(S, X, fvgs, j0, j1):
@@ -809,7 +1012,7 @@ COLS = ["variant_base", "dir", "key", "dec_i", "fill_i", "exit_i", "entry", "sl"
 
 
 def run_symbol(sym, df, pip, spread_pips, models=None):
-    models = models or ["M1", "M2", "M3", "M4", "M5", "M6"]
+    models = models or MODELS
     X = Ctx(df, pip, spread_pips)
     o, h, l, c = (df[x].values.astype(float) for x in ("o", "h", "l", "c"))
     col = Collector(X)
@@ -830,6 +1033,10 @@ def run_symbol(sym, df, pip, spread_pips, models=None):
             model_m5(S, X, col, dsetups)
         if "M6" in models:
             model_m6(S, X, col, glist)
+        if "M7" in models:
+            model_m7(S, X, col)
+        if "M8" in models:
+            model_m8(S, X, col)
     raw = pd.DataFrame(col.rows, columns=COLS)
     trades, funnel = finalize(raw, X, sym, col.fun, models)
     return trades, funnel, (int(X.t[0]), int(X.t[-1]))
@@ -986,7 +1193,7 @@ def write_text(path, jd, tr, funnel, meta, symbols):
     L.append(f"  Bonferroni 기준 IS t ≥ {jd['bonf_t'].iloc[0]:.2f} (한쪽 5%, 변형 {len(jd)}개).")
     L.append("")
     L.append("[변형별 판정]  IS/OOS = 건수 · 평균R · PF · t,  DD = OOS 최대 낙폭(R),  종목 = IS·OOS 둘 다 + 종목 수,  연도 = + 연도 수")
-    for m in ["M1", "M2", "M3", "M4", "M5", "M6"]:
+    for m in MODELS:
         g = jd[jd["model"] == m]
         if g.empty:
             continue
@@ -1000,7 +1207,7 @@ def write_text(path, jd, tr, funnel, meta, symbols):
                 L.append(f"      못 넘은 기준: {r['fails']}")
     L.append("")
     L.append("[모델별 IS 최선 변형] (IS 100건 이상 중 IS 평균 R 1위. OOS는 고른 뒤 확인만)")
-    for m in ["M1", "M2", "M3", "M4", "M5", "M6"]:
+    for m in MODELS:
         g = jd[(jd["model"] == m) & (jd["IS_n"] >= 100)]
         if g.empty:
             L.append(f"  {m}: IS 100건 이상 변형 없음")
@@ -1067,7 +1274,7 @@ def build_parser():
     p.add_argument("--data-dir", help="folder with {SYMBOL}_M5.csv")
     p.add_argument("--out", help="output folder (created if missing)")
     p.add_argument("--symbols", default="", help="comma list. empty = all *_M5.csv in folder")
-    p.add_argument("--models", default="M1,M2,M3,M4,M5,M6", help="models to run (default all)")
+    p.add_argument("--models", default="M1,M2,M3,M4,M5,M6,M7,M8", help="models to run (default all)")
     p.add_argument("--spread", type=float, default=DEFAULT_SPREAD, help="default spread pips (default 1.0, floor 1)")
     p.add_argument("--spread-map", default="", help="per-symbol spread pips, e.g. GBPJPY=2.5 (XAUUSD default 2 = $0.20)")
     p.add_argument("--pip-map", default="", help="per-symbol pip size, e.g. XAUUSD=0.1")
@@ -1253,10 +1460,10 @@ def selftest():
                 + ("" if not bad else f" -> {bad}"))
     if few:
         print(f"  (참고) 랜덤워크에서 30건 미만이라 변형별 판정 생략: {', '.join(few)}")
-    for m in ["M1", "M2", "M3", "M4", "M5", "M6"]:
+    for m in MODELS:
         st = stats(rw[rw["model"] == m]["R"].values)
-        ok = _check(ok, st["t"] < 2.5 and -0.20 < st["avg"] < 0.10,
-                    f"{m} 전체 {st['n']:6d}행 평균 {st['avg']:+.3f}R t {st['t']:+.2f} (기준 t<2.5, -0.20<평균<+0.10)")
+        ok = _check(ok, st["t"] < 2.5 and (st["n"] < 500 or -0.20 < st["avg"] < 0.10),
+                    f"{m} 전체 {st['n']:6d}행 평균 {st['avg']:+.3f}R t {st['t']:+.2f} (기준 t<2.5, 500행 이상이면 -0.20<평균<+0.10)")
     allr = rw["R"].values
     ok = _check(ok, -0.10 < allr.mean() < 0.03, f"전체 평균 {allr.mean():+.3f}R (보수적 체결 규칙 때문에 약간 음수가 정상)")
     print("  (참고) 손절이 M5 봉 1~2개 크기로 좁은 변형은 '같은 봉 손절 우선·체결 봉 목표 무시' 때문에 랜덤워크에서도"

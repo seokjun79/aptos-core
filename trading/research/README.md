@@ -333,3 +333,52 @@ python crt_backtest.py --data-dir C:\Users\kun00\venus\mt5_m5_data --out C:\User
 - 랜덤워크(가짜 시세 8개) 확인: '깊음 − 얕음' 기대값 차이는 8개 합치면 +0.04R(≈0)이지만 시세 하나만 보면 −0.32 ~ +0.48R까지 흔들려요.
   실제 결과에서 이 정도 차이는 우연일 수 있어요.
 - 실행 예: `py -3.12 crt_backtest.py --data-dir C:\Users\kun00\venus\mt5_m5_data --out C:\Users\kun00\venus\crt_bt_out4 --trend ALL --mss-tf M15,M5 --stops S2 --targets T2,T3`
+
+## 프로젝트 2: ICT 모델 백테스트 (`ict_backtest.py`, 2026-10-29 작성, 실제 데이터 결과는 아직 없음)
+
+### 한 줄 설명
+ICT 본인 영상에서 나온 방법 8가지(M1~M8)를 기계 규칙으로 바꿔, 비용을 빼고도 이기는 것이 있는지 미리 정한 기준으로 판정하는 계산기예요.
+규칙 원문은 `trading/projects/02-ict/rules.md`(실데이터 보기 전 고정). 주문은 절대 안 넣어요(읽기만 해요).
+
+### 집 PC에서 돌리는 법 (RC비너스용)
+```
+cd C:\Users\kun00\venus
+py -3.12 ict_backtest.py --selftest
+py -3.12 ict_backtest.py --data-dir C:\Users\kun00\venus\mt5_m5_data --out C:\Users\kun00\venus\ict_bt_out
+```
+- 첫 줄 자체 시험 마지막에 "모두 통과"가 나와야 다음 줄을 돌려요(클라우드에서 약 16초).
+- 스크립트는 `trading/research/ict_backtest.py`를 PC로 복사해서 써요. 각 파일 머리글(첫 줄)을 보여 줘요.
+- 옵션: `--symbols EURUSD,GBPUSD`, `--models M2,M3,M4`, `--spread-map GBPJPY=2.5`(기본 1핍, 금 2핍=0.2달러, 이보다 낮게는 안 내려감), `--pip-map XAUUSD=0.1`, `--rw 2`(랜덤워크 개수).
+- 속도: 가짜 M5 8년치 1종목 약 4초(+CSV 읽기). 9종목 + 랜덤워크 2개 → 보통 PC에서 몇 분 안.
+
+### 모델 (자세한 숫자는 rules.md)
+| 모델 | 근거 영상 | 변형 |
+|---|---|---|
+| M1 일봉 3봉 스윙 + 4·5번 봉 확인 → 다음날 NY 08:30~11:00 M5 FVG CE | NQ 10/28 | 확인 C4/C45 × 목표 PDH/2R |
+| M2 아시아 레인지(NY19~24) 돌파·되돌림, 자정 시가 아래 매수(PO3), CBDR −1SD | ICT FX 2017, PO3, NQ | BRK, FADE, MO-PO3, CBDR-SD1 |
+| M3 주다스 스윙: AR 고가 위 → MO 아래 → AR 저가 −10핍 매수 | 주다스 영상 | 목표 AR 반대편/2R |
+| M4 실버 불릿 NY 03·10·14시 창, 가장 가까운 유동성(≥15핍)으로 첫 FVG | 실버 불릿 영상 | 창 3 × (FVG, MSS+FVG) |
+| M5 IFVG CE 지키기 (H1 스윙 / 일봉 스윙 뒤) | NQ 10/28 | H1/D1 × 목표 다리 고가/2R |
+| M6 NDOG·NWOG: CE 지지/저항, 갭 메우기 | NQ 10/28 | NDOG/NWOG × CE/FILL |
+| M7 마켓메이커 모델: 같은 높이 저점 스윕 → 바로 아래 BISI CE 매수 | MMXM 영상 | 목표 횡보 반대편/2R |
+| M8 TGIF: 강한 추세 주 다음 월요일 25% 되돌림 | TGIF 영상 | 손절 같은 거리/주 극값 너머 |
+- 모든 모델에 바이어스 스위치(+B: 주봉·일봉 중간값 방향 일치) → 기본 28 × 2 = **56개 변형**.
+- ICT "10핍"은 종목·시기 차이를 없애려고 **ADR20 ÷ 7**로 환산(EURUSD 하루 평균 70핍 기준).
+
+### 판정 (README 합격 기준 그대로, 자동)
+OOS ≥ 60건, OOS 평균R > 0, OOS PF ≥ 1.2, IS 평균R > 0, 종목 과반 IS·OOS 둘 다 +, 연도 과반 +, IS t ≥ Bonferroni(56개 → 3.12),
+랜덤워크(스프레드 0) t < 2. 모두 통과 = 합격, 아니면 IS·OOS 둘 다 + 면 후보(실전 권유 안 함), 그 밖은 불합격.
+
+### 결과 파일 (out 폴더)
+| 파일 | 내용 |
+|---|---|
+| `summary_ict.txt` | 한 줄 결론, 변형별 판정과 못 넘은 기준, 모델별 IS 최선 변형의 OOS·종목별·연도별, 깔때기(PO3·TGIF 통계 포함) |
+| `summary_ict.csv` | 변형별 IS/OOS 건수·평균R·PF·t·낙폭, 종목·연도 + 수, 랜덤워크, 판정 |
+| `by_symbol_ict.csv` | 변형 × 종목 × IS/OOS 성적 |
+| `trades_ict.csv` | 거래 하나하나: 셋업·체결·청산 시각(서버·NY·KST), 진입·손절·목표, 결과 R, 바이어스 일치 |
+| `funnel_ict.csv` | 종목·변형별 단계 수(셋업 → 주문 → 체결 → 바이어스·중복 정리 → 1포지션) |
+
+### 자체 시험 (2026-10-29, 클라우드, 가짜 데이터)
+- 시간 변환(서버→NY→KST 여름/겨울), 3봉 스윙·안 깨진 스윙, FVG/IFVG, SD 선, 청산 규칙(같은 봉 손절 우선·체결 봉 목표 무시·갭 손절·시간 청산) 단위 시험.
+- 랜덤워크 4개 × 8년(스프레드 0): 변형별 t < 3, 모델별 t < 2.5 → 통과. 미래 엿보기 검사(데이터를 중간에 잘라도 그 전 거래 1,982건이 완전히 같음) 통과.
+- 주의: 손절이 M5 봉 1~2개 크기인 변형은 보수적 체결 규칙 때문에 가짜 시세에서도 −0.05~−0.15R 정도 나올 수 있어요.
