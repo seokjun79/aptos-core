@@ -1,8 +1,11 @@
-"""석준님 SMC+CRT 매매법 백테스트 (4H CRT -> M15 MSS -> OB 지정가), 변형 비교용.
+"""석준님 SMC+CRT 매매법 백테스트 (4H CRT -> M15 MSS -> OB 지정가), 변형 + 필터 비교용.
 
 정의는 VenusCRTAssistant.mq5(EA)와 trading/rules/smc-crt-analysis.md 에 맞췄다. 매수 기준, 매도는 대칭.
  1. 4H CRT: 직전 마감 4H봉(C1)의 CRH/CRL. 다음 4H봉(C2) 안에서 M15 저가가 CRL 아래로 나가면 '스윕'.
-    (기본) C2가 CRL~CRH 안에서 마감해야 성립. 아시아장(뉴욕 19~2시에 시작하는 C2)은 기본 제외.
+    (기본) C2가 CRL~CRH 안에서 마감해야 성립. 아시아 C2는 기본 제외.
+    아시아 C2 = 4H봉의 가운데 시각이 아시아장(뉴욕 19~02시)인 봉 = 뉴욕 17시·21시에 시작하는 4H봉.
+    (2026-10-28 수정: 예전에는 '뉴욕 19~2시에 시작'으로 판정해서 런던 개장 봉(뉴욕 01시 시작)을 빼고
+     뉴욕 17시 봉을 남기는 버그가 있었다.)
  2. MSS 선(EA TrueMssLevel 과 같음): 스윕 극값 봉에서 거꾸로 가며 처음 만나는 M15 스윙 고점
     (왼쪽 N봉보다 높고 오른쪽 N봉 이상). CRH 이상인 고점은 건너뜀. C1에서 CRL을 만든 봉 이후만 본다.
     스윙은 오른쪽 N봉이 극값 봉까지 안에 다 있어야 함(= 그 시점에 확정된 스윙만 사용, 미래 엿보기 없음).
@@ -10,6 +13,7 @@
  3. OB = 확정 봉 직전부터 극값 봉까지 거꾸로 가며 처음 만나는 음봉(M15).
     진입 지정가: A) OB 고가  B) OB 시가(몸통 위)  C) 극값~돌파 고점 50%.
     주문은 '확정 봉 마감'과 'C2 마감' 중 늦은 시각에 걸린다(C2 마감 조건을 미래 정보 없이 쓰기 위해).
+    그래서 C2 마감 필수(기본)이면 체결은 늘 C2 '다음' 4H봉 안에서 난다.
     유효시간 X개 M15봉(기본 16 = 4시간). 체결 전에 CRH(목표 구조)에 먼저 닿으면 취소.
  4. 손절: S1) OB 저가-1핍  S2) 스윕 극값-1핍
           S3) 극값 이후 ~ 체결 직전까지 확정된 M15 저점(앞뒤 1봉) 중 진입가 아래에서
@@ -19,34 +23,55 @@
  6. 체결·청산은 M5로 본다. 같은 M5 봉에서 손절·목표가 모두 닿으면 손절. 체결한 봉에서는 목표를 인정하지
     않고 손절만 본다(보수적). 스프레드(핍)를 적용: 차트는 bid, 매수는 ask로 사고 bid로 판다.
 
+필터(각각 켜고 끄는 옵션, 기본 꺼짐). 켠 필터는 '켬/끔' 모든 조합을 한 번에 계산해서 표로 낸다.
+ F1H 큰 흐름(H4 구조): 주문 시점에 확정된 4H 스윙(앞뒤 2봉) 마지막 고점·저점이 둘 다 직전보다 높음(매수).
+ F1D 큰 흐름(D1 EMA): 주문 시점 직전 마감 D1 종가 > D1 EMA20 (매수). 서버시간 자정 기준 일봉.
+ F2  확인 캔들 진입(EA 방식): 지정가 대신, 가격이 OB 끝(매수 OB 고가)에 닿은 뒤 M15(옵션 M5) 양봉이
+     OB 고가 위에서 마감하면 그 봉 종가에 시장가 진입(진입 종류 K). 닿은 봉이 곧바로 확인 캔들이어도 됨.
+     확인 전에 CRH에 닿으면 취소. 켜면 진입 변형 K가 추가되고, 필터 표에서 F2 켬 = K, 끔 = A/B/C.
+ F3  무효(EA 규칙): 확정 봉 다음부터 체결(K는 확인 캔들 마감) 전까지 M15 종가가 OB 저가 아래로
+     마감한 적 있으면 셋업 취소.
+ F4  시간대: 체결 시각이 뉴욕 02~05시(런던) 또는 07~11시(뉴욕 오전)일 때만.
+     주의: C2 마감 필수 + 아시아 C2 제외(기본)에서는 구조상 런던 02~05시 체결이 거의 없다.
+ F5  위치: 스윕 극값이 HTF 유동성을 '처음' 넘었을 때만.
+     전날 저가(PDL, 그날 스윕 전에는 안 깨졌던 것) 또는
+     확정 4H 스윙 저점 중 아직 안 깨진 것들이 2핍 이내로 2개 이상 모인 '같은 높이 묶음'(기본 cluster).
+     --f5-h4 swing 이면 안 깨진 확정 4H 스윙 저점 하나만 넘어도 인정.
+
 읽기 전용 분석 스크립트다. MT5 연결·주문 없음. 필요한 것: Python 3.10+, pandas, numpy.
 사용 예:
-  python crt_backtest.py --data-dir C:\\Users\\kun00\\venus\\mt5_m5_data --out C:\\Users\\kun00\\venus\\crt_bt_out
-  python crt_backtest.py --data-dir ... --out ... --symbols EURUSD
-  python crt_backtest.py --selftest
+  py -3.12 crt_backtest.py --data-dir C:\\Users\\kun00\\venus\\mt5_m5_data --out C:\\Users\\kun00\\venus\\crt_bt_out
+  py -3.12 crt_backtest.py --data-dir ... --out ... --all-filters --stops S2 --targets T2,T3
+  py -3.12 crt_backtest.py --selftest
 """
 import argparse
+import math
 import os
 import sys
 import time as _time
+from itertools import combinations
 
 try:
     import numpy as np
     import pandas as pd
 except ImportError:  # 설치 안내만
-    print("pandas/numpy 가 없습니다. 명령창에서 다음을 실행한 뒤 다시 돌려 주세요:\n"
-          "  python -m pip install pandas numpy")
+    print("pandas/numpy not found. Run:  py -3.12 -m pip install pandas numpy")
     sys.exit(1)
 
 NS_MIN = 60 * 1_000_000_000
 NS_H = 60 * NS_MIN
+NS_INF = np.iinfo(np.int64).max
 SERVER_MINUS_NY = 7          # IC마켓 서버시간 = 뉴욕 + 7
 ENTRIES = ["A", "B", "C"]
 STOPS = ["S1", "S2", "S3"]
 TARGETS = ["T1", "T2", "T3", "T4"]
-ENTRY_DESC = {"A": "OB 고가", "B": "OB 시가(몸통)", "C": "스윕~돌파 50%"}
+ENTRY_DESC = {"A": "OB 고가", "B": "OB 시가(몸통)", "C": "스윕~돌파 50%", "K": "확인 캔들 종가(F2)"}
 STOP_DESC = {"S1": "OB 끝-1핍", "S2": "스윕 극값-1핍", "S3": "같은높이 저점묶음 너머-1핍"}
 TARGET_DESC = {"T1": "CRH/CRL", "T2": "2R", "T3": "3R", "T4": "직전 4H 스윙"}
+FILTERS = ["F1H", "F1D", "F2", "F3", "F4", "F5"]
+FILTER_DESC = {"F1H": "큰 흐름 H4 구조", "F1D": "큰 흐름 D1>EMA20", "F2": "확인 캔들 진입",
+               "F3": "OB 몸통 이탈 무효", "F4": "런던/뉴욕오전 체결", "F5": "HTF 유동성 스윕"}
+SESSIONS = ["런던", "뉴욕", "아시아", "뉴욕마감후"]
 
 
 # ---------------------------------------------------------------- 데이터 읽기
@@ -61,8 +86,8 @@ def load_m5(path, verbose=True):
         second = f.readline()
     sep = "\t" if "\t" in first else (";" if first.count(";") > first.count(",") else ",")
     if verbose:
-        print(f"  [헤더] {os.path.basename(path)}: {first.strip()[:200]}")
-        print(f"  [첫 줄] {second.strip()[:200]}")
+        print(f"  [header] {os.path.basename(path)}: {first.strip()[:200]}")
+        print(f"  [row1] {second.strip()[:200]}")
     toks = [_norm(x) for x in first.strip().split(sep)]
     has_header = any(t in ("open", "o", "high", "close") for t in toks)
     if has_header:
@@ -87,7 +112,7 @@ def load_m5(path, verbose=True):
 
     co, ch, cl, cc = pick("open", "o", "bidopen"), pick("high", "h", "bidhigh"), pick("low", "l", "bidlow"), pick("close", "c", "bidclose")
     if not all([co, ch, cl, cc]):
-        raise ValueError(f"open/high/low/close 열을 못 찾음: {list(df.columns)}")
+        raise ValueError(f"open/high/low/close columns not found: {list(df.columns)}")
     cdate, ctime = pick("date", "day"), pick("time", "datetime", "date_time", "timestamp", "time_(utc)", "gmt_time", "local_time")
     if cdate and ctime and cdate != ctime:
         raw = df[cdate].astype(str).str.strip() + " " + df[ctime].astype(str).str.strip()
@@ -95,7 +120,7 @@ def load_m5(path, verbose=True):
     elif ctime or cdate:
         ts = _parse_time(df[ctime or cdate])
     else:
-        raise ValueError(f"시간 열을 못 찾음: {list(df.columns)}")
+        raise ValueError(f"time column not found: {list(df.columns)}")
     out = pd.DataFrame({"o": pd.to_numeric(df[co], errors="coerce").values,
                         "h": pd.to_numeric(df[ch], errors="coerce").values,
                         "l": pd.to_numeric(df[cl], errors="coerce").values,
@@ -103,7 +128,7 @@ def load_m5(path, verbose=True):
     out = out[~out.index.isna()].dropna()
     out = out[~out.index.duplicated(keep="first")].sort_index()
     if verbose:
-        print(f"  [읽음] {len(out):,}봉, {out.index[0]} ~ {out.index[-1]} (서버시간)")
+        print(f"  [read] {len(out):,} bars, {out.index[0]} ~ {out.index[-1]} (server time)")
     return out
 
 
@@ -129,7 +154,7 @@ def _parse_time(s):
 
 # ---------------------------------------------------------------- 시간 도구
 def bars_from_m5(t, o, h, l, c, minutes):
-    """M5 배열을 서버시간 기준으로 묶는다(15분, 240분). 시작시각 라벨."""
+    """M5 배열을 서버시간 기준으로 묶는다(15분, 240분, 1440분). 시작시각 라벨."""
     step = minutes * NS_MIN
     key = t - (t % step)
     starts = np.flatnonzero(np.r_[True, key[1:] != key[:-1]])
@@ -163,6 +188,7 @@ def server_to_kst(ts):
 
 
 def session_of(t_ns):
+    """한 시각의 시간대(뉴욕 기준). 아시아 19~02, 런던 02~08, 뉴욕 08~17, 뉴욕마감후 17~19."""
     h = ny_hour(t_ns)
     if h >= 19 or h < 2:
         return "아시아"
@@ -171,6 +197,27 @@ def session_of(t_ns):
     if h < 17:
         return "뉴욕"
     return "뉴욕마감후"
+
+
+def c2_session(c2_start_ns):
+    """4H봉의 시간대 = 봉 가운데 시각(시작+2시간)의 시간대.
+    뉴욕 17·21시 시작 = 아시아, 01·05시 = 런던, 09·13시 = 뉴욕."""
+    return session_of(c2_start_ns + 2 * NS_H)
+
+
+def parse_windows(s):
+    out = []
+    for part in str(s).split(","):
+        if "-" in part:
+            a, b = part.split("-", 1)
+            out.append((int(a), int(b)))
+    return tuple(out)
+
+
+def f4_ok(t_ns, windows):
+    """체결 시각(뉴욕 시)이 창 안인지. 창 (2,5) = 02:00~04:59."""
+    h = ny_hour(t_ns)
+    return any(a <= h < b for a, b in windows)
 
 
 def default_pip(sym, price):
@@ -228,8 +275,124 @@ def equal_level_stop(d, levels, entry, tol, buf):
     return None
 
 
+def h4_swings(H4h, H4l, T4):
+    """4H 스윙 고점/저점(앞뒤 2봉). 확정 시각 = k+2 봉 마감."""
+    k4 = len(T4)
+    sh4 = np.zeros(k4, bool)
+    sl4 = np.zeros(k4, bool)
+    for k in range(2, k4 - 2):
+        sh4[k] = H4h[k] > H4h[k - 1] and H4h[k] > H4h[k - 2] and H4h[k] >= H4h[k + 1] and H4h[k] >= H4h[k + 2]
+        sl4[k] = H4l[k] < H4l[k - 1] and H4l[k] < H4l[k - 2] and H4l[k] <= H4l[k + 1] and H4l[k] <= H4l[k + 2]
+    conf4 = np.r_[T4[2:] + 4 * NS_H, np.full(min(2, k4), NS_INF)][:k4]
+    sh_idx, sl_idx = np.flatnonzero(sh4), np.flatnonzero(sl4)
+    return dict(sh4=sh4, sl4=sl4, conf4=conf4, sh_idx=sh_idx, sh_conf=conf4[sh_idx],
+                sl_idx=sl_idx, sl_conf=conf4[sl_idx])
+
+
+def h4_trend_at(sw, H4h, H4l, t):
+    """F1H: 시각 t에 확정된 마지막 두 스윙 고점·저점. 둘 다 높아짐 +1, 둘 다 낮아짐 -1, 그 밖 0."""
+    a = int(np.searchsorted(sw["sh_conf"], t, side="right"))
+    b = int(np.searchsorted(sw["sl_conf"], t, side="right"))
+    if a < 2 or b < 2:
+        return 0
+    h1, h0 = H4h[sw["sh_idx"][a - 1]], H4h[sw["sh_idx"][a - 2]]
+    l1, l0 = H4l[sw["sl_idx"][b - 1]], H4l[sw["sl_idx"][b - 2]]
+    if h1 > h0 and l1 > l0:
+        return 1
+    if h1 < h0 and l1 < l0:
+        return -1
+    return 0
+
+
+def d1_context(t, o, h, l, c, span):
+    d1 = bars_from_m5(t, o, h, l, c, 1440)
+    d1["ema"] = pd.Series(d1["c"]).ewm(span=span, adjust=False).mean().values
+    d1["span"] = span
+    return d1
+
+
+def d1_bias_at(d1, t):
+    """F1D: 시각 t 직전에 마감한 D1의 종가 vs EMA. 위 +1, 아래 -1, 자료 부족 0."""
+    j = int(np.searchsorted(d1["t"], t, side="right")) - 1   # t가 들어 있는 날
+    p = j - 1                                                 # 직전 마감한 날
+    if p < d1["span"] - 1:
+        return 0
+    c, e = d1["c"][p], d1["ema"][p]
+    return 1 if c > e else (-1 if c < e else 0)
+
+
+def htf_swept(d, ext, sweep_j, i, T, H, L, d1, sw, T4, H4h, H4l, tol, lookback, mode="cluster"):
+    """F5: 스윕(극값 ext)이 HTF 유동성을 처음 넘었는지. 돌려줌 (bool, 종류 문자열).
+    PDL/PDH: 스윕 시작 봉 sweep_j 의 전날 저가/고가, 그날 sweep_j 전에는 안 깨졌어야 함.
+    H4: sweep_j 시각에 확정된 4H 스윙 저점(고점) 중 형성 후 sweep_j 전까지 안 깨진 것.
+        cluster = 그런 것들이 tol 이내로 2개 이상 모인 묶음 전체를 넘음, swing = 하나라도 넘음."""
+    ts = T[sweep_j]
+    kinds = []
+    j = int(np.searchsorted(d1["t"], ts, side="right")) - 1
+    if j >= 1:
+        a = int(np.searchsorted(T, d1["t"][j]))
+        if d == 1:
+            lvl = d1["l"][j - 1]
+            before = L[a:sweep_j].min() if sweep_j > a else np.inf
+            if ext < lvl and before >= lvl:
+                kinds.append("PDL")
+        else:
+            lvl = d1["h"][j - 1]
+            before = H[a:sweep_j].max() if sweep_j > a else -np.inf
+            if ext > lvl and before <= lvl:
+                kinds.append("PDH")
+    idx, conf = (sw["sl_idx"], sw["sl_conf"]) if d == 1 else (sw["sh_idx"], sw["sh_conf"])
+    m = int(np.searchsorted(conf, ts, side="right"))
+    cand = idx[:m]
+    cand = cand[cand >= i - lookback]
+    fresh = []
+    for k in cand:
+        lvl = H4l[k] if d == 1 else H4h[k]
+        if d * (lvl - ext) <= 0:          # 극값이 이 높이를 넘지 못함
+            continue
+        a = int(np.searchsorted(T, T4[k] + 4 * NS_H))
+        if sweep_j > a:
+            seg = L[a:sweep_j] if d == 1 else H[a:sweep_j]
+            if (d == 1 and seg.min() < lvl) or (d == -1 and seg.max() > lvl):
+                continue                  # 이미 깨진 높이
+        fresh.append(lvl)
+    if fresh:
+        if mode == "swing":
+            kinds.append("H4swing")
+        elif len(fresh) >= 2 and np.any(np.diff(np.sort(fresh)) <= tol + 1e-12):
+            kinds.append("H4eq")
+    return bool(kinds), "+".join(kinds)
+
+
+def first_invalid_close(d, C, T, j0, j1, far, step):
+    """F3: M15 j0..j1-1 중 종가가 OB 먼 끝(매수 OB 저가) 너머로 처음 마감한 봉의 마감 시각. 없으면 NS_INF."""
+    if j1 <= j0:
+        return NS_INF
+    seg = C[j0:j1]
+    k = first_true(seg < far) if d == 1 else first_true(seg > far)
+    return int(T[j0 + k] + step) if k >= 0 else NS_INF
+
+
+def confirm_entry(d, bo, bh, bl, bc, b0, b1, edge, target, spread=0.0):
+    """F2: EA Track 순서. 봉 b0..b1-1을 보며
+    목표(CRH) 먼저 닿음 -> 취소, OB 끝 닿음 -> 대기, 닿은 뒤(같은 봉 포함) 양봉이 OB 끝 위에서 마감 -> 진입.
+    돌려줌 ('entry'|'cancel_tp'|'expired', 봉 인덱스)."""
+    touched = False
+    for b in range(b0, b1):
+        if (d == 1 and bh[b] >= target) or (d == -1 and bl[b] + spread <= target):
+            return "cancel_tp", b
+        if not touched:
+            if (d == 1 and bl[b] <= edge) or (d == -1 and bh[b] >= edge):
+                touched = True
+            else:
+                continue
+        if (d == 1 and bc[b] > bo[b] and bc[b] > edge) or (d == -1 and bc[b] < bo[b] and bc[b] < edge):
+            return "entry", b
+    return "expired", -1
+
+
 # ---------------------------------------------------------------- 셋업 찾기
-def find_setups(m15, h4, n, pip, opt):
+def find_setups(m15, h4, n, pip, opt, ctx=None):
     """M15·H4 배열에서 셋업(주문 직전까지)을 찾는다. 돌려주는 값: 셋업 목록, 깔때기 집계."""
     T, O, H, L, C = m15["t"], m15["o"], m15["h"], m15["l"], m15["c"]
     T4, H4h, H4l, H4c = h4["t"], h4["h"], h4["l"], h4["c"]
@@ -237,23 +400,18 @@ def find_setups(m15, h4, n, pip, opt):
     funnel = dict(c2=0, asia_skip=0, sweep=0, c2_close_ok=0, mss_line=0, mss_confirm=0,
                   no_ob=0, target_before_order=0, setups=0)
     setups = []
-    # 4H 스윙 고점/저점(앞뒤 2봉): 확정 시각 = k+2 봉 마감
+    sw = ctx["sw"] if ctx else h4_swings(H4h, H4l, T4)
+    d1 = ctx["d1"] if ctx else None
+    sh4, sl4, conf4 = sw["sh4"], sw["sl4"], sw["conf4"]
     k4 = len(T4)
-    sh4 = np.zeros(k4, bool)
-    sl4 = np.zeros(k4, bool)
-    for k in range(2, k4 - 2):
-        sh4[k] = H4h[k] > H4h[k - 1] and H4h[k] > H4h[k - 2] and H4h[k] >= H4h[k + 1] and H4h[k] >= H4h[k + 2]
-        sl4[k] = H4l[k] < H4l[k - 1] and H4l[k] < H4l[k - 2] and H4l[k] <= H4l[k + 1] and H4l[k] <= H4l[k + 2]
-    conf4 = np.r_[T4[2:] + 4 * NS_H, np.full(2, np.iinfo(np.int64).max)]  # k+2 봉 마감 시각
+    tol = getattr(opt, "eq_tol", 2.0) * pip
 
     for i in range(1, k4):
         funnel["c2"] += 1
         c2s, c2e = T4[i], T4[i] + 4 * NS_H
-        if not opt.include_asia:
-            hny = ny_hour(c2s)
-            if hny >= 19 or hny < 2:
-                funnel["asia_skip"] += 1
-                continue
+        if not opt.include_asia and c2_session(c2s) == "아시아":
+            funnel["asia_skip"] += 1
+            continue
         crh, crl = H4h[i - 1], H4l[i - 1]
         if crh <= crl:
             continue
@@ -266,7 +424,7 @@ def find_setups(m15, h4, n, pip, opt):
         seg_h = H[a1:a2]
         anchor_lo = a1 + (len(seg_l) - 1 - int(np.argmin(seg_l[::-1])))   # 가장 최근 최저 봉
         anchor_hi = a1 + (len(seg_h) - 1 - int(np.argmax(seg_h[::-1])))
-        d, ext, ext_i, mss, conf_j = 0, 0.0, -1, 0.0, -1
+        d, ext, ext_i, mss, conf_j, sweep_j = 0, 0.0, -1, 0.0, -1, -1
         for j in range(a2, a3):
             if d == 0:
                 if L[j] < crl:
@@ -275,6 +433,7 @@ def find_setups(m15, h4, n, pip, opt):
                     d, ext, ext_i = -1, H[j], j
                 else:
                     continue
+                sweep_j = j
                 mss = mss_level(d, ext_i, anchor_lo if d == 1 else anchor_hi, n, crh, crl, H, L)
             elif (d == 1 and L[j] < ext) or (d == -1 and H[j] > ext):
                 ext, ext_i = (L[j] if d == 1 else H[j]), j
@@ -332,10 +491,20 @@ def find_setups(m15, h4, n, pip, opt):
             if d == -1 and sl4[k] and H4l[k] < crl:
                 t4 = H4l[k]
                 break
+        # 필터 재료 (모두 주문 시점까지의 정보만)
+        h4tr = h4_trend_at(sw, H4h, H4l, t_order)
+        d1b = d1_bias_at(d1, t_order) if d1 is not None else 0
+        if d1 is not None:
+            f5, f5k = htf_swept(d, ext, sweep_j, i, T, H, L, d1, sw, T4, H4h, H4l, tol,
+                                opt.t4_lookback, getattr(opt, "f5_h4", "cluster"))
+        else:
+            f5, f5k = False, ""
         funnel["setups"] += 1
         setups.append(dict(d=d, c1=T4[i - 1], c2=c2s, crh=crh, crl=crl, ext=ext, ext_i=ext_i, mss=mss,
                            t_conf=T[conf_j], conf_j=conf_j, ob_i=ob, ob_h=H[ob], ob_l=L[ob], ob_o=O[ob],
-                           brk=brk, t_order=t_order, px_order=px_order, t4=t4))
+                           brk=brk, t_order=t_order, px_order=px_order, t4=t4, sweep_j=sweep_j,
+                           h4_trend=h4tr, d1_bias=d1b, f1h=(h4tr == d), f1d=(d1b == d), f5=f5, f5_kind=f5k,
+                           c2_sess=c2_session(c2s)))
     return setups, funnel
 
 
@@ -345,12 +514,13 @@ def first_true(mask):
     return int(idx[0]) if len(idx) else -1
 
 
-def simulate_exit(d, f, fill, sl, tp, spread, M, max_hold):
-    """체결 봉 f 부터 손절/목표. 돌려줌: (결과, 청산 인덱스, 청산가)."""
+def simulate_exit(d, f, fill, sl, tp, spread, M, max_hold, check_fill_bar=True):
+    """체결 봉 f 부터 손절/목표. 돌려줌: (결과, 청산 인덱스, 청산가).
+    check_fill_bar=True(지정가): 봉 f 안에서 체결 -> 그 봉은 손절만 본다.
+    check_fill_bar=False(확인 캔들 종가 진입): 봉 f 마감에 진입 -> f+1 부터 본다."""
     O, H, L, C = M["o"], M["h"], M["l"], M["c"]
     n = len(O)
-    # 체결 봉: 손절만 본다
-    if (d == 1 and L[f] <= sl) or (d == -1 and H[f] + spread >= sl):
+    if check_fill_bar and ((d == 1 and L[f] <= sl) or (d == -1 and H[f] + spread >= sl)):
         return "loss", f, sl
     start = f + 1
     end_cap = n if max_hold <= 0 else min(n, f + 1 + max_hold)
@@ -378,45 +548,75 @@ def simulate_exit(d, f, fill, sl, tp, spread, M, max_hold):
     return "open", n - 1, np.nan
 
 
+def _list_opt(v, allowed):
+    if isinstance(v, (list, tuple)):
+        out = [str(x).strip().upper() for x in v]
+    else:
+        out = [x.strip().upper() for x in str(v).split(",") if x.strip()]
+    bad = [x for x in out if x not in allowed]
+    if bad:
+        raise ValueError(f"unknown value {bad}, allowed {allowed}")
+    return out
+
+
+def enabled_filters(opt):
+    on = {"F1H": opt.f1h4, "F1D": opt.f1d1, "F2": opt.f2, "F3": opt.f3, "F4": opt.f4, "F5": opt.f5}
+    return [f for f in FILTERS if on[f]]
+
+
 def run_symbol(sym, m5df, opt, pip, spread_pips):
     t = m5df.index.values.astype("datetime64[ns]").astype("int64")
     o, h, l, c = (m5df[k].values.astype(float) for k in ("o", "h", "l", "c"))
     M = dict(t=t, o=o, h=h, l=l, c=c)
     m15 = bars_from_m5(t, o, h, l, c, 15)
     h4 = bars_from_m5(t, o, h, l, c, 240)
+    ctx = dict(sw=h4_swings(h4["h"], h4["l"], h4["t"]), d1=d1_context(t, o, h, l, c, opt.d1_ema))
     spread = spread_pips * pip
     buf = opt.sl_buffer * pip
     tol = opt.eq_tol * pip
     step15 = 15 * NS_MIN
+    entries = _list_opt(opt.entries, ENTRIES)
+    stops_on = _list_opt(opt.stops, STOPS)
+    targets_on = _list_opt(opt.targets, TARGETS)
+    use_k = bool(opt.f2)
+    all_e = entries + (["K"] if use_k else [])
+    windows = parse_windows(opt.f4_windows)
+    if opt.f2_tf.upper() == "M5":
+        KB, kstep = M, 5 * NS_MIN
+    else:
+        KB, kstep = m15, step15
     # M15 1봉 프랙탈 저점/고점 (확정 시각 = 다음 봉 마감)
-    L15, H15, T15 = m15["l"], m15["h"], m15["t"]
+    L15, H15, T15, C15 = m15["l"], m15["h"], m15["t"], m15["c"]
     fl = np.zeros(len(L15), bool)
     fh = np.zeros(len(H15), bool)
     fl[1:-1] = (L15[1:-1] < L15[:-2]) & (L15[1:-1] <= L15[2:])
     fh[1:-1] = (H15[1:-1] > H15[:-2]) & (H15[1:-1] >= H15[2:])
     trades, funnels = [], []
     for n in opt.swing:
-        setups, fun = find_setups(m15, h4, n, pip, opt)
+        setups, fun = find_setups(m15, h4, n, pip, opt, ctx)
         fun.update(symbol=sym, swing=n)
-        fills = {e: 0 for e in ENTRIES}
-        skip_px = {e: 0 for e in ENTRIES}
-        expired = {e: 0 for e in ENTRIES}
-        cancel_tp = {e: 0 for e in ENTRIES}
+        cnt = {k: {e: 0 for e in all_e} for k in ("fill", "skip_px", "expired", "cancel_tp", "f3_invalid")}
         for st in setups:
             d = st["d"]
             ent = {"A": st["ob_h"] if d == 1 else st["ob_l"],
                    "B": st["ob_o"],
                    "C": st["ext"] + 0.5 * (st["brk"] - st["ext"])}
             struct_tp = st["crh"] if d == 1 else st["crl"]
+            edge = st["ob_h"] if d == 1 else st["ob_l"]     # 가격이 먼저 닿는 OB 끝
+            far = st["ob_l"] if d == 1 else st["ob_h"]      # 이 너머로 마감하면 무효(F3)
+            t_end = st["t_order"] + opt.expiry_bars * step15
             i0 = int(np.searchsorted(t, st["t_order"]))
-            i1 = int(np.searchsorted(t, st["t_order"] + opt.expiry_bars * step15))
+            i1 = int(np.searchsorted(t, t_end))
             if i0 >= len(t):
                 continue
-            for e in ENTRIES:
+            j1 = int(np.searchsorted(T15, t_end + step15))
+            inv_t = first_invalid_close(d, C15, T15, st["conf_j"] + 1, j1, far, step15)
+            fills = []   # (진입 종류, 진입 M5 인덱스, 진입가, 판단 시각, 체결 봉 손절 검사)
+            for e in entries:
                 E = ent[e]
                 # 지정가는 현재가보다 유리한 쪽에만 걸 수 있다
                 if (d == 1 and E >= st["px_order"]) or (d == -1 and E <= st["px_order"]):
-                    skip_px[e] += 1
+                    cnt["skip_px"][e] += 1
                     continue
                 if d == 1:
                     fill_m = l[i0:i1] + spread <= E
@@ -427,30 +627,49 @@ def run_symbol(sym, m5df, opt, pip, spread_pips):
                 fi, ci = first_true(fill_m), first_true(canc_m)
                 if fi < 0 or (0 <= ci < fi):
                     if 0 <= ci and (fi < 0 or ci < fi):
-                        cancel_tp[e] += 1
+                        cnt["cancel_tp"][e] += 1
                     else:
-                        expired[e] += 1
+                        cnt["expired"][e] += 1
                     continue
                 f = i0 + fi
                 if opt.block_asia_fill and session_of(t[f]) == "아시아":
-                    expired[e] += 1
+                    cnt["expired"][e] += 1
                     continue
-                fills[e] += 1
                 fill = min(E, o[f] + spread) if d == 1 else max(E, o[f])   # 갭이면 더 좋은 값
-                # S3 재료: 극값 다음 봉 ~ 체결 전에 확정된 M15 프랙탈
-                j_end = int(np.searchsorted(T15, t[f] - step15, side="right"))  # 다음 봉까지 마감된 것
+                fills.append((e, f, fill, int(t[f]), True))
+            if use_k:
+                b0 = int(np.searchsorted(KB["t"], st["t_order"]))
+                b1 = int(np.searchsorted(KB["t"], t_end))
+                res_k, b = confirm_entry(d, KB["o"], KB["h"], KB["l"], KB["c"], b0, b1, edge, struct_tp, spread)
+                if res_k == "entry":
+                    tc = int(KB["t"][b] + kstep)                      # 확인 캔들 마감 시각
+                    f = int(np.searchsorted(t, tc)) - 1               # 그 봉의 마지막 M5
+                    if opt.block_asia_fill and session_of(tc) == "아시아":
+                        cnt["expired"]["K"] += 1
+                    elif f + 1 < len(t):
+                        fills.append(("K", f, KB["c"][b] + (spread if d == 1 else 0.0), tc, False))
+                else:
+                    cnt["expired" if res_k == "expired" else "cancel_tp"]["K"] += 1
+            for e, f, fill, td, chk in fills:
+                cnt["fill"][e] += 1
+                f3 = not (inv_t <= td)
+                if not f3:
+                    cnt["f3_invalid"][e] += 1
+                f4 = f4_ok(td, windows)
+                # S3 재료: 극값 다음 봉 ~ 판단 시각 전에 확정된 M15 프랙탈
+                j_end = int(np.searchsorted(T15, td - step15, side="right"))  # 판단 시각까지 마감된 봉 수
                 js = np.arange(st["ext_i"] + 1, max(st["ext_i"] + 1, j_end - 1))
                 lv = (L15[js][fl[js]] if d == 1 else H15[js][fh[js]]) if len(js) else np.array([])
                 stops = {"S1": (st["ob_l"] - buf) if d == 1 else (st["ob_h"] + buf),
                          "S2": st["ext"] - d * buf}
                 s3 = equal_level_stop(d, lv, fill, tol, buf)
                 stops["S3"] = s3 if s3 is not None else stops["S2"]
-                for s in STOPS:
+                for s in stops_on:
                     SL = stops[s]
                     risk = d * (fill - SL)
                     if risk <= 0 or risk < opt.min_risk_pips * pip:
                         continue
-                    for tg in TARGETS:
+                    for tg in targets_on:
                         if tg == "T1":
                             TP, fb = struct_tp, False
                         elif tg == "T2":
@@ -461,27 +680,25 @@ def run_symbol(sym, m5df, opt, pip, spread_pips):
                             TP, fb = (st["t4"], False) if st["t4"] is not None else (struct_tp, True)
                         if d * (TP - fill) <= 0:
                             continue
-                        res, k, px = simulate_exit(d, f, fill, SL, TP, spread, M, opt.max_hold_bars)
-                        if res == "open":
-                            r = np.nan
-                        else:
-                            r = d * (px - fill) / risk
+                        res, k, px = simulate_exit(d, f, fill, SL, TP, spread, M, opt.max_hold_bars, chk)
+                        r = np.nan if res == "open" else d * (px - fill) / risk
                         trades.append(dict(
                             symbol=sym, swing=n, entry_v=e, stop_v=s, target_v=tg,
                             combo=f"N{n}-{e}-{s}-{tg}", dir="BUY" if d == 1 else "SELL",
-                            c1_server=t2s(st["c1"]), c2_server=t2s(st["c2"]),
+                            c1_server=t2s(st["c1"]), c2_server=t2s(st["c2"]), c2_session=st["c2_sess"],
                             crh=st["crh"], crl=st["crl"], sweep_ext=st["ext"], mss=st["mss"],
+                            ob_h=st["ob_h"], ob_l=st["ob_l"],
                             mss_confirm_server=t2s(st["t_conf"]), order_server=t2s(st["t_order"]),
-                            fill_server=t2s(t[f]), entry=fill, sl=SL, tp=TP,
+                            fill_server=t2s(td if not chk else t[f]), entry=fill, sl=SL, tp=TP,
                             risk_pips=risk / pip, rr_planned=d * (TP - fill) / risk,
                             exit_server=t2s(t[k]), exit_price=px, result=res, R=r,
                             s3_fallback=(s == "S3" and s3 is None), t4_fallback=(tg == "T4" and fb),
-                            session=session_of(t[f]), t_fill_ns=t[f]))
-        for e in ENTRIES:
-            fun[f"fill_{e}"] = fills[e]
-            fun[f"expired_{e}"] = expired[e]
-            fun[f"cancel_tp_{e}"] = cancel_tp[e]
-            fun[f"skip_px_{e}"] = skip_px[e]
+                            session=session_of(td), t_fill_ns=td,
+                            h4_trend=st["h4_trend"], d1_bias=st["d1_bias"],
+                            f1h=st["f1h"], f1d=st["f1d"], f3=f3, f4=f4, f5=st["f5"], f5_kind=st["f5_kind"]))
+        for k, v in cnt.items():
+            for e in all_e:
+                fun[f"{k}_{e}"] = v[e]
         funnels.append(fun)
     return trades, funnels, (t[0], t[-1])
 
@@ -517,7 +734,6 @@ def summarize(tr, oos_start):
     oos_ns = pd.Timestamp(oos_start).value
     rows = []
     years = sorted(closed["year"].unique())
-    sessions = ["런던", "뉴욕", "아시아", "뉴욕마감후"]
     groups = [("ALL", closed)] + [(s, g) for s, g in closed.groupby("symbol")]
     for sym, g in groups:
         for combo, gc in g.groupby("combo"):
@@ -536,12 +752,130 @@ def summarize(tr, oos_start):
                 v = gc[gc["year"] == y]["R"].values
                 row[f"exp_{y}"] = v.mean() if len(v) else np.nan
                 row[f"n_{y}"] = len(v)
-            for s in sessions:
+            for s in SESSIONS:
                 v = gc[gc["session"] == s]["R"].values
                 row[f"exp_{s}"] = v.mean() if len(v) else np.nan
                 row[f"n_{s}"] = len(v)
+                v = gc[gc["c2_session"] == s]["R"].values
+                row[f"c2exp_{s}"] = v.mean() if len(v) else np.nan
+                row[f"c2n_{s}"] = len(v)
             rows.append(row)
     return pd.DataFrame(rows)
+
+
+def _agg(df, keys):
+    """keys 별 n, 평균, t값 (전체·IS·OOS). 빠르게 groupby 로."""
+    def one(g, pre):
+        a = g.groupby(keys)["R"].agg(["count", "mean", "std"])
+        se = a["std"] / np.sqrt(a["count"])
+        a["t"] = np.where(se > 0, a["mean"] / se, np.nan)
+        a = a.drop(columns="std")
+        a.columns = [f"{pre}n", f"{pre}exp_R", f"{pre}t"]
+        return a
+    out = one(df, "")
+    for p in ("IS", "OOS"):
+        out = out.join(one(df[df["period"] == p], p + "_"), how="left")
+    for p in ("IS_", "OOS_"):
+        out[p + "n"] = out[p + "n"].fillna(0).astype(int)
+    return out.reset_index()
+
+
+def filter_table(tr, enabled):
+    """켠 필터들의 모든 켬/끔 조합 x 기본 조합(N-진입-손절-목표) 결과. symbol=ALL 과 종목별."""
+    closed = tr[tr["result"] != "open"]
+    rows = []
+    for r in range(len(enabled) + 1):
+        for sub in combinations(enabled, r):
+            m = np.ones(len(closed), bool)
+            if "F2" in enabled:
+                isk = (closed["entry_v"] == "K").values
+                m &= isk if "F2" in sub else ~isk
+            for f in sub:
+                if f != "F2":
+                    m &= closed[f.lower()].values.astype(bool)
+            g = closed[m]
+            if g.empty:
+                continue
+            a = _agg(g, ["combo"])
+            a.insert(0, "symbol", "ALL")
+            b = _agg(g, ["symbol", "combo"])
+            ab = pd.concat([a, b], ignore_index=True)
+            ab.insert(1, "filters", "+".join(sub) if sub else "none")
+            ab.insert(2, "n_filters", len(sub))
+            rows.append(ab)
+    if not rows:
+        return pd.DataFrame()
+    out = pd.concat(rows, ignore_index=True)
+    out["base"] = out["combo"].str.replace(r"-[ABCK]-", "-*-", regex=True)
+    return out
+
+
+def norm_ppf(p):
+    """표준정규 역함수(이분법). scipy 없이 Bonferroni 기준 계산용."""
+    lo, hi = -10.0, 10.0
+    for _ in range(100):
+        mid = (lo + hi) / 2
+        if 0.5 * math.erfc(-mid / math.sqrt(2)) < p:
+            lo = mid
+        else:
+            hi = mid
+    return (lo + hi) / 2
+
+
+def filter_text(ft, enabled, opt):
+    """요약 맨 위 두 표: 필터 하나씩 IS->OOS 변화, 필터 조합 상위 5 (IS로 고르고 OOS 확인)."""
+    L = []
+    if ft.empty or not enabled:
+        return L
+    g = ft[ft["symbol"] == "ALL"]
+    min_n = opt.min_trades
+    L.append("[1] Filter one at a time / 필터 하나씩 켰을 때 IS -> OOS 변화 (ALL, 조합 평균 기대값 R)")
+    L.append("    끔(none)과 켬을 같은 조합끼리 짝지어 평균. F2는 끔=지정가 A/B/C, 켬=확인 캔들 K (손절·목표·N 같은 것끼리).")
+    L.append(f"  {'filter':<7}{'desc':<19}{'IS n/조합':>14}{'IS exp off->on':>22}{'OOS n/조합':>14}{'OOS exp off->on':>22}  same-dir")
+    base = g[g["filters"] == "none"]
+    for f in enabled:
+        on = g[g["filters"] == f]
+        if on.empty:
+            L.append(f"  {f:<6}{FILTER_DESC[f]:<20} (거래 없음)")
+            continue
+        if f == "F2":
+            key = "base"
+            b = base.groupby("base")[["IS_n", "IS_exp_R", "OOS_n", "OOS_exp_R"]].mean()
+            o2 = on.set_index("base")[["IS_n", "IS_exp_R", "OOS_n", "OOS_exp_R"]]
+        else:
+            key = "combo"
+            b = base.set_index("combo")[["IS_n", "IS_exp_R", "OOS_n", "OOS_exp_R"]]
+            o2 = on.set_index(key)[["IS_n", "IS_exp_R", "OOS_n", "OOS_exp_R"]]
+        common = b.index.intersection(o2.index)
+        b, o2 = b.loc[common], o2.loc[common]
+        dis = o2["IS_exp_R"].mean() - b["IS_exp_R"].mean()
+        doo = o2["OOS_exp_R"].mean() - b["OOS_exp_R"].mean()
+        same = "-" if not (np.isfinite(dis) and np.isfinite(doo)) else ("YES" if dis * doo > 0 else "NO(뒤집힘)")
+        L.append(f"  {f:<6}{FILTER_DESC[f]:<20}{b['IS_n'].mean():>6.0f}->{o2['IS_n'].mean():<6.0f}"
+                 f"{fmt(b['IS_exp_R'].mean(), 3):>9}->{fmt(o2['IS_exp_R'].mean(), 3):<7}({fmt(dis, 3)})"
+                 f"{b['OOS_n'].mean():>6.0f}->{o2['OOS_n'].mean():<6.0f}"
+                 f"{fmt(b['OOS_exp_R'].mean(), 3):>9}->{fmt(o2['OOS_exp_R'].mean(), 3):<7}({fmt(doo, 3)})  {same}")
+    L.append("")
+    min_oos = max(10, min_n // 3)
+    cand = g[(g["IS_n"] >= min_n) & (g["OOS_n"] >= min_oos)]
+    M = len(cand)
+    L.append(f"[2] Top 5 filter combos / 가장 좋은 필터 조합 상위 5 (IS 기대값으로 고름, IS {min_n}건+ / OOS {min_oos}건+)")
+    if M == 0:
+        L.append("  조건을 채우는 조합 없음")
+    else:
+        zb = norm_ppf(1 - 0.05 / (2 * M))
+        L.append(f"  {'filters':<20}{'combo':<16}{'IS n':>6}{'IS exp':>8}{'IS t':>6}{'OOS n':>7}{'OOS exp':>9}{'OOS t':>7}  t>3?")
+        for _, r in cand.sort_values("IS_exp_R", ascending=False).head(5).iterrows():
+            L.append(f"  {r['filters']:<20}{r['combo']:<16}{int(r['IS_n']):>6}{fmt(r['IS_exp_R'], 3):>8}{fmt(r['IS_t'], 1):>6}"
+                     f"{int(r['OOS_n']):>7}{fmt(r['OOS_exp_R'], 3):>9}{fmt(r['OOS_t'], 1):>7}  "
+                     f"{'IS' if r['IS_t'] > 3 else '-'}/{'OOS' if r['OOS_t'] > 3 else '-'}")
+        L.append("")
+        L.append(f"  경고: 이번에 비교한 (필터 조합 x 기본 조합) 수 = {M}개. 많이 비교할수록 '운으로 1등'이 꼭 나온다.")
+        L.append(f"  Bonferroni 기준(대략): t > 3 이어야 '우연 아닐 수도' 수준. 정확히 계산하면 {M}개 비교에서 t > {zb:.2f}.")
+        L.append("  IS 1등이 OOS에서 + 이고 OOS t도 2 이상일 때만 다음 단계(전진 시험)로 넘길 후보로 본다.")
+        L.append("  같은 셋업이 여러 조합에 겹쳐 들어가므로 조합끼리 독립이 아니다(실제 '독립 시험 수'는 이보다 적다).")
+    L.append("")
+    return L
 
 
 def fmt(x, nd=2):
@@ -550,13 +884,17 @@ def fmt(x, nd=2):
     return f"{x:+.{nd}f}" if isinstance(x, float) else str(x)
 
 
-def write_text(path, summ, funnels, meta, opt):
+def write_text(path, summ, funnels, meta, opt, ft=None, enabled=()):
     L = []
     L.append("석준님 CRT 백테스트 요약 (정보 제공용, 매매 결정은 석준님)")
     L.append("=" * 70)
     for k, v in meta.items():
         L.append(f"{k}: {v}")
     L.append("")
+    if enabled:
+        L.append("필터: " + ", ".join(f"{f}={FILTER_DESC[f]}" for f in enabled))
+        L.append("")
+        L += filter_text(ft, list(enabled), opt)
     L.append("용어: R = 손절폭 1개 크기. 기대값(R) = 한 번 거래할 때 평균으로 얻는 R. +0.20이면 1% 위험 거래마다 평균 +0.2%.")
     L.append("      최대 낙폭(R) = 누적 R이 고점에서 가장 많이 빠진 크기. IS = 앞 기간(규칙 고르는 데 써도 되는 구간), OOS = 뒤 기간(확인용).")
     L.append("변형: 진입 " + ", ".join(f"{k}={v}" for k, v in ENTRY_DESC.items()))
@@ -565,10 +903,12 @@ def write_text(path, summ, funnels, meta, opt):
     L.append("")
     L.append("[셋업 깔때기] (4H 봉 -> 스윕 -> C2 마감 조건 -> MSS 확정 -> 주문 -> 체결)")
     fdf = pd.DataFrame(funnels)
+    ecols = [c[5:] for c in fdf.columns if c.startswith("fill_")]
     for _, f in fdf.iterrows():
         L.append(f"  {f['symbol']:<8} N{f['swing']}: C2 {f['c2']}, 아시아제외 {f['asia_skip']}, 스윕 {f['sweep']}, "
                  f"C2마감OK {f['c2_close_ok']}, MSS확정 {f['mss_confirm']}, OB없음 {f['no_ob']}, "
-                 f"주문전목표도달 {f['target_before_order']}, 주문 {f['setups']} | 체결 A {f['fill_A']} B {f['fill_B']} C {f['fill_C']}")
+                 f"주문전목표도달 {f['target_before_order']}, 주문 {f['setups']} | 체결 " +
+                 " ".join(f"{e} {f['fill_' + e]}" for e in ecols))
     L.append("")
     min_n = opt.min_trades
 
@@ -581,6 +921,7 @@ def write_text(path, summ, funnels, meta, opt):
                      f"{fmt(r['IS_exp_R'], 3):>8}{fmt(r['OOS_exp_R'], 3):>8}{int(r['OOS_n']):>6}")
         L.append("")
 
+    L.append("아래 표는 필터 없이(모든 거래) 본 결과다.")
     for sym in ["ALL"] + sorted(s for s in summ["symbol"].unique() if s != "ALL"):
         g = summ[(summ["symbol"] == sym) & (summ["n"] >= min_n)]
         if g.empty:
@@ -592,7 +933,7 @@ def write_text(path, summ, funnels, meta, opt):
         if sym == "ALL":
             table(g.sort_values("IS_exp_R"), "[ALL] IS 기대값 하위 (피해야 할 조합 후보)", 5)
             # 변형 하나씩 평균(다른 변형은 고르게 섞음) -> 어떤 축이 효과 있는지
-            L.append("[ALL] 축별 평균 기대값(R) — 다른 변형을 모두 평균낸 값, IS / OOS")
+            L.append("[ALL] 축별 평균 기대값(R): 다른 변형을 모두 평균낸 값, IS / OOS")
             for axis, desc in (("swing", None), ("entry_v", ENTRY_DESC), ("stop_v", STOP_DESC), ("target_v", TARGET_DESC)):
                 for v, gv in g.groupby(axis):
                     name = desc[v] if desc else f"N={v}"
@@ -602,8 +943,11 @@ def write_text(path, summ, funnels, meta, opt):
             best = g_is.iloc[0]
             L.append(f"[ALL] IS 1위 {best['combo']} 연도별 기대값(R): " +
                      ", ".join(f"{c[4:]} {fmt(best[c], 2)}({int(best['n_' + c[4:]])})" for c in ycols))
-            L.append(f"[ALL] IS 1위 {best['combo']} 시간대별 기대값(R, 체결 시각 뉴욕 기준): " +
-                     ", ".join(f"{s} {fmt(best['exp_' + s], 2)}({int(best['n_' + s])})" for s in ["런던", "뉴욕", "아시아", "뉴욕마감후"]))
+            L.append(f"[ALL] IS 1위 {best['combo']} 체결 시각 시간대별 기대값(R, 뉴욕 기준): " +
+                     ", ".join(f"{s} {fmt(best['exp_' + s], 2)}({int(best['n_' + s])})" for s in SESSIONS))
+            L.append(f"[ALL] IS 1위 {best['combo']} C2(셋업 4H봉) 시간대별 기대값(R): " +
+                     ", ".join(f"{s} {fmt(best['c2exp_' + s], 2)}({int(best['c2n_' + s])})" for s in SESSIONS))
+            L.append("      (C2 마감 필수면 체결은 C2 다음 4H봉: C2 런던(뉴욕01·05시) -> 체결 05~13시, C2 뉴욕 13시 -> 체결 17~21시)")
             L.append("")
     L.append("주의")
     L.append(f"- 조합이 {len(summ['combo'].unique())}개라 그중 1등은 운으로도 좋아 보일 수 있다(과최적화). IS로 고른 조합이 OOS에서도 +인지가 핵심.")
@@ -627,34 +971,59 @@ def parse_map(s, cast=float):
 
 
 def build_parser():
-    p = argparse.ArgumentParser(description="석준님 CRT(4H)+MSS(M15)+OB 백테스트 (읽기 전용)")
-    p.add_argument("--data-dir", help="{SYMBOL}_M5.csv 가 있는 폴더")
-    p.add_argument("--out", help="결과 폴더 (없으면 만듦)")
-    p.add_argument("--symbols", default="", help="쉼표 구분. 비우면 폴더의 *_M5.csv 전부")
-    p.add_argument("--swing", default="5,3", help="MSS 스윙 봉 수 목록 (기본 5,3)")
-    p.add_argument("--expiry-bars", type=int, default=16, help="지정가 유효시간, M15 봉 수 (기본 16=4시간)")
-    p.add_argument("--spread", type=float, default=1.0, help="기본 스프레드 핍 (기본 1.0)")
-    p.add_argument("--spread-map", default="", help="종목별 스프레드 핍, 예: EURUSD=0.8,GBPJPY=2.5")
-    p.add_argument("--pip-map", default="", help="종목별 1핍 크기, 예: XAUUSD=0.1,US30=1")
-    p.add_argument("--sl-buffer", type=float, default=1.0, help="손절 버퍼 핍 (기본 1)")
-    p.add_argument("--eq-tol", type=float, default=2.0, help="같은 높이 저점 묶음 허용 핍 (기본 2)")
-    p.add_argument("--min-risk-pips", type=float, default=0.0, help="손절폭이 이보다 작으면 거래 안 함 (기본 0)")
+    p = argparse.ArgumentParser(description="CRT(4H)+MSS(M15)+OB backtest with optional filters (read-only)")
+    p.add_argument("--data-dir", help="folder with {SYMBOL}_M5.csv")
+    p.add_argument("--out", help="output folder (created if missing)")
+    p.add_argument("--symbols", default="", help="comma list. empty = all *_M5.csv in folder")
+    p.add_argument("--swing", default="5,3", help="MSS swing bars list (default 5,3)")
+    p.add_argument("--entries", default="A,B,C", help="limit entries to test (default A,B,C)")
+    p.add_argument("--stops", default="S1,S2,S3", help="stops to test, e.g. S2 (default S1,S2,S3)")
+    p.add_argument("--targets", default="T1,T2,T3,T4", help="targets to test, e.g. T2,T3 (default all)")
+    p.add_argument("--expiry-bars", type=int, default=16, help="order/watch life in M15 bars (default 16=4h)")
+    p.add_argument("--spread", type=float, default=1.0, help="default spread pips (default 1.0)")
+    p.add_argument("--spread-map", default="", help="per-symbol spread pips, e.g. EURUSD=0.8,GBPJPY=2.5")
+    p.add_argument("--pip-map", default="", help="per-symbol pip size, e.g. XAUUSD=0.1,US30=1")
+    p.add_argument("--sl-buffer", type=float, default=1.0, help="stop buffer pips (default 1)")
+    p.add_argument("--eq-tol", type=float, default=2.0, help="equal highs/lows tolerance pips (default 2)")
+    p.add_argument("--min-risk-pips", type=float, default=0.0, help="skip trade if stop distance below this")
     p.add_argument("--c2-close", choices=["required", "ignore"], default="required",
-                   help="required: C2가 범위 안 마감해야 성립, 주문은 C2 마감 후(기본). ignore: EA처럼 MSS 확정 즉시 주문")
-    p.add_argument("--include-asia", action="store_true", help="아시아장 C2(뉴욕 19~2시 시작)도 포함")
-    p.add_argument("--block-asia-fill", action="store_true", help="아시아장에 체결되는 주문은 버림(EA처럼)")
-    p.add_argument("--max-hold-bars", type=int, default=0, help="최대 보유 M5 봉 수, 0=제한 없음")
-    p.add_argument("--t4-lookback", type=int, default=120, help="T4 4H 스윙 찾을 범위(4H 봉 수)")
-    p.add_argument("--oos-start", default="2024-01-01", help="표본 밖(OOS) 시작일 (서버시간)")
-    p.add_argument("--start", default="", help="이 날짜 이후 데이터만 (예 2019-01-01)")
-    p.add_argument("--min-trades", type=int, default=30, help="요약 표에 넣을 최소 거래 수")
-    p.add_argument("--selftest", action="store_true", help="가짜 데이터로 자체 시험만 실행")
+                   help="required: C2 must close inside range, order after C2 close (default). ignore: order right after MSS confirm (EA style)")
+    p.add_argument("--include-asia", action="store_true", help="also use Asia C2 (4H bars starting NY 17h, 21h)")
+    p.add_argument("--block-asia-fill", action="store_true", help="drop fills in Asia session (NY 19-02), like EA")
+    p.add_argument("--max-hold-bars", type=int, default=0, help="max hold in M5 bars, 0 = no limit")
+    p.add_argument("--t4-lookback", type=int, default=120, help="H4 bars to look back for T4 / F5 swings")
+    p.add_argument("--oos-start", default="2024-01-01", help="OOS start date (server time)")
+    p.add_argument("--start", default="", help="use data from this date (e.g. 2019-01-01)")
+    p.add_argument("--min-trades", type=int, default=30, help="min trades for summary tables")
+    # 필터 (기본 꺼짐)
+    p.add_argument("--f1h4", action="store_true", help="F1H: trade with H4 structure (HH+HL for buys)")
+    p.add_argument("--f1d1", action="store_true", help="F1D: buys only if last D1 close > D1 EMA")
+    p.add_argument("--d1-ema", type=int, default=20, help="EMA length for F1D (default 20)")
+    p.add_argument("--f2", action="store_true", help="F2: confirm-candle market entry (entry K) in addition to limits")
+    p.add_argument("--f2-tf", choices=["M15", "M5"], default="M15", help="F2 confirm candle timeframe")
+    p.add_argument("--f3", action="store_true", help="F3: cancel if M15 body closes beyond OB before fill")
+    p.add_argument("--f4", action="store_true", help="F4: fills only in NY-hour windows (--f4-windows)")
+    p.add_argument("--f4-windows", default="2-5,7-11", help="F4 NY-hour windows (default 2-5,7-11)")
+    p.add_argument("--f5", action="store_true", help="F5: sweep must take fresh PDH/PDL or H4 equal highs/lows")
+    p.add_argument("--f5-h4", choices=["cluster", "swing"], default="cluster", help="F5 H4 level type (default cluster)")
+    p.add_argument("--all-filters", action="store_true", help="turn on F1H,F1D,F2,F3,F4,F5")
+    p.add_argument("--selftest", action="store_true", help="run self tests on synthetic data only")
     return p
+
+
+def default_opts(**kw):
+    o = build_parser().parse_args([])
+    for k, v in kw.items():
+        setattr(o, k, v)
+    return o
 
 
 def run_all(opt, files=None, quiet=False):
     t0 = _time.time()
+    if getattr(opt, "all_filters", False):
+        opt.f1h4 = opt.f1d1 = opt.f2 = opt.f3 = opt.f4 = opt.f5 = True
     opt.swing = [int(x) for x in str(opt.swing).split(",") if str(x).strip()] if not isinstance(opt.swing, list) else opt.swing
+    enabled = enabled_filters(opt)
     if files is None:
         syms = [s.strip().upper() for s in opt.symbols.split(",") if s.strip()]
         allf = sorted(f for f in os.listdir(opt.data_dir) if f.upper().endswith("_M5.CSV"))
@@ -665,9 +1034,9 @@ def run_all(opt, files=None, quiet=False):
                 files[s] = os.path.join(opt.data_dir, f)
         missing = [s for s in syms if s not in files]
         if missing:
-            print(f"! 파일 없음: {missing}")
+            print(f"! missing files: {missing}")
     if not files:
-        print("! 돌릴 파일이 없습니다. --data-dir 와 --symbols 를 확인해 주세요.")
+        print("! no files to run. check --data-dir and --symbols")
         return None
     os.makedirs(opt.out, exist_ok=True)
     spmap, pipmap = parse_map(opt.spread_map), parse_map(opt.pip_map)
@@ -679,23 +1048,24 @@ def run_all(opt, files=None, quiet=False):
             df = df[df.index >= pd.Timestamp(opt.start)]
         pip = pipmap.get(sym, default_pip(sym, float(df["c"].iloc[-1])))
         sp = spmap.get(sym, opt.spread)
-        print(f"  1핍 = {pip}, 스프레드 = {sp}핍")
+        print(f"  pip = {pip}, spread = {sp} pips")
         tr, fun, rng = run_symbol(sym, df, opt, pip, sp)
         meta_rng[sym] = rng
         all_tr += tr
         all_fun += fun
-        print(f"  셋업(주문) {[f['setups'] for f in fun]} (N={opt.swing}), 거래 기록 {len(tr):,}줄, {(_time.time() - t0):.0f}초")
+        print(f"  setups {[f['setups'] for f in fun]} (N={opt.swing}), trade rows {len(tr):,}, {(_time.time() - t0):.0f}s")
     tr = pd.DataFrame(all_tr)
-    tag = f"c2{opt.c2_close}"
+    tag = f"c2{opt.c2_close}" + (("_" + "".join(f.lower() for f in enabled)) if enabled else "")
     if tr.empty:
-        print("! 거래가 하나도 없습니다.")
+        print("! no trades.")
         pd.DataFrame(all_fun).to_csv(os.path.join(opt.out, f"funnel_{tag}.csv"), index=False, encoding="utf-8-sig")
-        return dict(trades=tr, summary=pd.DataFrame(), funnels=all_fun)
+        return dict(trades=tr, summary=pd.DataFrame(), funnels=all_fun, filters=pd.DataFrame())
     # 한국시간 열
     for col in ("fill_server", "exit_server"):
         tr[col.replace("_server", "_kst")] = server_to_kst(pd.to_datetime(tr[col])).strftime("%Y-%m-%d %H:%M")
     tr["period"] = np.where(tr["t_fill_ns"] < pd.Timestamp(opt.oos_start).value, "IS", "OOS")
     summ = summarize(tr, opt.oos_start)
+    ft = filter_table(tr, enabled) if enabled else pd.DataFrame()
     rng_txt = "; ".join(f"{s} {t2s(a)}~{t2s(b)}" for s, (a, b) in meta_rng.items())
     lo, hi = min(a for a, _ in meta_rng.values()), max(b for _, b in meta_rng.values())
     meta = {"데이터": f"MT5 M5 CSV ({opt.data_dir or '메모리'})",
@@ -703,21 +1073,26 @@ def run_all(opt, files=None, quiet=False):
             "기간(한국시간)": f"{server_to_kst([pd.Timestamp(lo)])[0]:%Y-%m-%d %H:%M} ~ {server_to_kst([pd.Timestamp(hi)])[0]:%Y-%m-%d %H:%M} KST",
             "시간 기준": "표의 시각은 MT5 서버시간(뉴욕+7). 거래 목록에 한국시간(KST) 열 있음",
             "IS / OOS": f"IS = {opt.oos_start} 이전 체결, OOS = 이후",
-            "설정": f"C2마감={opt.c2_close}, 아시아C2 {'포함' if opt.include_asia else '제외'}, 유효 {opt.expiry_bars}봉(M15), "
-                   f"스프레드 {opt.spread}핍(+맵 {opt.spread_map or '없음'}), 손절버퍼 {opt.sl_buffer}핍, 같은높이 {opt.eq_tol}핍, 스윙 N={opt.swing}",
+            "설정": f"C2마감={opt.c2_close}, 아시아C2(뉴욕17·21시 시작 4H) {'포함' if opt.include_asia else '제외'}, 유효 {opt.expiry_bars}봉(M15), "
+                   f"스프레드 {opt.spread}핍(+맵 {opt.spread_map or '없음'}), 손절버퍼 {opt.sl_buffer}핍, 같은높이 {opt.eq_tol}핍, 스윙 N={opt.swing}, "
+                   f"진입 {opt.entries}{'+K' if opt.f2 else ''}, 손절 {opt.stops}, 목표 {opt.targets}",
+            "필터 설정": f"켠 필터 {enabled or '없음'}, D1 EMA {opt.d1_ema}, F2 {opt.f2_tf}, F4 뉴욕 {opt.f4_windows}시, F5 H4={opt.f5_h4}",
             "만든 시각": pd.Timestamp.now().strftime("%Y-%m-%d %H:%M") + " (실행 PC 시각)"}
-    out_cols = ["symbol", "combo", "swing", "entry_v", "stop_v", "target_v", "dir", "period", "session",
-                "c1_server", "c2_server", "crh", "crl", "sweep_ext", "mss", "mss_confirm_server", "order_server",
+    out_cols = ["symbol", "combo", "swing", "entry_v", "stop_v", "target_v", "dir", "period", "session", "c2_session",
+                "c1_server", "c2_server", "crh", "crl", "sweep_ext", "mss", "ob_h", "ob_l", "mss_confirm_server", "order_server",
                 "fill_server", "fill_kst", "entry", "sl", "tp", "risk_pips", "rr_planned",
-                "exit_server", "exit_kst", "exit_price", "result", "R", "s3_fallback", "t4_fallback"]
+                "exit_server", "exit_kst", "exit_price", "result", "R", "s3_fallback", "t4_fallback",
+                "h4_trend", "d1_bias", "f1h", "f1d", "f3", "f4", "f5", "f5_kind"]
     tr[out_cols].to_csv(os.path.join(opt.out, f"trades_{tag}.csv"), index=False, encoding="utf-8-sig", float_format="%.10g")
     summ.to_csv(os.path.join(opt.out, f"summary_{tag}.csv"), index=False, encoding="utf-8-sig", float_format="%.4f")
+    if not ft.empty:
+        ft.to_csv(os.path.join(opt.out, f"filters_{tag}.csv"), index=False, encoding="utf-8-sig", float_format="%.4f")
     pd.DataFrame(all_fun).to_csv(os.path.join(opt.out, f"funnel_{tag}.csv"), index=False, encoding="utf-8-sig")
-    txt = write_text(os.path.join(opt.out, f"summary_{tag}.txt"), summ, all_fun, meta, opt)
+    txt = write_text(os.path.join(opt.out, f"summary_{tag}.txt"), summ, all_fun, meta, opt, ft, enabled)
     if not quiet:
         print("\n" + txt)
-    print(f"\n완료 {(_time.time() - t0):.0f}초. 결과 폴더: {opt.out}")
-    return dict(trades=tr, summary=summ, funnels=all_fun)
+    print(f"\ndone {(_time.time() - t0):.0f}s. output folder: {opt.out}  (summary_{tag}.txt is UTF-8)")
+    return dict(trades=tr, summary=summ, funnels=all_fun, filters=ft)
 
 
 # ---------------------------------------------------------------- 자체 시험
@@ -737,7 +1112,7 @@ def _expand_m15(rows, start, base, pip):
     return df
 
 
-def scenario_rows():
+def scenario_rows(c3=None):
     pre = [(1, 2, 0, 1)] * 32                      # 서버 00:00~07:45 횡보
     c1 = [(1, 2, -5, 0), (0, 8, 0, 8), (8, 16, 8, 16), (16, 24, 16, 24), (24, 30, 24, 28),   # CRL -5, CRH 30
           (28, 28, 22, 22), (22, 22, 16, 16), (16, 16, 12, 12), (12, 12, 10, 10), (10, 13, 10, 13),
@@ -747,82 +1122,227 @@ def scenario_rows():
           (-6, -5, -8, -7), (-7, -1, -7, -1), (-1, 5, -1, 5),                               # 13:00 극값 -8
           (5, 7, 2, 3),                                                                      # 13:45 OB (음봉 7~2, 시가 5)
           (3, 23, 3, 22)] + [(22, 24, 21, 23)] * 7                                           # 14:00 MSS 확정, C2 마감 23
-    c3 = [(23, 23, 15, 15), (15, 15, 6, 8), (8, 18, 8, 18), (18, 31, 18, 31)]               # 16:15 OB 고가 7 체결, 16:45 CRH 30
+    if c3 is None:
+        c3 = [(23, 23, 15, 15), (15, 15, 6, 8), (8, 18, 8, 18), (18, 31, 18, 31)]           # 16:15 OB 고가 7 체결, 16:45 CRH 30
     post = [(31, 32, 30, 31)] * (4 * 24 * 2)
     return pre + c1 + c2 + c3 + post
 
 
+def _random_walk(seed, start, end, pip):
+    rng = np.random.default_rng(seed)
+    idx = pd.date_range(start, end, freq="5min")
+    idx = idx[idx.dayofweek < 5]
+    m = len(idx)
+    steps = rng.normal(0, 2.5 * pip / np.sqrt(5), size=(m, 5)).cumsum(axis=1)   # 1분 5걸음
+    st = 1.1 + np.r_[0, steps[:-1, -1]].cumsum()
+    path = st[:, None] + steps
+    return pd.DataFrame({"o": st, "c": path[:, -1], "h": np.maximum(path.max(axis=1), st),
+                         "l": np.minimum(path.min(axis=1), st)}, index=idx)[["o", "h", "l", "c"]]
+
+
+def _check(ok, cond, msg):
+    print(f"  [{'PASS' if cond else 'FAIL'}] {msg}")
+    return ok and bool(cond)
+
+
 def selftest():
-    import types
+    import tempfile
     ok = True
     pip = 0.0001
-    print("=== 시험 1: 같은 높이 저점 묶음 (2026-10-27 GBPUSD 예시) ===")
-    s3 = equal_level_stop(1, [1.33115, 1.33135, 1.33144], 1.33191, 2 * pip, 1 * pip)
-    print(f"  저점 1.33115/1.33135/1.33144, 진입 1.33191 -> 손절 {s3:.5f} (기대 1.33105)")
-    ok &= abs(s3 - 1.33105) < 1e-9
-
-    print("=== 시험 2: 손으로 만든 시나리오 (스윕 -> MSS -> OB 되돌림 -> CRH) ===")
-    df = _expand_m15(scenario_rows(), "2024-01-08 00:00", 1.10000, pip)
-    base = dict(swing="5,3", expiry_bars=16, spread=1.0, spread_map="", pip_map="", sl_buffer=1.0, eq_tol=2.0,
-                min_risk_pips=0.0, c2_close="required", include_asia=False, block_asia_fill=False,
-                max_hold_bars=0, t4_lookback=120, oos_start="2024-06-01", start="", min_trades=1,
-                data_dir="", symbols="")
-    import tempfile
+    S = lambda s: pd.Timestamp(s).value   # noqa: E731  (서버시간 문자열 -> ns)
     out_dir = tempfile.mkdtemp(prefix="crt_selftest_")
-    opt = types.SimpleNamespace(**base, out=out_dir)
+    print("=== Test 1: equal-lows stop (2026-10-27 GBPUSD example) ===")
+    s3 = equal_level_stop(1, [1.33115, 1.33135, 1.33144], 1.33191, 2 * pip, 1 * pip)
+    ok = _check(ok, abs(s3 - 1.33105) < 1e-9, f"lows 1.33115/1.33135/1.33144, entry 1.33191 -> stop {s3:.5f} (expect 1.33105)")
+
+    print("=== Test 2: hand scenario (sweep -> MSS -> OB pullback -> CRH), filters off ===")
+    df = _expand_m15(scenario_rows(), "2024-01-08 00:00", 1.10000, pip)
+    opt = default_opts(oos_start="2024-06-01", min_trades=1, out=out_dir)
     res = run_all(opt, files={"EURUSD": df}, quiet=True)
     tr = res["trades"]
     for n in (5, 3):
         f = [x for x in res["funnels"] if x["swing"] == n][0]
-        print(f"  N={n}: 스윕 {f['sweep']}, MSS확정 {f['mss_confirm']}, 주문 {f['setups']}, 체결 A/B/C {f['fill_A']}/{f['fill_B']}/{f['fill_C']}")
-        ok &= f["setups"] == 1 and f["fill_A"] == 1 and f["fill_B"] == 0 and f["fill_C"] == 1
+        ok = _check(ok, f["setups"] == 1 and f["fill_A"] == 1 and f["fill_B"] == 0 and f["fill_C"] == 1,
+                    f"N={n}: sweep {f['sweep']}, confirm {f['mss_confirm']}, setups {f['setups']}, fills A/B/C {f['fill_A']}/{f['fill_B']}/{f['fill_C']}")
     t = tr[tr["combo"] == "N5-A-S2-T1"]
-    print(t[["dir", "mss", "order_server", "fill_server", "fill_kst", "entry", "sl", "tp", "result", "R"]].to_string(index=False))
     exp_R = (30 - 7) / (7 + 9)
-    ok &= len(t) == 1 and t["result"].iloc[0] == "win" and abs(t["R"].iloc[0] - exp_R) < 1e-9
-    ok &= abs(t["mss"].iloc[0] - 1.1020) < 1e-9 and abs(t["entry"].iloc[0] - 1.1007) < 1e-9
+    ok = _check(ok, len(t) == 1 and t["result"].iloc[0] == "win" and abs(t["R"].iloc[0] - exp_R) < 1e-9, f"N5-A-S2-T1 win R {exp_R:.4f}")
+    ok = _check(ok, abs(t["mss"].iloc[0] - 1.1020) < 1e-9 and abs(t["entry"].iloc[0] - 1.1007) < 1e-9, "MSS 1.1020, entry 1.1007")
     t2 = tr[tr["combo"] == "N5-A-S1-T1"]
-    ok &= len(t2) == 1 and abs(t2["R"].iloc[0] - 23 / 6) < 1e-9
+    ok = _check(ok, len(t2) == 1 and abs(t2["R"].iloc[0] - 23 / 6) < 1e-9, "N5-A-S1-T1 R 23/6")
     t3 = tr[tr["combo"] == "N5-A-S2-T2"]
-    ok &= len(t3) == 1 and t3["result"].iloc[0] == "open"
-    ok &= set(tr["dir"]) == {"BUY"}
-    ok &= t["fill_kst"].iloc[0] == "2024-01-08 23:20"   # 16:15 M15봉의 둘째 M5(서버 16:20) = 뉴욕 09:20(EST) = 한국 23:20
-    print(f"  기대 R {exp_R:.4f}, S1 R {23 / 6:.4f}, T2는 미청산 -> {'통과' if ok else '실패'}")
+    ok = _check(ok, len(t3) == 1 and t3["result"].iloc[0] == "open", "N5-A-S2-T2 still open")
+    ok = _check(ok, set(tr["dir"]) == {"BUY"}, "only BUY")
+    # 16:15 M15봉의 둘째 M5(서버 16:20) = 뉴욕 09:20(EST) = 한국 23:20
+    ok = _check(ok, t["fill_kst"].iloc[0] == "2024-01-08 23:20", "fill KST 2024-01-08 23:20")
+    ok = _check(ok, t["c2_session"].iloc[0] == "런던" and t["session"].iloc[0] == "뉴욕",
+                "C2 (NY 05h) labelled London, fill (NY 09:20) labelled New York")
 
-    print("=== 시험 3: 랜덤워크 (방향 없는 가짜 시세) -> 기대값 0 근처여야 함 ===")
-    rng = np.random.default_rng(7)
-    idx = pd.date_range("2019-01-01", "2023-12-31 23:55", freq="5min")
-    idx = idx[idx.dayofweek < 5]
-    m = len(idx)
-    steps = rng.normal(0, 2.5 * pip / np.sqrt(5), size=(m, 5)).cumsum(axis=1)   # 1분 5걸음
-    start = 1.1 + np.r_[0, steps[:-1, -1]].cumsum()
-    path = start[:, None] + steps
-    o = start
-    c = path[:, -1]
-    h = np.maximum(path.max(axis=1), o)
-    lo = np.minimum(path.min(axis=1), o)
-    rw = pd.DataFrame({"o": o, "h": h, "l": lo, "c": c}, index=idx)
-    for sp in (0.0, 1.0):
-        base2 = dict(base, spread=sp, oos_start="2022-01-01", min_trades=30)
-        opt = types.SimpleNamespace(**base2, out=out_dir)
-        res = run_all(opt, files={"RWALK": rw}, quiet=True)
-        cl = res["trades"][res["trades"]["result"] != "open"]
-        e = cl["R"].mean()
-        se = cl.groupby("combo")["R"].agg(lambda r: r.std() / np.sqrt(len(r))).mean()
-        by = cl.groupby("combo")["R"].mean()
-        print(f"  스프레드 {sp}핍: 기록 {len(cl):,}줄, 전체 평균 R {e:+.3f}, 조합별 평균 범위 {by.min():+.3f} ~ {by.max():+.3f}, 조합 표준오차 약 {se:.3f}")
-        if sp == 0.0:
-            ok &= abs(e) < 0.15
-    print("\n자체 시험:", "모두 통과" if ok else "실패 있음")
+    print("=== Test 3: session bug fix (Asia C2 = 4H bars starting NY 17h/21h) ===")
+    hours = {h: c2_session(S("2024-01-08 00:00") + ((h + 7) % 24) * NS_H) for h in (17, 21, 1, 5, 9, 13)}
+    ok = _check(ok, hours == {17: "아시아", 21: "아시아", 1: "런던", 5: "런던", 9: "뉴욕", 13: "뉴욕"},
+                f"C2 session by NY start hour: {hours}")
+    rw = _random_walk(7, "2019-01-01", "2023-12-31 23:55", pip)
+    r0 = run_all(default_opts(oos_start="2022-01-01", out=out_dir), files={"RW": rw}, quiet=True)["trades"]
+    c2h = sorted(((pd.to_datetime(r0["c2_server"]).dt.hour - 7) % 24).unique().tolist())
+    ok = _check(ok, c2h == [1, 5, 9, 13], f"random walk: C2 NY start hours used = {c2h} (expect [1, 5, 9, 13])")
+    lon = int((r0["session"] == "런던").sum())
+    ok = _check(ok, lon > 0, f"random walk: London-session fills now {lon} rows (was 0 before fix)")
+
+    print("=== Test 4: F1H H4 structure ===")
+    k = np.arange(30)
+    zig = np.tile([0.0, 2.0, 4.0, 2.0], 8)[:30]
+    T4 = S("2024-01-01") + k * 4 * NS_H
+    for drift, want in ((0.5, 1), (-0.5, -1)):
+        hh = zig + drift * k + 10
+        ll = hh - 1
+        sw = h4_swings(hh, ll, T4)
+        tr_ = h4_trend_at(sw, hh, ll, T4[-1] + 4 * NS_H)
+        ok = _check(ok, tr_ == want, f"drift {drift:+}: trend {tr_} (expect {want}); buy kept={tr_ == 1}")
+    sw = h4_swings(zig + 10, zig + 9, T4)
+    ok = _check(ok, h4_trend_at(sw, zig + 10, zig + 9, T4[-1]) == 0, "flat zigzag -> 0 (buy and sell both filtered)")
+    ok = _check(ok, h4_trend_at(sw, zig + 10, zig + 9, T4[3]) == 0, "not enough confirmed swings yet -> 0")
+
+    print("=== Test 5: F1D D1 close vs EMA20 ===")
+    days = S("2024-01-01") + np.arange(40) * 24 * NS_H
+    for closes, want, name in ((np.linspace(1.0, 1.4, 40), 1, "rising"), (np.linspace(1.4, 1.0, 40), -1, "falling")):
+        d1 = dict(t=days, c=closes, ema=pd.Series(closes).ewm(span=20, adjust=False).mean().values, span=20)
+        b = d1_bias_at(d1, days[-1] + 3 * NS_H)
+        ok = _check(ok, b == want, f"{name} closes -> bias {b} (expect {want})")
+        ok = _check(ok, d1_bias_at(d1, days[10]) == 0, f"{name}: only 10 days of history -> 0")
+    days41 = S("2024-01-01") + np.arange(41) * 24 * NS_H
+    cl = np.r_[np.linspace(1.0, 1.4, 39), 1.2, 1.2]   # 39번째 날 급락: 그 날 안에서는 아직 +, 다음 날부터 -
+    d1 = dict(t=days41, c=cl, ema=pd.Series(cl).ewm(span=20, adjust=False).mean().values, span=20)
+    a1, a2 = d1_bias_at(d1, days41[39] + NS_H), d1_bias_at(d1, days41[40] + NS_H)
+    ok = _check(ok, a1 == 1 and a2 == -1, f"uses previous completed day only (no look-ahead): during drop day {a1}, next day {a2}")
+
+    print("=== Test 6: F2 confirm candle ===")
+    #          o   h   l   c          OB 끝(edge) 10, 목표 30
+    bars = np.array([[20, 22, 15, 16],   # 0 안 닿음
+                     [16, 17, 9, 12],    # 1 닿음, 음봉 -> 아님
+                     [12, 12, 9, 9.5],   # 2 음봉
+                     [9.5, 9.9, 9, 9.8], # 3 양봉이지만 OB 끝 아래 마감 -> 아님
+                     [9.8, 14, 9.5, 13], # 4 양봉, 10 위 마감 -> 진입
+                     [13, 31, 13, 30]], float)
+    o_, h_, l_, c_ = bars.T
+    r = confirm_entry(1, o_, h_, l_, c_, 0, 6, 10.0, 30.0)
+    ok = _check(ok, r == ("entry", 4), f"touch then bullish close above OB -> {r} (expect entry at bar 4)")
+    r = confirm_entry(1, o_, h_, l_, c_, 0, 4, 10.0, 30.0)
+    ok = _check(ok, r == ("expired", -1), f"window ends before confirm -> {r}")
+    r = confirm_entry(1, o_, h_, l_, c_, 0, 6, 10.0, 21.0)
+    ok = _check(ok, r == ("cancel_tp", 0), f"target reached before touch -> {r}")
+    r = confirm_entry(1, np.array([12.0]), np.array([14.0]), np.array([9.0]), np.array([13.0]), 0, 1, 10.0, 30.0)
+    ok = _check(ok, r == ("entry", 0), "touching bar itself can be the confirm candle")
+    opt = default_opts(oos_start="2024-06-01", min_trades=1, out=out_dir, f2=True)
+    tr = run_all(opt, files={"EURUSD": df}, quiet=True)["trades"]
+    tk = tr[tr["combo"] == "N5-K-S2-T1"]
+    expk = (30 - 19) / (19 + 9)    # 16:30 양봉 종가 18 + 스프레드 1 = 19, 손절 -9, 목표 30
+    ok = _check(ok, len(tk) == 1 and tk["result"].iloc[0] == "win" and abs(tk["R"].iloc[0] - expk) < 1e-9
+                and tk["fill_server"].iloc[0] == "2024-01-08 16:45",
+                f"scenario K entry 16:45 at 1.1019, R {expk:.4f}")
+
+    print("=== Test 7: F3 OB body-close invalidation ===")
+    C_ = np.array([5.0, 3.0, 1.5, 4.0])
+    T_ = S("2024-01-08") + np.arange(4) * 15 * NS_MIN
+    ok = _check(ok, first_invalid_close(1, C_, T_, 0, 4, 2.0, 15 * NS_MIN) == T_[2] + 15 * NS_MIN,
+                "first close below OB low -> that bar's close time")
+    ok = _check(ok, first_invalid_close(1, C_, T_, 3, 4, 2.0, 15 * NS_MIN) == NS_INF, "no close below -> none")
+    ok = _check(ok, bool(tk["f3"].iloc[0]), "base scenario: K trade valid (f3 True)")
+    c3_bad = [(23, 23, 15, 15), (15, 15, 0, 1), (1, 18, 1, 18), (18, 31, 18, 31)]   # 16:15 봉이 OB 저가 2 아래 1로 마감
+    dfb = _expand_m15(scenario_rows(c3_bad), "2024-01-08 00:00", 1.10000, pip)
+    trb = run_all(opt, files={"EURUSD": dfb}, quiet=True)["trades"]
+    kb = trb[trb["combo"] == "N5-K-S2-T1"]
+    ab = trb[trb["combo"] == "N5-A-S2-T1"]
+    ok = _check(ok, len(kb) == 1 and not bool(kb["f3"].iloc[0]),
+                "close below OB before confirm candle -> K trade flagged invalid (F3 removes it)")
+    ok = _check(ok, len(ab) == 1 and bool(ab["f3"].iloc[0]),
+                "limit A filled at 16:20, invalid close came later (16:30) -> A kept")
+    ftb = filter_table(trb, ["F2", "F3"])
+    ok = _check(ok, not ((ftb["filters"] == "F2+F3") & (ftb["combo"] == "N5-K-S2-T1")).any()
+                and ((ftb["filters"] == "F2") & (ftb["combo"] == "N5-K-S2-T1")).any(),
+                "filter table: K trade present with F2, gone with F2+F3")
+
+    print("=== Test 8: F4 time window ===")
+    w = parse_windows("2-5,7-11")
+    cases = {"2024-01-08 10:00": True, "2024-01-08 13:00": False, "2024-01-08 16:59": True,
+             "2024-01-08 18:00": False, "2024-01-08 08:59": False, "2024-01-08 09:00": True}
+    got = {k: f4_ok(S(k), w) for k in cases}
+    ok = _check(ok, got == cases, "server 10:00(NY03) in, 13:00(NY06) out, 16:59(NY09:59) in, 18:00(NY11) out, 08:59(NY01:59) out")
+    ok = _check(ok, bool(t["session"].iloc[0] == "뉴욕") and bool(tk["f4"].iloc[0]), "scenario fill NY 09:45 -> F4 kept")
+
+    print("=== Test 9: F5 HTF liquidity sweep ===")
+    T15 = S("2024-01-08") + np.arange(192) * 15 * NS_MIN    # 이틀
+    Lw = np.full(192, 102.0)
+    Hw = np.full(192, 103.0)
+    Lw[10] = 100.0                                         # 첫날 저가 100 = PDL
+    d1 = dict(t=np.array([S("2024-01-08"), S("2024-01-09")]), l=np.array([100.0, 99.0]), h=np.array([103.0, 103.0]))
+    T4 = S("2024-01-08") + np.arange(12) * 4 * NS_H
+    H4h = np.full(12, 103.0)
+    H4l = np.full(12, 102.0)
+    H4l[2], H4l[3] = 101.0, 101.015                        # 4H 같은 높이 저점 두 개 (1.5핍 차이)
+    sw = dict(sl_idx=np.array([2, 3]), sl_conf=T4[[2, 3]] + 3 * 4 * NS_H, sh_idx=np.array([], int), sh_conf=np.array([], np.int64))
+    sj, i4 = 96 + 20, 7                                    # 둘째 날 05:00 스윕
+    a = htf_swept(1, 99.5, sj, i4, T15, Hw, Lw, d1, sw, T4, H4h, H4l, 0.02, 120)
+    ok = _check(ok, a == (True, "PDL+H4eq"), f"fresh PDL and H4 equal lows both taken -> {a}")
+    a = htf_swept(1, 100.5, sj, i4, T15, Hw, Lw, d1, sw, T4, H4h, H4l, 0.02, 120)
+    ok = _check(ok, a == (True, "H4eq"), f"above PDL but below H4 equal lows -> {a}")
+    a = htf_swept(1, 101.5, sj, i4, T15, Hw, Lw, d1, sw, T4, H4h, H4l, 0.02, 120)
+    ok = _check(ok, a == (False, ""), f"sweep did not reach any HTF level -> {a}")
+    L2 = Lw.copy()
+    L2[96 + 5] = 99.8                                      # 같은 날 스윕 전에 이미 깨짐
+    a = htf_swept(1, 99.5, sj, i4, T15, Hw, L2, d1, sw, T4, H4h, H4l, 0.02, 120)
+    ok = _check(ok, a == (False, ""), f"levels already taken earlier -> not fresh -> {a}")
+    sw1 = dict(sw, sl_idx=np.array([2]), sl_conf=sw["sl_conf"][:1])
+    a = htf_swept(1, 100.5, sj, i4, T15, Hw, Lw, d1, sw1, T4, H4h, H4l, 0.02, 120)
+    b = htf_swept(1, 100.5, sj, i4, T15, Hw, Lw, d1, sw1, T4, H4h, H4l, 0.02, 120, mode="swing")
+    ok = _check(ok, a == (False, "") and b == (True, "H4swing"), f"single H4 low: cluster mode {a}, swing mode {b}")
+    sc = tr[tr["combo"] == "N5-A-S2-T1"]
+    ok = _check(ok, not bool(sc["f1h"].iloc[0]) and not bool(sc["f1d"].iloc[0]) and not bool(sc["f5"].iloc[0]),
+                "scenario has no HTF history -> F1H/F1D/F5 all filter it out")
+
+    print("=== Test 10: random walk with filters -> expectancy near 0 ===")
+    rw2 = _random_walk(11, "2016-01-01", "2023-12-31 23:55", pip)
+    opt = default_opts(oos_start="2021-01-01", min_trades=30, out=out_dir, spread=0.0, all_filters=True,
+                       stops="S1,S2", targets="T1,T2,T3")
+    res = run_all(opt, files={"RW": rw2}, quiet=True)
+    ft = res["filters"]
+    cl = res["trades"][res["trades"]["result"] != "open"]
+    for sub in ["none"] + FILTERS + ["F1H+F1D+F2+F3+F4+F5"]:
+        m = np.ones(len(cl), bool)
+        parts = [] if sub == "none" else sub.split("+")
+        isk = (cl["entry_v"] == "K").values
+        m &= isk if "F2" in parts else ~isk
+        for f in parts:
+            if f != "F2":
+                m &= cl[f.lower()].values.astype(bool)
+        g = cl[m]
+        if len(g) == 0:
+            print(f"  {sub:<22} no trades")
+            continue
+        # 같은 셋업이 여러 조합에 겹치므로 표준오차는 '체결 수'(셋업 단위)로 잡는다
+        nfill = g.groupby(["fill_server", "entry_v", "swing"]).ngroups
+        se = g["R"].std(ddof=1) / np.sqrt(max(nfill, 2)) if len(g) > 1 else np.inf
+        good = abs(g["R"].mean()) < max(0.15, 3 * se)
+        ok = _check(ok, good, f"{sub:<22} rows {len(g):>5}, fills {nfill:>4}, mean R {g['R'].mean():+.3f} (3*SE {3 * se:.3f})")
+    labels = set(ft["filters"]) if not ft.empty else set()
+    ok = _check(ok, {"none", *FILTERS} <= labels and len(labels) >= 40,
+                f"filter table: no-filter + every single filter present, {len(labels)} of 64 on/off combos have trades")
+    print("  F5 kinds on random walk:", cl.drop_duplicates(["fill_server", "swing"])["f5_kind"].value_counts().to_dict())
+    print("\nSELFTEST:", "ALL PASS" if ok else "SOME FAILED")
     return ok
 
 
 def main():
+    for s in (sys.stdout, sys.stderr):
+        try:
+            s.reconfigure(errors="replace")   # cp949 콘솔에서 못 쓰는 글자는 ? 로 (오류로 멈추지 않게)
+        except Exception:
+            pass
     opt = build_parser().parse_args()
     if opt.selftest:
         sys.exit(0 if selftest() else 1)
     if not opt.data_dir or not opt.out:
-        print("--data-dir 와 --out 이 필요합니다. 예: python crt_backtest.py --data-dir C:\\...\\mt5_m5_data --out C:\\...\\crt_bt_out")
+        print("need --data-dir and --out. e.g. py -3.12 crt_backtest.py --data-dir C:\\...\\mt5_m5_data --out C:\\...\\crt_bt_out")
         sys.exit(2)
     run_all(opt)
 
