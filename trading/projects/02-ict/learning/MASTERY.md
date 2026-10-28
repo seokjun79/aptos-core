@@ -24,7 +24,7 @@
 | 순서 | ID | 제목 | 원문 | 화면 | 사전 | 예시 | 시험 |
 |---|---|---|---|---|---|---|---|
 | 1 | LPOaFOZekf8 | NQ Futures Price Action Commentary (10/28) | 읽음 | 65장 | 33개 | 완료 | 40/40 (암기 시험 통과, 적용 시험 남음) |
-| 2 | 9YS41OoxbX4 | Market Review On NQ December Price Delivery | - | - | - | - | - |
+| 2 | 9YS41OoxbX4 | Market Review On NQ December Price Delivery | 읽음 | 47장 | 21개 | 완료(가상 매매) | 출제 대기 |
 | 3 | 59Elm8myGEc | NonFarm Payroll October 2026 Lecture | - | - | - | - | - |
 | 4 | kRShZKZlvJ4 | NQ AM Session Review 09/30/2026 | - | - | - | - | - |
 | 5 | 7M56e9O06Ko | NQ December Asian Session Execution | - | - | - | - | - |
