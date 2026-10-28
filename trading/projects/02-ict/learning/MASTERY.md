@@ -43,3 +43,19 @@
 ## 필요한 것
 - PC의 RC비너스 창(현재 닫힘): 자막 원문 전체 전달 + 영상 화면 캡처.
 - 나스닥 1분봉(ICT 예시 따라 그리기용): MT5에 지수 CFD가 있는지 RC가 확인.
+
+## ICT 채널 전체 (RC 조사 2026-10-29, PC `venus\learning\ict\channel_index.csv`)
+- 일반 영상 755개 (약 369.5시간) + 라이브 165개 (약 281.5시간) = **920개, 약 651시간**. 자막 있는 비율 약 85%(표본 20개).
+- 지금 속도: 숙지 1회 ≈ 영상 길이 × 1, 시험·재시청 포함 ≈ × 1.5~2 → 전체 약 1,000~1,300시간 작업.
+
+### 숙지 순서 (매니저 제안)
+| 단계 | 재생목록 | 영상 | 길이 | 이유 |
+|---|---|---|---|---|
+| 1 | 2022 ICT Mentorship | 41 | 24.5h | ICT 모델의 기본 정의가 처음부터 순서대로 있음 |
+| 2 | ICT Forex 묶음: Market Maker Primer Course(24), What Every New Forex Trader Wants To Know(5), Precision Trading Concepts(3), Market Maker Forex Series(5), OTE Pattern Recognition(20), Pattern Recognition OTE(2) | 59 | 약 26.7h | 석준님 GBPUSD와 직접 관련 |
+| 3 | 2017 Private Mentorship Month 11·12 | 8 | 6h | 공개된 핵심 강의 |
+| 4 | 2023 ICT Mentorship | 97 | 92.8h | |
+| 5 | ICT 2024 Mentorship | 51 | 97.2h | |
+| 6 | 2025 Lecture Series + 2026 ICT Smart Money Concept Lecture | 226 | 약 106h+ | 최근 해설(1·2번 영상 포함) |
+| 7 | ICT Trade Executions, Price Action Chronicles 등 나머지 재생목록 | | | 실제 매매 기록 |
+| 8 | 재생목록 없는 영상 402개, 라이브 | | | |
