@@ -1,0 +1,469 @@
+Title: NQ Futures Price Action Commentary
+Channel: The Inner Circle Trader
+Published: 2026-10-28T07:51:51-07:00
+Length: 56:31
+URL: https://www.youtube.com/watch?v=LPOaFOZekf8
+Source: YouTube 'Show transcript' panel (English, auto-generated), copied by RC비너스 2026-10-29. Auto-caption errors: cibby/CBY/sippy = FVG, end dog = NDOG, consequent encouragement = consequent encroachment.
+
+## Chapter 1: Analyzing market liquidity
+[0:00] and I called out in one of my students live streams.
+[0:04] Sometimes I get caught up in the commentary of other students that part of my own students live streams and
+[0:13] we'll get to this in a moment. Let me say top center. Okay,
+[0:22] mentioned how my interest was in this particular day's low and that low comes in at 29,053.
+[0:29] Okay. And I recently showed that a couple people say that I didn't make a mention of it, but there was about uh
+[0:36] 12-500 people in Dasha or you know as Lumi Traders live stream on YouTube and I said my
+[0:44] only interest right now was this one here and that was on this day and we were trading around here and we went all
+[0:50] the way down to a low of 29,033.
+[0:57] So, it went exactly 20 handles below what I was aiming for, which is just simply based off this low. Now, you might question, well, why'd you pick
+[1:05] that low? Why would What was so particular about that one? And why didn't you just simply go for this one here? Wouldn't that make more sense?
+[1:13] Well, you got to consider what what we've already done.
+[1:16] We had this low here. So, we had a low, low, low. Then look how much energy we spent creating a new all-time high.
+[1:28] So I think that looking for this low to be swept ahead of
+[1:36] or during the week of the week prior to midterm elections in the US, which is what I'm highlighting here. So that's this trading week here.
+[1:45] Monday, yesterday is Tuesday and today's Wednesday's trading. I'll get to that in a moment. But because we had already
+[1:53] traded down to a level that my interest was in here and because we've already taken sellside side here, we had low slightly lower low. So we had three
+[2:02] drives lower failure to go lower and then look how much price action we had to the upside. So
+[2:11] the way I interpret that is where's the swing low prior to that low?
+[2:17] If we're coming from higher prices going lower, this is the first one you're going to come to
+[2:24] obviously breaking below that. But on this particular day, my interest was only focused on that. Now, if it would
+[2:32] have went below and went to there, so what? It doesn't matter. Just so happens that my trade ideas were anchored to
+[2:39] this particular low. And I'm giving you the logic as to why I did that. Okay.
+[2:44] Now, which brings us into what I was talking to my son about the other day.
+[2:56] And last Thursday, the market trades down, hits my level, and then Friday, we open, we trade down below once more, and
+[3:04] then wick back above, and then we go into unchanged.
+[3:08] Now, this week is the last trading week before we go into the US midterm elections. Now, it's standard practice,
+[3:16] okay? You're going to find this more true than not. uh they tend to kind of fluff the market up
+[3:23] during the week or potentially sometimes two weeks before the elections because they understand that
+[3:33] the average person sees the stock market as a barometer for the economy and that's not true at all.
+[3:41] It's absolutely it's one of the furthest things from the truth there is. So by then fluffing it up when we hit a key
+[3:50] level that I gave out publicly then we on Friday created a lower low than we did on Thursday and then Monday
+[3:59] we had a higher low. So, I was I was teaching my son how to read price and anticipate swing
+
+## Chapter 2: Volume imbalance adjustments
+[4:08] points and then once they're confirmed after a particular key level and liquidity has been engaged as we indicate here on that particular day's
+[4:17] low being in 29,053 once we hit it here on Thursday we tried to go lower on Friday came back above.
+[4:27] So, we have small little tiny indecision candle there. The body is you relatively small.
+[4:34] Look at the setting tab down here. See how it's toggled on and now it's off.
+[4:39] You see that? What's happening here? The key is to watch this candlestick.
+[4:45] Watch this candlestick. See how much of a wick this is? See how that is? Watch.
+[4:51] Watch what happens. Smaller wick, larger wick, smaller wick, larger wick. Also
+[5:00] take notice of the difference between where the body is here to here.
+[5:08] First of all, let's get one thing straight. The open is 29,116.5.
+[5:15] The close is 29,117.75.
+[5:19] Okay. So, it's a very very small up close body, but the range we're going to show in a
+[5:27] little box here to there. Okay. So, I'm highlighting
+[5:33] this with we'll create some kind of a contrast here.
+[5:41] All right. So that box represents the difference between the close on last Friday
+[5:49] and the open on Monday with this setting toggled on. Now when I toggle it, you
+[5:56] know, again off, if I click that, it's no longer highlighted.
+[6:01] Then we want to see the difference between the the height of this box between open of this candle and close of that candle. Why close of that candle?
+[6:11] Because the close is higher than the open. Remember, look at this. Look at the information. Open is 116.50 and the close is 117.75.
+[6:21] Okay? So, it's 1.25 or five ticks. One handle.25 handles above where it opened. So, it's
+[6:30] a slightly up closed candle. Does this box represent the highest widest range
+[6:38] or by me toggling this again, does it make it wider? Or does the candlesticks represent something smaller in terms of
+[6:46] a gap? Well, let's see. Uhoh. What happened?
+[6:54] It's smaller. You see that? So, when it comes to looking at volume imbalances,
+[7:02] because that's what this is, when there's a separation between the bodies, even though there's a wick bridging the two candlesticks together,
+[7:11] this wick engages this candlestick's body, but this body opens higher than this
+[7:18] body's close. And no connection or touching occurs between these two specific candlestick bodies.
+[7:28] I'm not talking about the wicks.
+[7:29] Clearly, they they they spent some time in the same range if you incorporate the low, the wick. Okay. But what I'm trying
+[7:37] to represent here is when I'm using the toggle on and off with the setting for settlement price, because I get questioned all the time, why do you use
+[7:45] it on? When do you use it off? What determines that? I'm looking at the representation of how the volume and balances populate on the chart, whether
+[7:54] that's toggled on or off. Okay. So, again, same thing as I mentioned in the most recent uh traders roundup with
+[8:02] Kitten the gang. The if we look at wicks as we're doing here
+[8:09] and here, what I'm doing is the same thing. I'm looking at it where where am I seeing the longest wick?
+
+## Chapter 3: Corroborating market data
+[8:17] That one. And it just so happens that it also corroborates the story line behind this
+[8:26] gap or volume imbalance between the bodies of last Friday and Monday. So which setting am I going to have on my
+[8:32] chart? This one. Because it's showing a longer wick. See this right here? This wick. I I'll do the same thing I just
+[8:40] did with that volume and balance. I'm going to measure this.
+[8:46] Okay, that's the wick. Okay, the premium side wick on last Friday's candle. Now, if I toggle it again, look what happens.
+[8:57] The wick shortens.
+[9:00] See that? So, I'm I'm only interested in seeing the one setting that gives me the widest volume imbalance. Or there may
+[9:09] not be a volume imbalance in two particular candles. Now, which candles am I picking? I'm just getting the lay of the land where we're at. Okay? For instance, if we didn't have all this
+[9:17] down here, and this one was the only one I could see right away, like look, looking at it, this one would not be chosen.
+[9:26] This one would cuz it's it's wider between the two bodies. And other places in the chart, like up here, see this?
+[9:38] See how wide much wider it gets? If I had something like this
+[9:45] versus that, I would choose that setting. So, it's again, it's corroborating this particular setting.
+
+## Chapter 4: Fine-tuning chart analysis
+[9:54] You see what I'm saying? So, we're we're getting more information, more data suggesting what the algorithm is currently respecting. Sometimes you'll
+[10:03] see where the the setting is not to be toggled at all and just left like that.
+[10:09] and I let the price action itself dictate when I have it on. Now, if there's ever a question where you really
+[10:16] can't see any kind of discernable distinction between whether it's toggled on or off in relationship to volume
+[10:23] imbalances or or the wicks that's being considered in in your analysis, then
+
+## Chapter 5: Swing point identification
+[10:32] choose one setting, pick the particular candles and ranges that you're looking for, measure them,
+[10:39] grade them out, and then toggle it the opposite and then get measured. ments on that too. And then just watch it for a
+[10:46] few hours for a session intraday and you'll see which one the market's reacting and keying off of and
+[10:53] respecting. And then the other one that it's not so much respecting, dis you dismiss it. You remove it from your
+[11:01] chart and then you've fine-tuned and calibrated your analysis on real market order flow. Okay. So hopefully you learned something in that regard. But
+[11:09] now let's go over to Again, Thursday's low here, Friday's lower low than Thursday's daily low. And then we
+[11:18] had Monday's trading slightly higher low. Added time when we went to a key level I gave out publicly, 29,053.
+[11:26] So, we hit that liquidity and then we're entering the last week prior to US
+[11:33] United States midterm elections, which is next Tuesday, November 3rd, 2026.
+[11:39] So, I have that much data highlighted in yellow. And it just so happens that we opened, we traded down back into that
+[11:47] key level once more, did not take out Friday's low, and then we ripped higher.
+[11:52] Okay? So, if we have a swing low forming, and a swing low is just basically like this. Okay? We have that,
+[12:01] and then we have, again, this is going to be a crude depiction. And I apologize if only the best of uh production quality around here, folks.
+[12:13] So, we have a swing low is a candle that creates a low, a lower low, but there's a key level down here. It's traded to,
+[12:20] and then the next candlestick is has a slightly higher low. This is a is a swing low. Usually, if you're bullish
+[12:28] and your analysis is on point, you're on side. If you see these types of things form, candlestick number four, this is candlestick one, candlestick number two,
+[12:36] candlestick number three, candlesticks four and or five should be bullish candles. That's how you should interpret
+[12:43] it. Okay? So, if we're reversing this and we're looking for something bearish,
+[12:51] some kind of a key level here, we have an up close candle.
+[12:56] We have it doesn't necessarily have to be an up close candle either. So don't don't don't read into what I just said there. Uh it it's a candle with a high
+[13:04] and then a higher high than that of the previous and then the next candle is a lower high. So we have a high with two
+[13:14] lower highs surrounding it. Candlestick number one, candlestick number two, candlestick number three. And then what that would indicate is if you're on side
+[13:22] and you're bearish and you have the right key level that you traded up into, that should be a premium sensitivity element in price action. Something like
+[13:30] um old liquidity or trading up into a bearish fair value gap or a bearish inversion fair value gap or a bearish
+[13:39] breaker or a volume imbalance or institutional orderflow entry drill or a reaper. Anything that we would key off
+[13:47] of. Okay. uh trade up into that and then candlestick one, two, and three, candlestick four and or five should be a
+[13:54] bearish candle. If if those things don't indicate that is in fact true, you're probably misreading
+[14:03] the underlying bias and price action and it might slightly go higher or completely tear off your face and go higher than what you thought it was
+[14:11] going to do, which is in in itself Intel and you're going to pay a premium for that if you take a loss. And there's nothing to be afraid of in that regard
+[14:18] because you're paying for good information. You're paying for good data. A loss is not something that you should be fearful of. It's just you're
+[14:26] willing to pay a premium price with money for better intel.
+[14:32] Trust me, you're going to have a better read on price action when you dismiss the emotional connection to taking
+[14:39] losses. Whereas the general retail trader that is always predominantly and perpetually looking for a way to
+[14:48] avoid entirely losing money or losing on trades when they take a loss. A less informed trader, unskilled, a
+[14:55] undisiplined, a trader without a model, a trader without experience just watching price action, reading it before trying to make money with it. When they
+[15:03] take a loss, they lose all of their bearings in coordination. It discombobulates them,
+[15:12] makes them confused and scared, and they emotionally react with anger.
+[15:18] A emotionally stable, more soundminded, sober-minded analyst, when they have it
+[15:25] wrong and they get stopped out and they incur a loss monetarily, they view that as paying for more
+[15:33] insight than they had prior to it. So now they have a better understanding, a better feel for what price is really
+[15:40] showing them. Their in their indications may be that the market was going to go higher, but they get stopped out. So now they're put in a position where they
+[15:48] paid a price to now re-evaluate their expectations on the marketplace. It
+[15:56] forces them to go back to why they did what they did initially. And then do the things still hold true that started that first perspective on entry?
+[16:05] Many times because they're mature, they will see that something has changed and that means that they either comfortably
+[16:12] move to the sideline and do nothing, not fearfully or they may in fact reverse and go the other direction. And there's
+[16:21] nothing wrong with that. That's not chasing price. That's follow a model.
+[16:25] If the model's telling you you were wrong as the operator because it's always operator error. A sound model that you spent time with and there's an edge to it and you're going to know
+[16:34] there's an edge if you do back testing and forward testing and then tape reading without money involved. Once you
+[16:41] prove that your edge is there and you trust it and you understand it, there's no reason for you to be fearful of
+[16:47] taking a loss because if you lose, it's operator error because a sound model isn't expected to be a 100% model.
+[16:57] There is no 100% models. They don't exist. That's a myth. Okay? Anyone that tells you you have a 100% model is a liar.
+[17:06] So the idea is simply understanding where the probabilities lie and where those probabilities lie and where your skill set matches.
+[17:17] Then the results over time are going to kind of like provide you a tapestry of
+[17:23] progress and consistency or the lack thereof.
+[17:28] And by having these periods of where we trade down the key levels that was given publicly 29,5
+[17:36] I'm sorry 29,053 we traded to it on two days here here showed no meaningful want to go lower
+[17:45] this candlestick if we grade this.
+[17:53] Okay, watch.
+[17:58] I'm measuring the low of the uh candlestick up to
+[18:04] the open. Okay. And by doing this, I'm going to take that 53 level off.
+[18:11] Now, you can see this level 29,051.75.
+[18:17] That's the consequent encroachment or midpoint of this wick on the lower side of it. So, it's the the discount wick of Friday's daily candlestick.
+[18:27] This wick is the premium wick of Friday's daily range candlestick. So, we're measuring the high down to the
+[18:34] close. And if you have your magnet toggled on Trading View to strong, if you put your your fib right here and let
+[18:43] go of it, it'll automatically snap right to the nearest price level and it's anchored to that. And let's double check it now.
+[18:54] The close is 29,117.75.
+[18:58] Go up here, double tap on the fib, look at coordinates, and you'll see that's in fact what it's toggled to.
+[19:06] Okay.
+[19:08] So now what that does is it gives me the consequent encouragement on Friday's daily wick, the premium wick to that
+[19:14] midpoint. All right. So, we have two wicks like this that are graded out. All right.
+[19:24] If we anticipate the market trading higher, why? Because it's the week going into midterms for the election and
+[19:31] there's there's a slight tendency for them to want to fluff the market up.
+[19:35] That means there's a slight tendency to have a modest bullish bias. Not always.
+[19:41] It's not a panacea. It's not a beall end all. It's always going to be this way.
+[19:45] This is something that traders with maturity have recognized over the years when it comes to election time, whether it be midterm or presidential. Usually,
+[19:52] there's all kinds of, you know, built-in, you know, well, let's just put it this way, they
+[20:00] like to fluff up the numbers and they fluff up the market and it makes everybody feel patriotic and it makes the the administration in office kind of
+[20:09] have something to brag about, okay? and they don't want to have a down market where it's been crashing going into the election.
+[20:16] It just one more talking point that they can use against the administration that's in office and the one that's trying to get in office can can use it
+[20:24] when they're really both the same uni party. But it's the illusion of choice, right? So now because we have two
+[20:32] reference points here, okay, and we're we're looking for how this turning point could be materializing.
+[20:42] We have two wicks graded out on Friday after a key level at 29,053 was traded to. Now we can take a look at this.
+[20:53] We're going to
+[21:05] set this. So, I'm going to get a consequent encroachment of two consequent encroachments on Friday's candle.
+[21:13] New PD array. So, I'm sure you'll probably find this in white golf.
+[21:20] You're never going to find this in white golf, but it's okay. I understand. It's always fun for me to twist the knife.
+[21:25] ICT twisted. All right. So, we want to anchor a fib from this level here and this
+[21:33] level here. All right. But right now, it's presently anchored to that. So, we have to look at this level. Draw your attention over to here. So, we want
+[21:41] 29,222 0. Okay.
+[21:58] So 29,222 and we want this consequent encroachment next. So that's 29,051
+[22:10] 29,051.75.
+[22:15] This is really complicated. If you're expecting me to do this, bro, I'm going to do something else. I'm going to just trust overbought, oversold indicators.
+[22:23] Okay. That's fine. Boom. All right. So, now we have a midpoint level.
+[22:36] We're going to double check that. 29,051.75. That's that level there. And 29,22022.
+[22:45] Yep, that's here. So now we have this 29,137 even level which is the midpoint of both of these consequent encroachment levels.
+[22:54] Now we're going to change the color of this one to blue.
+
+## Chapter 6: Mapping market timeframes
+[23:01] All right. And then we're also going to change this to a dashed line. So that way it'll look different. Okay. Okay, it's going to look different between the
+
+## Chapter 7: Advanced level labeling
+[23:09] uh it's going level here and there.
+[23:18] Get this one off because it's a little confusing for right now. Right. So, we have a wick consequent encroachment here and a wick consequent crochment here on the same individual daily candlestick.
+[23:28] And then we have Monday's trading during a time when we expect price to go higher. So now we can take this information and transpose that into our
+[23:36] lower time frames. And let me just double check make sure that this is going to exist and populate on the one minute chart. And it will. Okay, good.
+
+## Chapter 8: Using inversion gaps
+[23:45] Now before we do that, if in fact this market's going to go up during this yellow shaded area, which is the week
+[23:52] prior to new uh the US midterm elections next Tuesday, the 3rd of November, 2026.
+[24:00] Look what we have here.
+[24:03] You see that? So now we have a range between this WIX low and this Wick's high.
+[24:11] And we're going to look at grading that. And these will be solid lines.
+[24:21] And we'll make this green.
+[24:25] That's the midpoint consequent encroachment. And then we will use that
+[24:31] and we're going to make them solid lines and we'll make them thin. Okay. So now
+
+## Chapter 9: Forecasting market movement
+[24:39] when we see these horizontal lines that are graded like this, what it's representing is this cibby which should
+[24:46] act as like a fireman's ladder carrying price
+[24:54] up with inversion fair value gap
+[25:01] characteristics to it. Okay. So what we're doing is we're blending very very rich details from the daily chart just
+[25:10] like the algorithm will implement and use when we drop in these lower time frames and you'll see it's a laughing uh
+[25:19] it's a laughing stock really when you when you look at what people try to say even the talking heads in this industry
+[25:26] that have lots of uh letters after the name PhD piled higher and deeper um CTA PA p uh you PhDs and scientists and all
+[25:36] these other people. They'll have all kinds of you know textbook explanations why price did something after the fact.
+[25:43] But I'm I'm wanting you to see what I teach you. The logic is there. You can expect it, anticipate it, and then be
+[25:52] able to forecast with it. And that's important because as a trader, you have to forecast. You must forecast. You're not guessing, okay? You're you're
+[26:01] predicting. And if you're reacting, that means you don't know what you're doing and you're you're just knee-jerk reaction like a reflex.
+[26:08] The only time reflex is appropriate is when you're trying to protect your money. That means if you see something in your model, see something in your setup, see something in your framework for the trade idea that you implemented.
+[26:19] If that has shifted or changed or no long no longer exists, then you must react. Then the reflex
+[26:28] reaction would be close the trade, remove risk.
+[26:32] Otherwise, we don't react. We don't react to anything. We don't wait and see. Okay? Wait and see is part of FFO
+[26:39] and we don't trade with the FFO model around here. If you don't know what that means, just Google it.
+[26:46] The uh inversion fair gap here. And then once we get to this area here, that would be an ideal area for like minor buy side.
+[26:56] So we can look at that. It's a minor buyside liquidity pool and that would suffice it enough. Now if you
+[27:05] wanted to go one step further, you could grade this wick here.
+[27:09] Okay? And I'm not going to do that because we'll have more horizontal lines and I don't want to add more talking points because I think this is a
+[27:18] rich tapestry here that we can use inside of intraday price action on the one minute chart. All right. So, let's drop down and we're going to take a look
+[27:26] at what um price action was doing on Monday.
+[27:32] Now, remember, these lines here are already established and determined at 5:00 p.m. last Friday. So, all weekend
+[27:41] long, you could have had all these ideas implemented and laying on your chart.
+[27:46] Okay. So, we'll drop down into a one minute time frame.
+[27:50] Real quick, let me make sure this is going to show up on all time frames. Yep, it'll show on one minute.
+[28:00] So, now we're going to go to the one minute time frame.
+
+## Chapter 10: Understanding opening gaps
+[28:12] We're going to scrub back to I know the calendar thing. Don't talk to me, boy.
+[28:17] All you got to do, ICT, is just glue to the little calendar thing down here. I know. It's this right here. I know. Here, I'll satisfy you.
+[28:26] Monday 30.
+[28:36] Okay. You happy?
+[28:38] All right. So, now we have price action utilizing this
+[28:47] halfway point or consequent encroachment between Friday's daily candlesticks premium consequent encroachment of its
+[28:55] wick and its discount wick its consequent encroachment. So we have those two two key levels there. You see
+[29:00] that and we also have the market trading
+[29:10] inside of this area in here which we'll look at in a moment. But for now, just know that the market created a turning
+[29:18] point potentially forming on Friday.
+[29:24] There's Sunday, we open, we trade down slightly below that low there. Then we rally up. We come back down in rally back up.
+[29:35] Fail to go lower. Rallies higher.
+[29:39] And now we're inside of that inversion fair value gap of the daily chart and that orange shaded area.
+[29:48] Trades higher, bangs around, falls short of this octave, but eventually gets to it here. But look at the reaction off the octant levels and the quadrant
+[29:56] levels. See that here? We're just slightly outside of it.
+[30:05] Rallies back up. I'll get to these in a moment. But I just want to show you all these piece pieces of information.
+[30:12] This is what I have on my chart or not my chart on my uh on my notepad and things I talked about with my son. And
+[30:21] we have this in here and then we rally up and now
+[30:27] price is sitting right there. Okay.
+[30:37] Now, let's go back into yesterday's price action.
+[30:43] All right. And this yellow area here, we're going to remove that box cuz it's a little disgusting in terms of the color. It's just again highlighting the
+[30:52] time which represents the week prior to leading into the US midterm elections
+[30:58] next Tuesday, November 3rd, 2026. So, I'll take that off. And I know it's much more pleasing now. You can see a lot
+[31:06] better. And again, just real quick, you can see all the business here. Okay.
+[31:16] All right. So, we have uh I was talking to my son about new day opening gaps and I told him I said he he and all of you
+[31:22] also have the the luxury of deti deciding how you're going to label your PD arrays. And you may look at this
+[31:31] shaded area here and say, "Okay, what is that?" Well, it's a new opening gap.
+[31:38] when it formed where we settled on
+[31:49] Monday at 4:59 p.m. Eastern time and where we opened at 6:00 p.m. Same day,
+[31:57] but it becomes the new trading day through electronic trading hours. Okay, so electronic trading hours resumes at 6
+[32:05] p.m. Eastern time and where we opened and where we closed that is the new day
+[32:11] opening gap. All right, because it's still technically Monday. I
+[32:18] was explaining that you can label that Monday's new day opening gap. Doesn't matter if it's Monday or if you call it
+[32:26] what I would like to refer to it as it's Tuesday's new day opening gap because now we're on Tuesday's electronic trading.
+[32:34] Even though it's 6:00 p.m. Monday Eastern time in the US, technically all of this data in my mind algorithmically
+[32:43] goes towards Tuesday's electronic trading hour data. All right. So, if you
+[32:49] have it set to Tuesday, new day opening app or end dog as it has here, or if you have it Monday, Monday
+[32:57] or Tuesday, it doesn't make a difference. Just make sure you have it represented. All right.
+[33:02] It's real important that you know that the first one that forms.
+[33:09] Okay, so 6 PM Monday, you want to have that one and and keep
+[33:17] them for at least two weeks rotating in your chart. always go back two weeks and have them always projected throughout
+[33:25] the inter the entire weekly range because it'll be used many times, multiple times for trade setups, targets, um stop management. They're
+[33:34] they're very very influential because it's the first one that formed for the week. Okay? So, just to make it simple, in case you're confused about whether
+[33:42] you should label it a Monday endog or Tuesday end, just know that whatever you name it, the one that forms at 6:00 p.m.
+
+## Chapter 11: Pre-market trading ranges
+[33:50] on Monday Eastern time, that's the one you carry across your entire trading week for present week and
+[33:58] grab the one from the previous Monday at 600 PM Eastern time and have that across the entirety of your trading week because they will use them. And you do
+[34:07] the same thing with Friday. Okay. And you also want to do the same thing with your regular trading hours, opening range gaps. Same same premise, same
+[34:16] principle. The Monday and Friday of the last two weeks, you want to make sure that you have them on your chart. Okay.
+[34:24] All right. So, now let's get into the business of I'm not going to go over all this stuff. This stuff I talked to my son about and we worked with all that
+[34:31] real time, but it's not important for you to have everything I give to my kids. I got to have something that's personal and unique for him, right? No, no, no.
+[34:43] All right. So, let's go over to And here here's a new day opening gap here for uh Tuesday, but it's technically for
+[34:49] Wednesday's trading electronic hours, right? So, here's the business uh yesterday. Uh
+[34:56] obviously, we had a comic strip event yesterday. Typical stuff. They talk all kinds of smack, but they don't ever really do anything.
+[35:08] I was asked by my dear one if I would accompany which means bring the wallet, bring the
+[35:16] credit cards. Uh can I accompany and chafferon a housewares
+[35:24] shopping spree? And gentlemen, I was really put through the mill yesterday. So just just be tender with
+[35:32] me today. I'm feeling extremely fragile still.
+[35:36] No matter what answer I gave, it wasn't good enough. So, I hate when I'm asked, does this look good or do we do we have
+[35:43] this one? Do we need another one? We I think we need whatever. So, it's it's more or less like, you know, whatever you want to get. Whatever gets us out of
+[35:51] the stores faster, that that's what I'm looking for. Okay. So, I only had time to do one thing. Okay. Okay. And the one
+[35:58] thing I did was if you measure the pre-market session hours, which is what I teach is 7:00 Eastern time.
+[36:08] To 9:00 a.m. Eastern time. So, let's view that vertically here.
+[36:13] That's here. And
+[36:26] so this range specifically dealing with this candlestick's low.
+
+## Chapter 12: Standard deviation analysis
+[36:34] Note the time down here 7:45 a.m. Eastern time and this high 8:25 a.m. Eastern time.
+[36:46] Always pardon me. Always have your time set to New York. Because if you have it set to your local time, you're you're
+[36:54] confusing not only me if you're asking questions because I don't know what your local time is. And I'm not in the habit of trying to calculate it to to make
+[37:02] things germaine for you to understand because the algorithm runs on New York time. So if you're looking at your local time, no matter where you are
+[37:09] geographically around this world, um you're doing it incorrectly. So just always calibrate your charts to New York local time and you'll be fine. So 7:00
+[37:16] in the morning to 9:00 a.m., those two hours, that's the pre-market trading hours. Now, you can make your entire career just trading inside that. But
+[37:24] what we're looking for is we're at a time when the market's likely to do what? Go higher.
+[37:32] Why? Because Monday created a higher low on the daily chart. So that means now we have a valid verifiable
+[37:39] swing low on the daily chart after we traded to 29,053 key level that I anchored attention to
+[37:46] publicly. We traded down to it on Thursday of last week. We traded down to it on Friday of last week and then Monday we had a higher low but now we
+[37:56] have key levels that we can anchor in and these horizontal lines here going across
+[38:04] that that's the consequent encouragement of that daily inversion fair value gap the next octant above it upper quadrant
+
+## Chapter 13: Executing short positions
+[38:11] next octant and then the high of that inversion fair value gap on the daily chart here we have the range between 7:00 and 9. What is the profile?
+[38:23] Not volume profile, not market profile.
+[38:27] Okay. What is the schematic? What is the type of price action that's occurring
+[38:36] between 7 a.m. and 9? It's consolidation. Perfect.
+[38:43] That is perfect for doing standard deviations as I taught when I was teaching primarily forex trading. Treat
+[38:51] this entire range just like an Asian range or flout or central bank dealers
+
+## Chapter 14: Interpreting price delivery
+[38:58] range. Same idea, absolutely the same premise. The market is held in a consolidation or holding pattern. We're
+[39:06] entering a time, we're actually entered actually a time when the market should go up because we're going into US
+[39:12] midterm elections. So, they're going to fluff up the market. Even though there is no economic news on Monday and
+[39:21] Tuesday really to speak of, it doesn't change the fact that all the underlying things I've indicated here are likely to
+[39:28] see the market go higher. Now, I I couldn't be a part of every facet of
+[39:34] going with the lung. I I just I can't have my wife telling me, "Listen, you're on your phone and I'm trying to have
+[39:42] conversation with you. We're right here doing this, doing that." I I just can't I can't get into an argument with her.
+[39:47] Okay? I'm just not going to do it. And I'm certainly not going to do it in the stores. Okay? So, the only time I had
+[39:54] was able to facilitate a short that would set up the the long that leads to where price is today. So, I'll just
+[40:02] leave you with this. If you take the low here, drag it up to the highest high. Now, this is not cherry-picking.
+[40:12] This is not me creating something new.
+[40:14] You've seen me teach this, folks. You've seen me teach it. You know, it's it's exactly what I teach in regards to doing
+[40:21] standard deviations on opening range gaps and on dealing ranges. Well, the dealing range is defined by
+[40:28] time. So, we have 7 a.m. to 9. The highest high, the lowest low when we're in consolidation makes the purest, the
+[40:38] most reliable, the most dependable, trustworthy. I'm running out
+[40:46] of you descriptive terms to to try to emphasize the trust factor, the comfort of me believing these things are going
+[40:55] to have an impact on future delivery of price. Okay. So, you can see right away that we have
+[41:03] the fib level here. And now what I'm going to do is I'm going to show you
+
+## Chapter 15: Managing trade exits
+[41:10] standard deviation 1.5. Okay, 1.5.
+[41:21] And we're going to zoom out. Crunch this up a little bit.
+[41:35] It drops down into here. It rallies up and trades right into where's my left
+[41:57] negative.5.
+[41:59] I was looking at um 1.5 on my notes and it discombobulated me.
+[42:06] is messing me all up. So, here's the uh negative 0.5 level right here. So, what we're
+[42:16] doing is we're measuring this low to high and we're getting a measured move.
+[42:23] It's all it is. It's a measured move of a time specific portion of range of price.
+[42:31] It's ahead of the highest impact of volume coming into the marketplace, which is the US open at 9:30 to 10:00.
+[42:40] That first 30 minutes, that's the opening range, not opening range gap, but opening range. And when we have price create this nice little
+[42:48] consolidation and then we drift lower, we rally up right there at 941, we cross that line at 0.5.
+[43:00] Okay, again, 0.5. I taught you this. I told you you can use this same premise on the opening range gaps to see how far
+[43:08] we can move and accelerate outside of the opening range gap. If there isn't going to be a follow through or trending day, many times you can nail down the
+[43:15] high or low of the day doing that projection like I'm doing here. But because I felt this was a little too
+[43:23] quick to run and they left this low, these lows and this low here, it just
+[43:31] seems like they left sellside just too intact and they took out the relative equal highs first. So when we do this,
+[43:40] it's likely that they're going to come back and clear the the board and and knock out anyone that's long. So now what we can do is we can go back to this
+[43:48] low here frame that with sellside liquidity
+[44:02] and we'll remove the box area. Okay. So now what we have is we have a market that is sell side relative equal highs
+
+## Chapter 16: Inversion gap applications
+[44:12] here. It rallied above that and soon as we crossed that on the way back in I
+[44:19] went short. Now I wanted to get closer that price right here.
+[44:31] It just it just moved without me and there's nothing I can do about it. Okay?
+[44:34] And you can beat yourself up and say, "Oh, well this that thing." Don't worry about that kind of stuff. So but now we have this
+[44:43] wick here. So, whenever we could a wick forming where we think there's a turning point, always expect them to want to come back up into that wick again.
+[44:55] If we look at where is it at here? Execution.
+[45:05] There you go. See where my fill is? It's down here.
+[45:10] So, it ran to it and then quickly moved away from it. So, the time I had to react to that, okay, wasn't wasn't good
+[45:19] enough. Yeah, I wasn't really looking at the chart at the very moment when it was running to it. I thought I was
+[45:26] comfortable enough to to sit there and let it come to me. It it came and went, but I got in on the high candle. There's that. Okay. So, if you look right in
+[45:34] here, you'll see that's the fill. Now, because of that, I have to have now a stop loss that's just above this wick.
+[45:41] Why? Because it's gone to a key level. It's traded to it and it's already showing intra candle
+[45:50] that it's likely to reverse. So, I'm taking all this business off and just showing you the midpoint level consequent.
+[46:02] And this is a red level and dashed. Okay, so here midpoint. Let me broaden that up a little bit.
+[46:16] So it can retrace back up into as much as the middle point of that wick to the candlestick's body whether it be open or
+[46:23] close in reference to if it's up close or down close candle. So what we can do is we can measure. Let me get away from every candle from here down to the body.
+[46:33] And now I can show you that this should act as a premium array.
+[46:42] And if you see this type of action where the market opens, trades up to it here, and immediately gives up the ghost, and then
+
+## Chapter 17: Confirming trade precision
+[46:50] the next candle really starts to slide, you're golden. Then at that time you can bring your stop loss down to a break even price point and cover some cost.
+[46:58] Don't just go to break even. Give yourself some kind of like a pizza dinner or something, brand new tire or something and then watch price rip lower
+[47:06] and we have the sell side down here. But but because it's bullish primarily because I
+[47:15] know that the likelihood is this is a false run to get everybody chasing price higher because they like to react to price then they fold on them come back
+[47:25] down for the sell side here and then 7 a.m. to 9:00 a.m. sellside liquidity pool
+[47:33] there. See that? So, if we go and look at what price did, it traded lower,
+[47:40] lower, lower, and finally, bang, right there. I want to get out at the low of the sell side plus a tick. That's what
+[47:49] I'm looking to do. I'm trying to get out above.
+[47:53] I don't care about getting below it and being perfect because I'm shorting a primarily bullish market condition.
+[48:01] That's why I wanted full exit there. And I was trading with very low leverage, only three contracts of a mini, not you 10, not 30, not 15, something like that.
+[48:12] It's just very small. It's manageable.
+[48:15] And I'm not upset about missing the low candle on my exit because the the logic is is I want to be out. And you'll see,
+[48:23] look right here. You'll see there's my exit there at the low end right above the sell side equity pool because it could have very well done something like
+[48:30] this where it would have just went by a little bit and it maybe it didn't fill me. Say my limit order. I've had this
+[48:39] many times. You've seen it happen when I was trading with a live brokerage firm account.
+[48:45] Sometimes the limit orders don't execute even though price goes there and above it too. If it doesn't fill you, there's
+[48:52] nothing you can do about it except for if you trust that it should have got you out and it's going to likely reverse from what you were holding, just close
+[48:59] it at market. Don't even worry about arguing about it. Okay? So, that's the reason why I used that price point there to get out. And I don't care about the
+[49:08] little tiny fluctuation we had below it and then ultimately we ripped higher.
+[49:14] I taught this in um let me take these levels off here and we're going to just look at what we have
+[49:22] in regards to the inversion fair value gap portion of the runup
+[49:29] the drop down from here to here. If you grade that now while we're inside of a daily inversion fair. That's why it's
+[49:38] shaded in that color right now. We can grade this out.
+[49:48] I'm almost done. For the folks are saying this is a long video. Guys got no stamina.
+[49:57] What are you talking about? ICT, you can go for four hours, bro. I'm here for it. I brought road snacks.
+[50:03] All right. So, we have the dealing range from the high down to the lowest low.
+[50:08] Okay. We measured that out. By having that, by having that, we can now look
+[50:15] inside of all of this range here. And any down close bearish CBY, okay, a fair value got that has a down close.
+[50:26] We can take that information and transpose those ranges to the right, carry them over to the right and show
+[50:34] them as potentially inversion fair value gaps. Okay, so working backwards, we'll go to the left as soon as we get to a
+[50:43] cibby of any kind. All right, we have one here. Let's look at the the close on that candlestick. The close comes in at 29,540.
+[50:53] So just remember 40.5 and the open on this candle here is 40.25. So there's a small little volume imbalance there. So
+[51:01] you add that to that. Okay. And now we drag that over there.
+[51:12] Make it the right color. We'll make it like that.
+[51:17] So there's a little bit of contrast between the background color here. And then same thing. We'll keep going over here. And we have another one right there.
+[51:31] And there's that. Okay. Midline. And then keep going to the left.
+[51:40] There's a sippy here.
+[51:43] So, I'm going to take this one here because we already saw that it really didn't support this one at all. So, it's going to borrow the range.
+[51:53] that and we'll highlight this and then keep going to the left and
+[52:02] we're looking for cibbies. There's no cibby here. There's one right here.
+[52:11] Yeah, that's an interesting reaction, isn't it? And then keep going to the left. We have another one here. It's got a volume imbalance right there. So, you have to be mindful of that.
+[52:24] There you go. All right.
+[52:29] And then finally, we blow off the top of that initial high that I shorted from and covered very close to the low, but
+[52:36] utilizing sellside liquidity for 7:00 to 9:00 a.m. dealing range. And then the market rally. I'm going to make this one
+[52:44] just a little bit different color just to contrast it.
+[52:50] There you go. All right. So we have inside the shadow of this one and this one the bodies are there. So that's
+[52:58] respecting that we open traded down the consequent encouragement of this inversion fair value gap rallying up and
+[53:06] then we have the body close inside of the the part of this gap there and this gap here that's highlighted.
+[53:15] Okay. the two points at which it bleeds over into one another. Look real close.
+[53:25] See that in here? And the fact that we could not come back down and touch the midpoint, that level right there,
+[53:34] that is strength. That's bullish. And then we want to see price rally up. We opened on this candlestick. We traded back down into this inversion fair.
+[53:43] And what I'm getting at here is once we have a suspected low and the market is likely to go higher. If you're on side,
+[53:51] you can go through the range that this was created on the move down every CBY turn it into an inversion fair value gap. And then does price support like we have here. Look at this.
+[54:02] If I take the fib, I'm going to measure just the the halfway point between here and there. All right? And we're only
+[54:10] looking at consequent encroachment. So, we don't care about these levels here. I wish there was a faster way to just untugle all these things.
+[54:19] All right. So, we'll make that purple so it can stand out right there. So, that's this one here.
+[54:27] What is that price? It comes in at 29,578.75. Okay. So, 578.75.
+[54:35] What's the low of this candlestick? No way, bro. No way.
+[54:43] Oh, I'm just ribbing the people that say stuff doesn't work right.
+[54:52] Come on, show me your volume nudes. You volume nerds. Perfect delivery.
+[55:00] Perfect. It trades down and then rips higher. And then the same bit of business here. What do we got here? We
+[55:07] have again, we're grading this dealing range.
+[55:11] Let me take this off because we're getting a little too many too many lines here.
+[55:15] We have a octin at 0.625 and the price level comes in at 29,615.25.
+[55:26] And what is the low of this candlestick?
+[55:32] 29,615 even. So, one tick variance. Okay. The previous candle we look like we traded
+[55:38] to it there as well 15. So it's one tick variance. Perfect as far as I'm concerned because it's doing what? It's
+[55:46] not leaving the body on that. It's not leaving the body. So price trading down into that octant but keeping the body off of it and certainly not below it.
+[55:54] It's supporting price rips higher comes back down in this inversion fair value gap doesn't get traded back down to its
+[56:03] its consequent encouragement level. The bodies are certainly above it. Rallies up. Look at the bodies supporting that
+[56:09] octant level at 0 875.
+[56:15] And then finally tearing off through the initial high of the day.
+[56:20] Rallies higher, trades up into an order block there. Rallies higher and then just really just takes off rather handsomely.
+[56:30] And that's the business.
