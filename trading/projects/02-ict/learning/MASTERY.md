@@ -36,8 +36,8 @@
 | 9 | tRq1hyGGtl4 | ICT Silver Bullet | 읽음 | 34장 | 완료 | 예시 3개(ES 5분봉) | 1차 38/38 → 새 차트 적용(3일) 14/14 → 남음: 석준님 확인 |
 | 10 | iKsIbUblSWM | Market Maker Models | 읽음 | 75장 | 완료 | GBPUSD 예시 | 1차 36/36 → 새 차트 적용(GBPUSD 3일) 15/15 → 남음: 석준님 확인 |
 | 11 | xJMbva8SjzE | ICT Judas Swing | 읽음 | 42장 | 완료 | - | 1차 32/32 → 새 차트 적용(EURUSD 3일) 15/15 → 남음: 석준님 확인 |
-| 12 | dIT4HTFYGGo | Accumulation-Manipulation-Distribution | 읽음 | 43장 | 완료 | USDCAD M15 | 1차 33/33 → 새 차트 적용(USDCAD 3일) 시험 중 |
-| 13 | JA0mLNJeytY | Implementing The Asian Range | - | - | - | - | - |
+| 12 | dIT4HTFYGGo | Accumulation-Manipulation-Distribution | 읽음 | 43장 | 완료 | USDCAD M15 | 1차 33/33 → 새 차트 적용(USDCAD 3일) 14/14 → 남음: 석준님 확인 |
+| 13 | JA0mLNJeytY | Implementing The Asian Range | 읽는 중 | - | - | - | - |
 | 14~16 | f6KC4m4zNgc, KhnKA8Uu0n8, sUGuNE31lG0 | 자막 없는 실시간 매매 | 없음 | 화면만 | - | - | - |
 
 ## 필요한 것
