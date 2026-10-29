@@ -29,7 +29,7 @@
 | 2 | 9YS41OoxbX4 | Market Review On NQ December Price Delivery | 읽음 | 47장 | 21개 | 완료(가상 매매) | 1차 39.5/40 → 재시청 보강 → 3차 10/10 → 새 차트 적용 15/15 → 남음: 석준님 확인 |
 | 3 | 59Elm8myGEc | NonFarm Payroll October 2026 Lecture | 읽음 | 52장 | 완료 | 완료(실제 숏 15계약) | 1차 40/40 → 새 차트 적용(뉴스일 3일) 22/22 → 남음: 석준님 확인 |
 | 4 | kRShZKZlvJ4 | NQ AM Session Review 09/30/2026 | 읽음 | 33장 | 21개 | 완료(롱 6계약) | 1차 31/34 → 재시청 보강 → 2차 12/12 → 새 차트 적용 12/12 → 남음: 석준님 확인 |
-| 5 | 7M56e9O06Ko | NQ December Asian Session Execution | 읽음 | 54장 | 18개 | 완료(롱 12계약) | 시험 중 |
+| 5 | 7M56e9O06Ko | NQ December Asian Session Execution | 읽음 | 54장 | 18개 | 완료(롱 12계약) | 1차 33.5/40 → 재시청 보강 → 2차 12/12 → 남음: 새 차트 적용, 석준님 확인 |
 | 6 | I7fIf1eEz0w | NQ December Commentary 09/29/2026 | - | - | - | - | - |
 | 7 | UVVmS0de0g0 | NQ AM Session Low Of Day Long Review | - | - | - | - | - |
 | 8 | 50VbES10ULs | NQ Dec Futures September FOMC Trade Review | - | - | - | - | - |
