@@ -32,8 +32,8 @@
 | 5 | 7M56e9O06Ko | NQ December Asian Session Execution | 읽음 | 54장 | 18개 | 완료(롱 12계약) | 1차 33.5/40 → 재시청 보강 → 2차 12/12 → 새 차트 적용 21/21 → 남음: 석준님 확인 |
 | 6 | I7fIf1eEz0w | NQ December Commentary 09/29/2026 | 읽음 | 40장 | 완료 | 해설(체결 없음) | 1차 27.5/28(반어 해석) → 재학습 → 2차 5/5 → 새 차트 적용 21/21 → 남음: 석준님 확인 |
 | 7 | UVVmS0de0g0 | NQ AM Session Low Of Day Long Review | 읽음 | 55장 | 완료 | 완료(롱 10계약) | 1차 25.5/40(이유 설명 부족·일반 지식으로 채움) → 재학습 → 2차 20/20 → 새 차트 적용 21/21 → 남음: 석준님 확인 |
-| 8 | 50VbES10ULs | NQ Dec Futures September FOMC Trade Review | 읽음 | 49장 | 완료 | 완료(숏 6계약) | 1차 28.5/36(화면 원값 계산으로 채움, IFVG 특징 지어냄) → 재시청 보강 → 2차 15/15 → 새 차트 적용 출제 중 |
-| 9 | tRq1hyGGtl4 | ICT Silver Bullet | 읽음 | 34장→읽는 중 | 완료 | 예시 3개(ES 5분봉) | - |
+| 8 | 50VbES10ULs | NQ Dec Futures September FOMC Trade Review | 읽음 | 49장 | 완료 | 완료(숏 6계약) | 1차 28.5/36(화면 원값 계산으로 채움, IFVG 특징 지어냄) → 재시청 보강 → 2차 15/15 → 새 차트 적용(FOMC 등 3일) 18/18 → 남음: 석준님 확인 |
+| 9 | tRq1hyGGtl4 | ICT Silver Bullet | 읽음 | 34장 | 완료 | 예시 3개(ES 5분봉) | 1차 시험 중(38문항) |
 | 10 | iKsIbUblSWM | Market Maker Models | - | - | - | - | - |
 | 11 | xJMbva8SjzE | ICT Judas Swing | - | - | - | - | - |
 | 12 | dIT4HTFYGGo | Accumulation-Manipulation-Distribution | - | - | - | - | - |
