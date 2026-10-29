@@ -31,7 +31,7 @@
 | 4 | kRShZKZlvJ4 | NQ AM Session Review 09/30/2026 | 읽음 | 33장 | 21개 | 완료(롱 6계약) | 1차 31/34 → 재시청 보강 → 2차 12/12 → 새 차트 적용 12/12 → 남음: 석준님 확인 |
 | 5 | 7M56e9O06Ko | NQ December Asian Session Execution | 읽음 | 54장 | 18개 | 완료(롱 12계약) | 1차 33.5/40 → 재시청 보강 → 2차 12/12 → 새 차트 적용 21/21 → 남음: 석준님 확인 |
 | 6 | I7fIf1eEz0w | NQ December Commentary 09/29/2026 | 읽음 | 40장 | 완료 | 해설(체결 없음) | 1차 27.5/28(반어 해석) → 재학습 → 2차 5/5 → 새 차트 적용 21/21 → 남음: 석준님 확인 |
-| 7 | UVVmS0de0g0 | NQ AM Session Low Of Day Long Review | 읽음 | 55장 | 완료 | 완료(롱 10계약) | 출제 중 |
+| 7 | UVVmS0de0g0 | NQ AM Session Low Of Day Long Review | 읽음 | 55장 | 완료 | 완료(롱 10계약) | 1차 25.5/40(이유 설명 부족·일반 지식으로 채움) → 재학습 중 |
 | 8 | 50VbES10ULs | NQ Dec Futures September FOMC Trade Review | - | - | - | - | - |
 | 9 | tRq1hyGGtl4 | ICT Silver Bullet | - | - | - | - | - |
 | 10 | iKsIbUblSWM | Market Maker Models | - | - | - | - | - |
@@ -59,3 +59,8 @@
 | 6 | 2025 Lecture Series + 2026 ICT Smart Money Concept Lecture | 226 | 약 106h+ | 최근 해설(1·2번 영상 포함) |
 | 7 | ICT Trade Executions, Price Action Chronicles 등 나머지 재생목록 | | | 실제 매매 기록 |
 | 8 | 재생목록 없는 영상 402개, 라이브 | | | |
+
+## 답안 원칙 (2026-10-29, 7번 영상 1차 불합격 뒤 추가)
+- **이 영상에서 직접 말한 것만 답한다.** 영상에 없는 일반 ICT 지식(NWOG, IPDA 등)으로 빈칸을 채우지 않는다. 영상에 없으면 "영상에 없음"이라고 쓴다.
+- **반어인지 직설인지는 문장마다 따로 판정한다.** 6번 영상의 "probably random"(반어)을 배웠다고 7번 영상의 "coincidence"(직설: 17·20·40분은 매크로가 아니다)까지 반어로 읽으면 틀린다.
+- 숫자만이 아니라 ICT가 "왜"라고 말한 이유 문장을 숙지 문서에 원문 인용과 시각으로 남긴다.
