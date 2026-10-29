@@ -55,6 +55,9 @@
   .fresh.stale { color: var(--warn); background: var(--warn-bg); border-color: var(--warn); }
   .fresh.stale b { color: var(--warn); }
   .fresh.stale .dot { background: var(--warn); }
+  .refresh { border: 1px solid var(--accent); background: var(--panel); color: var(--accent); border-radius: 999px; padding: .3rem .9rem; min-height: 2.2rem; cursor: pointer; font-size: .92rem; font-weight: 600; }
+  .refresh:disabled { opacity: .55; cursor: default; }
+  .refresh-msg { font-size: .85rem; color: var(--muted); }
   .seg { margin-left: auto; display: inline-flex; border: 1px solid var(--line); border-radius: 999px; padding: 2px; background: var(--panel-2); }
   .seg button { border: 0; background: none; padding: .35rem .85rem; border-radius: 999px; cursor: pointer; color: var(--muted); font-size: .92rem; min-height: 2.2rem; }
   .seg button[aria-pressed="true"] { background: var(--fg); color: var(--bg); font-weight: 600; }
@@ -163,6 +166,8 @@
   <header class="bar">
     <h1 class="brand"><i></i>석준님 HTS</h1>
     <span class="fresh" id="fresh" aria-live="polite"><span class="dot"></span><span id="fresh-text">연결하는 중</span></span>
+    <button type="button" class="refresh" id="refresh">새로고침</button>
+    <span class="refresh-msg" id="refresh-msg" aria-live="polite"></span>
     <div class="seg" role="group" aria-label="국내 해외 나눠 보기" id="kind-seg">
       <button type="button" data-kind="합계" aria-pressed="true">전체</button>
       <button type="button" data-kind="국내" aria-pressed="false">국내</button>
@@ -906,5 +911,34 @@
     if (r.mode !== 'main') { S.dailyCode = null; watchDaily(codeFor(r.slug)); }
     render();
   })();
+
+  /* ---------- 새로고침: 저장소를 다시 읽고, PC에 바로 모아 올리라고 요청 ---------- */
+  const marketOpen = () => {
+    const ny = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/New_York' }));
+    const kr = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Seoul' }));
+    const m = (d) => d.getHours() * 60 + d.getMinutes();
+    const wk = (d) => d.getDay() > 0 && d.getDay() < 6;
+    return (wk(kr) && m(kr) >= 530 && m(kr) <= 940) || (wk(ny) && m(ny) >= 570 && m(ny) <= 960);
+  };
+  $('refresh').addEventListener('click', async () => {
+    const btn = $('refresh'), msg = $('refresh-msg');
+    if (!S.db) { msg.textContent = '저장소에 연결되지 않았어요'; return; }
+    btn.disabled = true;
+    msg.textContent = '다시 읽는 중';
+    try {
+      const snap = await S.db.collection('hts').get();
+      const next = {};
+      snap.docs.forEach((d) => { if (d.exists && DOCS.includes(d.id)) next[d.id] = d.data(); });
+      S.docs = next;
+      render();
+    } catch (e) { /* 실시간 연결이 계속 채워 줘요 */ }
+    try {
+      await S.db.collection('hts_req').doc('refresh').set({ at: new Date().toISOString() });
+      msg.textContent = marketOpen() ? '요청 보냄 · 1분 안에 새 값이 들어와요' : '요청 보냄 · 장 밖이라 5분 안에 새 값이 들어와요';
+    } catch (e) {
+      msg.textContent = '화면은 다시 읽었어요 · PC 요청은 못 보냈어요';
+    }
+    setTimeout(() => { btn.disabled = false; }, 30000);
+  });
 })();
 </script>
