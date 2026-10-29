@@ -35,8 +35,8 @@
 | 8 | 50VbES10ULs | NQ Dec Futures September FOMC Trade Review | 읽음 | 49장 | 완료 | 완료(숏 6계약) | 1차 28.5/36(화면 원값 계산으로 채움, IFVG 특징 지어냄) → 재시청 보강 → 2차 15/15 → 새 차트 적용(FOMC 등 3일) 18/18 → 남음: 석준님 확인 |
 | 9 | tRq1hyGGtl4 | ICT Silver Bullet | 읽음 | 34장 | 완료 | 예시 3개(ES 5분봉) | 1차 38/38 → 새 차트 적용(3일) 14/14 → 남음: 석준님 확인 |
 | 10 | iKsIbUblSWM | Market Maker Models | 읽음 | 75장 | 완료 | GBPUSD 예시 | 1차 36/36 → 새 차트 적용(GBPUSD 3일) 15/15 → 남음: 석준님 확인 |
-| 11 | xJMbva8SjzE | ICT Judas Swing | 읽음 | 42장 | 완료 | - | 1차 32/32 → 새 차트 적용(EURUSD 3일) 시험 중 |
-| 12 | dIT4HTFYGGo | Accumulation-Manipulation-Distribution | - | - | - | - | - |
+| 11 | xJMbva8SjzE | ICT Judas Swing | 읽음 | 42장 | 완료 | - | 1차 32/32 → 새 차트 적용(EURUSD 3일) 15/15 → 남음: 석준님 확인 |
+| 12 | dIT4HTFYGGo | Accumulation-Manipulation-Distribution | 읽는 중 | - | - | - | - |
 | 13 | JA0mLNJeytY | Implementing The Asian Range | - | - | - | - | - |
 | 14~16 | f6KC4m4zNgc, KhnKA8Uu0n8, sUGuNE31lG0 | 자막 없는 실시간 매매 | 없음 | 화면만 | - | - | - |
 
