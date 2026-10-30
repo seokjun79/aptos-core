@@ -1,0 +1,31 @@
+{
+  "permissions": {
+    "allow": [
+      "Artifact",
+      "ArtifactData",
+      "ArtifactComments",
+      "WebSearch",
+      "WebFetch",
+      "mcp__Alpha_Vantage_MCP_Server",
+      "mcp__Parallel_Search",
+      "mcp__claude-code-remote__list_sessions",
+      "mcp__claude-code-remote__get_session",
+      "mcp__claude-code-remote__list_events",
+      "mcp__claude-code-remote__send_message",
+      "mcp__claude-code-remote__send_later",
+      "Read",
+      "Edit(/home/user/aptos-core/**)",
+      "Edit(/tmp/claude-0/**)",
+      "Bash(git status*)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git push *)",
+      "Bash(git log*)",
+      "Bash(git diff*)",
+      "Bash(ls *)",
+      "Bash(mkdir *)",
+      "Bash(python3 *)",
+      "Bash(curl *)"
+    ]
+  }
+}
