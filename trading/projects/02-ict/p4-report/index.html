@@ -1,0 +1,149 @@
+<title>석준 × ICT 통합 모델</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: trade-review dossier — headline numbers, three evidence tables, then the model draft */
+:root{
+  --bg:#f3f5f7; --panel:#fff; --line:#d7dde4; --fg:#151b24; --mute:#5c6878;
+  --accent:#2563eb; --accent-soft:#e4ecfd; --good:#16865a; --bad:#c8443a; --warn:#a86300;
+  --good-soft:#e1f3ea; --bad-soft:#fbe5e3; --warn-soft:#faefdb;
+  --f-body:"IBM Plex Sans KR",system-ui,sans-serif; --f-num:"JetBrains Mono",ui-monospace,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0e1218; --panel:#161c25; --line:#283140; --fg:#e5eaf1; --mute:#8d99aa;
+  --accent:#60a5fa; --accent-soft:#16263d; --good:#3dbb85; --bad:#ef6b61; --warn:#e0a446;
+  --good-soft:#12291d; --bad-soft:#2d1615; --warn-soft:#2b2010; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0e1218; --panel:#161c25; --line:#283140; --fg:#e5eaf1; --mute:#8d99aa;
+  --accent:#60a5fa; --accent-soft:#16263d; --good:#3dbb85; --bad:#ef6b61; --warn:#e0a446;
+  --good-soft:#12291d; --bad-soft:#2d1615; --warn-soft:#2b2010; color-scheme:dark}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:14.5px;line-height:1.6}
+.wrap{max-width:980px;margin:0 auto;padding-block:20px 40px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:16px}
+h1{font-size:24px;margin:0;text-wrap:balance} h2{font-size:17px;margin:0 0 10px;text-wrap:balance}
+.lead{color:var(--mute);margin:4px 0 0;max-width:68ch}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;min-width:0}
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+@media (max-width:680px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px}
+.kpi .l{font-size:12px;color:var(--mute)} .kpi .v{font-family:var(--f-num);font-size:21px;font-weight:600;font-variant-numeric:tabular-nums}
+.kpi .s{font-size:12px;color:var(--mute)}
+.alert{background:var(--bad-soft);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+.alert b.big{font-family:var(--f-num);font-size:20px;color:var(--bad)}
+.scroll{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:13.5px}
+th,td{padding:8px;border-top:1px solid var(--line);text-align:left;vertical-align:top}
+th{color:var(--mute);font-weight:500;border-top:0;white-space:nowrap}
+td.n{font-family:var(--f-num);text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+.bar{display:inline-block;height:8px;border-radius:3px;background:var(--accent);vertical-align:middle;margin-right:6px}
+.pill{display:inline-block;font-size:11.5px;padding:1px 8px;border-radius:99px;font-weight:500;white-space:nowrap}
+.p-good{background:var(--good-soft);color:var(--good)} .p-bad{background:var(--bad-soft);color:var(--bad)} .p-mid{background:var(--warn-soft);color:var(--warn)}
+.two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+@media (max-width:720px){.two{grid-template-columns:minmax(0,1fr)}}
+ul.plain,ol.plain{margin:0;padding-left:20px} ul.plain li,ol.plain li{margin:5px 0}
+.model{display:flex;flex-direction:column;gap:10px}
+.rule{display:grid;grid-template-columns:32px minmax(0,1fr);gap:10px;border-top:1px solid var(--line);padding-top:10px}
+.rule:first-child{border-top:0;padding-top:0}
+.rule .no{font-family:var(--f-num);font-weight:700;color:var(--accent);font-size:18px}
+.rule .ev{font-size:12.5px;color:var(--mute)}
+.note{font-size:12.5px;color:var(--mute)}
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>석준 × ICT 통합 모델</h1>
+    <p class="lead">석준님 실제 거래 1,031건(MT5, 2020-11 ~ 2026-10)을 차트에 대 보고, 유튜브로 배운 ICT 개념과 CRT 규칙으로 하나하나 표시한 결과예요. 이긴 거래의 공통점에서 발전 방향을 뽑았어요.</p>
+  </header>
+
+  <div class="kpis">
+    <div class="kpi"><div class="l">거래 수</div><div class="v">1,031</div><div class="s">수동 거래 전부</div></div>
+    <div class="kpi"><div class="l">이긴 비율</div><div class="v">48.3%</div><div class="s">절반쯤 이김</div></div>
+    <div class="kpi"><div class="l">평균 이익 / 손실</div><div class="v">+13.1 / −14.2</div><div class="s">핍</div></div>
+    <div class="kpi"><div class="l">거래당 평균</div><div class="v" style="color:var(--bad)">−1.0핍</div><div class="s">거의 본전</div></div>
+  </div>
+
+  <div class="alert">
+    <b>가장 중요한 발견.</b> 30핍 넘게 진 <b>58건</b>이 <b class="big">−2,985핍</b>이에요. 이 58건만 빼면 나머지 <b>973건은 +1,914핍</b>이에요.
+    손절 주문을 건 거래는 <b>1%</b>뿐이고, 하루 넘게 들고 간 19건은 26%만 이겼어요.
+    <br><span class="note">석준님 진입 실력은 이미 + 예요. 돈을 잃은 이유는 큰 손실 몇 번이에요.</span>
+  </div>
+
+  <section class="card">
+    <h2>표 ① 석준님 거래 ↔ ICT·CRT 개념: 어떤 조건에서 더 이겼나</h2>
+    <div class="scroll"><table>
+      <tr><th>조건</th><th>있을 때 승률</th><th>없을 때</th><th>건수</th><th>판단</th></tr>
+      <tr><td>CRT 스윕 + MSS 확정 + 킬존 + 4H 같은 방향 (EA A급)</td><td class="n"><span class="bar" style="width:71px"></span>71%</td><td class="n">—</td><td class="n">35</td><td><span class="pill p-good">가장 강함</span></td></tr>
+      <tr><td>OB·FVG 되돌림 진입</td><td class="n"><span class="bar" style="width:65px"></span>65%</td><td class="n">—</td><td class="n">26</td><td><span class="pill p-good">강함</span></td></tr>
+      <tr><td>CRT 스윕 + MSS 확정 + 킬존</td><td class="n"><span class="bar" style="width:64px"></span>64%</td><td class="n">—</td><td class="n">58</td><td><span class="pill p-good">강함</span></td></tr>
+      <tr><td>CRT 스윕 + MSS 확정</td><td class="n"><span class="bar" style="width:58px"></span>58%</td><td class="n">47%</td><td class="n">99</td><td><span class="pill p-good">좋음</span></td></tr>
+      <tr><td>CRT 범위 아래 절반에서 진입</td><td class="n"><span class="bar" style="width:57px"></span>57%</td><td class="n">46%</td><td class="n">—</td><td><span class="pill p-good">확실 (z 3.7)</span></td></tr>
+      <tr><td>매수</td><td class="n"><span class="bar" style="width:53px"></span>53%</td><td class="n">매도 44%</td><td class="n">—</td><td><span class="pill p-good">확실 (z 2.9)</span></td></tr>
+      <tr><td>직전 1시간 흐름 따라감</td><td class="n"><span class="bar" style="width:53px"></span>53%</td><td class="n">45%</td><td class="n">—</td><td><span class="pill p-mid">좋음 (z 2.5)</span></td></tr>
+      <tr><td>킬존 시간만 / 실버불릿 / 일봉 바이어스 / 주다스</td><td class="n">47~50%</td><td class="n">47~48%</td><td class="n">—</td><td><span class="pill p-mid">혼자서는 효과 없음</span></td></tr>
+      <tr><td>전일 범위 프리미엄/디스카운트</td><td class="n">46%</td><td class="n">53%</td><td class="n">—</td><td><span class="pill p-bad">오히려 나쁨</span></td></tr>
+      <tr><td>범위 위 절반에서 매도</td><td class="n"><span class="bar" style="width:39px;background:var(--bad)"></span>39%</td><td class="n">—</td><td class="n">157</td><td><span class="pill p-bad">약점</span></td></tr>
+    </table></div>
+    <p class="note" style="margin-top:8px">z = 우연이 아닐 정도. 3 이상이면 꽤 확실, 2~3은 가능성. 비교를 30개 넘게 해서 z 3 미만은 아직 "가설"이고, 7년치 백테스트로 확인할 거예요. 킬존은 혼자서는 효과가 없지만, CRT 스윕+MSS와 같이 있을 때 승률을 58% → 64%로 올렸어요.</p>
+  </section>
+
+  <section class="card">
+    <h2>표 ② 석준님 방식과 ICT·SMC: 같은 점과 다른 점</h2>
+    <div class="two">
+      <div>
+        <h3 style="font-size:14px;margin:0 0 6px;color:var(--good)">같은 점</h3>
+        <ul class="plain">
+          <li>킬존 중심 거래: 뉴욕 오전 65%, 런던 18%</li>
+          <li>CRT 범위 끝 = ICT의 유동성 자리 (쓸고 돌아오는 곳)</li>
+          <li>스윕 → MSS → OB·FVG 되돌림 순서가 ICT 마켓메이커·주다스와 같은 뼈대</li>
+        </ul>
+      </div>
+      <div>
+        <h3 style="font-size:14px;margin:0 0 6px;color:var(--bad)">다른 점</h3>
+        <ul class="plain">
+          <li><b>손절:</b> 석준님은 손으로 청산(손절 주문 1%). ICT는 극값 너머 고정 손절.</li>
+          <li><b>익절:</b> 석준님은 목표 전 빠른 익절(최대 이익의 63%에서 청산, 중앙 8핍). ICT는 다음 유동성까지.</li>
+          <li><b>매도:</b> ICT는 프리미엄(위쪽)에서 매도하라고 하지만, 석준님은 거기서 39%로 졌어요.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>표 ③ "석준 × ICT 통합 모델" 초안: 발전 방향 5가지</h2>
+    <div class="model">
+      <div class="rule"><div class="no">1</div><div><b>손절을 먼저 건다.</b> 스윕 극값 + 1핍, 최대 30핍. 하루 넘겨 들고 가지 않는다.<div class="ev">근거: 30핍 넘은 손실 58건이 −2,985핍. 이것만 막아도 나머지 973건 +1,914핍이 남아요.</div></div></div>
+      <div class="rule"><div class="no">2</div><div><b>A급 자리에 집중한다.</b> CRT 스윕 + MSS 몸통 마감 + 킬존 + 4H 같은 방향.<div class="ev">근거: 35건 중 71% 승리. 진입은 OB·FVG 되돌림(26건 65%).</div></div></div>
+      <div class="rule"><div class="no">3</div><div><b>범위 위쪽에서 역으로 파는 매도를 줄인다.</b><div class="ev">근거: 157건 중 39%만 이김. 매도 전체도 44%로 매수(53%)보다 약해요.</div></div></div>
+      <div class="rule"><div class="no">4</div><div><b>흐름 반대로 들어갈 때는 MSS 확정을 기다린다.</b><div class="ev">근거: 흐름 반대 진입 401건 46%. 스윕+MSS 확정이 있는 거래 전체는 58%였어요(흐름 반대만 따로 본 숫자는 백테스트에서 확인).</div></div></div>
+      <div class="rule"><div class="no">5</div><div><b>빠른 익절은 유지하되, 1R에서 절반만 정리하고 나머지는 다음 유동성까지.</b><div class="ev">근거: 석준님 이익 대부분이 빠른 익절에서 나와요. 절반만 남겨 ICT 목표(draw on liquidity)를 노려요.</div></div></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>FTMO 29건과 비교 — 잘됐던 때와 무엇이 다른가</h2>
+    <div class="scroll"><table>
+      <tr><th></th><th>FTMO 2차 (29건)</th><th>MT5 전체 (1,031건)</th></tr>
+      <tr><td>이긴 비율</td><td class="n" style="color:var(--good)">72%</td><td class="n">48%</td></tr>
+      <tr><td>거래당 평균</td><td class="n" style="color:var(--good)">+3.7핍</td><td class="n" style="color:var(--bad)">−1.0핍</td></tr>
+      <tr><td>진 거래 평균</td><td class="n">−6.7핍</td><td class="n">−14.2핍</td></tr>
+      <tr><td>30핍 넘게 진 거래</td><td class="n" style="color:var(--good)">0건</td><td class="n" style="color:var(--bad)">58건</td></tr>
+      <tr><td>흐름 따라간 거래 승률</td><td class="n">92% (13건)</td><td class="n">53% (395건)</td></tr>
+    </table></div>
+    <ul class="plain" style="margin-top:10px">
+      <li><b>차이의 핵심은 손실 끊기예요.</b> FTMO 때는 크게 진 거래가 한 번도 없었어요.</li>
+      <li>등급별: <b>A+ 7건 전승</b>(+9.3핍), A 80%(+5.9), B 59%(+0.8). A+·A는 직전 1시간 흐름이 +12~13핍, B는 −5.9핍.</li>
+      <li><b>석준님 A+의 정체:</b> 스윕 뒤 반대로 들어가는 것이 아니라, <b>흐름 방향으로 4H CRT 범위 끝을 돌파할 때 따라가는 것</b>이에요(29건 중 반대 방향 MSS 진입은 1건뿐). ICT로 보면 displacement(강한 움직임) 뒤 돌파 지속이에요.</li>
+      <li>같은 패턴을 MT5 전체에서 찾으면 157건 52%·+1.6핍이에요. 일봉·4H 같은 방향 조건은 FTMO에서도 효과가 없었어요.</li>
+    </ul>
+    <p class="note">FTMO는 체결가가 없어 진입가를 5분봉 시가로 근사했고, 핍·최대 이익·최대 역행은 FTMO 기록 값을 썼어요. 29건은 적어서 참고용이에요.</p>
+  </section>
+
+  <section class="card">
+    <h2>다음 단계</h2>
+    <ol class="plain">
+      <li>석준님이 위 5가지가 본인 방식과 맞는지 확인해 주세요. 고칠 곳은 말씀만 하시면 돼요.</li>
+      <li>확인되면 이 통합 모델을 2019~2023년 자료로 만들고, 처음 보는 2024~2025년 자료로 한 번 확인해요.</li>
+      <li>백테스트는 두 가지를 나란히 해요: ① EA A급(스윕+MSS 반전) ② 석준님 A+(흐름 방향 CRT 범위 돌파 추종). 둘 다 손절 최대 30핍·하루 넘김 금지를 붙여요.</li>
+    </ol>
+    <p class="note" style="margin-top:8px">자료: MT5 체결 기록을 읽기만 했고 금액·계좌번호는 쓰지 않았어요(핍 기준). 표시 규칙은 CRT 비서 EA v1.53을 5분봉에 적용했어요(EA는 1분봉 기준이라 일부 가정). 투자 결정은 석준님이 하세요.</p>
+  </section>
+</div>
