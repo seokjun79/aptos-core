@@ -119,11 +119,30 @@ ul.plain,ol.plain{margin:0;padding-left:20px} ul.plain li,ol.plain li{margin:5px
   </section>
 
   <section class="card">
+    <h2>FTMO 29건과 비교 — 잘됐던 때와 무엇이 다른가</h2>
+    <div class="scroll"><table>
+      <tr><th></th><th>FTMO 2차 (29건)</th><th>MT5 전체 (1,031건)</th></tr>
+      <tr><td>이긴 비율</td><td class="n" style="color:var(--good)">72%</td><td class="n">48%</td></tr>
+      <tr><td>거래당 평균</td><td class="n" style="color:var(--good)">+3.7핍</td><td class="n" style="color:var(--bad)">−1.0핍</td></tr>
+      <tr><td>진 거래 평균</td><td class="n">−6.7핍</td><td class="n">−14.2핍</td></tr>
+      <tr><td>30핍 넘게 진 거래</td><td class="n" style="color:var(--good)">0건</td><td class="n" style="color:var(--bad)">58건</td></tr>
+      <tr><td>흐름 따라간 거래 승률</td><td class="n">92% (13건)</td><td class="n">53% (395건)</td></tr>
+    </table></div>
+    <ul class="plain" style="margin-top:10px">
+      <li><b>차이의 핵심은 손실 끊기예요.</b> FTMO 때는 크게 진 거래가 한 번도 없었어요.</li>
+      <li>등급별: <b>A+ 7건 전승</b>(+9.3핍), A 80%(+5.9), B 59%(+0.8). A+·A는 직전 1시간 흐름이 +12~13핍, B는 −5.9핍.</li>
+      <li><b>석준님 A+의 정체:</b> 스윕 뒤 반대로 들어가는 것이 아니라, <b>흐름 방향으로 4H CRT 범위 끝을 돌파할 때 따라가는 것</b>이에요(29건 중 반대 방향 MSS 진입은 1건뿐). ICT로 보면 displacement(강한 움직임) 뒤 돌파 지속이에요.</li>
+      <li>같은 패턴을 MT5 전체에서 찾으면 157건 52%·+1.6핍이에요. 일봉·4H 같은 방향 조건은 FTMO에서도 효과가 없었어요.</li>
+    </ul>
+    <p class="note">FTMO는 체결가가 없어 진입가를 5분봉 시가로 근사했고, 핍·최대 이익·최대 역행은 FTMO 기록 값을 썼어요. 29건은 적어서 참고용이에요.</p>
+  </section>
+
+  <section class="card">
     <h2>다음 단계</h2>
     <ol class="plain">
       <li>석준님이 위 5가지가 본인 방식과 맞는지 확인해 주세요. 고칠 곳은 말씀만 하시면 돼요.</li>
       <li>확인되면 이 통합 모델을 2019~2023년 자료로 만들고, 처음 보는 2024~2025년 자료로 한 번 확인해요.</li>
-      <li>FTMO 29건도 같은 방법으로 표시해서 1,031건과 나란히 비교해요(진행 중).</li>
+      <li>백테스트는 두 가지를 나란히 해요: ① EA A급(스윕+MSS 반전) ② 석준님 A+(흐름 방향 CRT 범위 돌파 추종). 둘 다 손절 최대 30핍·하루 넘김 금지를 붙여요.</li>
     </ol>
     <p class="note" style="margin-top:8px">자료: MT5 체결 기록을 읽기만 했고 금액·계좌번호는 쓰지 않았어요(핍 기준). 표시 규칙은 CRT 비서 EA v1.53을 5분봉에 적용했어요(EA는 1분봉 기준이라 일부 가정). 투자 결정은 석준님이 하세요.</p>
   </section>
