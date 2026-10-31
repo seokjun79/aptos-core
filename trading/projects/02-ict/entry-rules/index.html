@@ -182,9 +182,28 @@ table.m th{background:var(--bg);font-weight:500;color:var(--mute)}
     </div>
   </section>
 
-  <div class="warn">
-    <b>미리 알아둘 점.</b> 진입 모델의 세부 숫자는 이 저장소의 규칙 문서(v1)를 기준으로 그렸어요. 3차 시험(v3)의 최종 규칙 원본은 집 PC에 있어서 숫자가 조금 다를 수 있어요. RC비너스가 v5 규칙을 고정하면 그 원본과 맞춰서 이 페이지를 고칠게요. 추세 필터(1~3단계)는 석준님 SMC 규칙 그대로예요.
-  </div>
+  <section class="rule" style="grid-template-columns:minmax(0,1fr)">
+    <div>
+      <h2>v5 결과 (2026-10-31) — 29개 중 합격 0개</h2>
+      <p class="note">2024년 이후 처음 보는 자료, 비용 포함. 숫자 = 거래당 평균 R / PF. 합격 기준: PF 1.2 이상, t 2.925 이상, 100건 이상.</p>
+      <div style="overflow-x:auto">
+      <table class="m">
+        <tr><th>모델</th><th>필터 없음</th><th>주봉+4H</th><th>4H만</th><th>주봉만</th></tr>
+        <tr><th>실버불릿</th><td>−0.097 / 0.89</td><td>−0.113 / 0.87</td><td>−0.166 / 0.82</td><td>−0.075 / 0.92</td></tr>
+        <tr><th>마켓메이커 H1</th><td>−0.055 / 0.91</td><td class="buy">+0.074 / 1.13</td><td>+0.047 / 1.08</td><td>+0.010 / 1.02</td></tr>
+        <tr><th>주다스</th><td>−0.109 / 0.82</td><td class="skip">−0.143 (55건)</td><td>−0.158 / 0.75</td><td class="skip">−0.147 (88건)</td></tr>
+        <tr><th>AMD</th><td>−0.054 / 0.91</td><td>−0.071 / 0.88</td><td>−0.063 / 0.89</td><td>−0.067 / 0.89</td></tr>
+        <tr><th>아시아 돌파</th><td>+0.011 / 1.03</td><td>−0.029 / 0.93</td><td>+0.013 / 1.03</td><td>−0.037 / 0.92</td></tr>
+        <tr><th>MM H4 (석준님식)</th><td>+0.037 / 1.05 (105건)</td><td class="skip">−0.103 (35건)</td><td class="skip">+0.114 / 1.16 (60건)</td><td>—</td></tr>
+      </table>
+      </div>
+      <ol class="how" style="margin-top:10px">
+        <li>추세 필터는 <b>마켓메이커에만</b> 효과가 보였어요(−0.055 → +0.074). 하지만 2019~23년 구간은 −0.090이고 t 0.64라 우연과 구분이 안 돼요.</li>
+        <li>석준님 방식에 가까운 <b>MM H4</b>는 7.8년에 거래가 35~105번뿐이라 판단할 수 없어요.</li>
+        <li>마켓메이커 규칙 시험은 100점 만점. 규칙 이해는 완성, 수익은 미확인이에요.</li>
+      </ol>
+    </div>
+  </section>
 </div>
 
 <script>
