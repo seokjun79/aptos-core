@@ -105,8 +105,8 @@ function chart(id,bars,levels,price,smc){
   (smc.swings||[]).forEach(s=>{const i=idx(s.t);if(i==null)return;const x=X(i),hiSw=s.type==="H",y=hiSw?Y(s.price)-6:Y(s.price)+14;
     g+=`<text x="${x}" y="${y}" text-anchor="middle" font-size="10" font-weight="700" fill="${hiSw?"var(--down)":"var(--up)"}">${esc(s.label||(hiSw?"H":"L"))}</text>`;});
   // 구조 돌파: BOS / CHoCH(MSS)
-  (smc.breaks||[]).forEach(b=>{const i0=idx(b.from_t),i1=idx(b.to_t);if(i0==null||i1==null)return;const col=b.type==="BOS"?"var(--fg)":"var(--warn)";
-    g+=`<line x1="${X(i0)}" x2="${X(i1)}" y1="${Y(b.price)}" y2="${Y(b.price)}" stroke="${col}" stroke-width="1.3" stroke-dasharray="${b.type==="BOS"?"0":"4 2"}"/>`;
+  (smc.breaks||[]).forEach(b=>{const i0=idx(b.from_t),i1=idx(b.to_t);if(i0==null||i1==null)return;const col=b.type==="BOS"?"var(--fg)":"var(--warn)",sw=b.level==="external"?2.6:(b.level==="internal"?0.9:1.3);
+    g+=`<line x1="${X(i0)}" x2="${X(i1)}" y1="${Y(b.price)}" y2="${Y(b.price)}" stroke="${col}" stroke-width="${sw}" stroke-dasharray="${b.type==="BOS"?"0":"4 2"}"/>`;
     g+=`<text x="${(X(i0)+X(i1))/2}" y="${Y(b.price)+(b.dir==="bull"?-4:11)}" text-anchor="middle" font-size="10" font-weight="700" fill="${col}">${esc(b.type==="CHoCH"?"CHoCH/MSS":"BOS")}</text>`;});
   // 유동성: 같은 높이 고점/저점(EQH/EQL)
   (smc.liq||[]).forEach(q=>{const i0=idx(q.t0),i1=q.t1?idx(q.t1):n-1;if(i0==null)return;
