@@ -1,0 +1,130 @@
+<title>RC 실시간 차트 분석</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: trading desk — symbol tabs, 4H + M15 charts with labelled levels, verdict card beside */
+:root{
+  --bg:#f3f5f7; --panel:#fff; --line:#d7dde4; --grid:#eef1f4; --fg:#151b24; --mute:#5c6878;
+  --up:#16865a; --down:#c8443a; --entry:#2563eb; --sl:#c8443a; --tp:#16865a; --lvl:#8a6a1f; --hi:#7c3aed;
+  --accent:#2563eb; --accent-soft:#e4ecfd; --warn-soft:#faefdb; --warn:#a86300;
+  --f-body:"IBM Plex Sans KR",system-ui,sans-serif; --f-num:"JetBrains Mono",ui-monospace,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0e1218; --panel:#161c25; --line:#283140; --grid:#1d2430; --fg:#e5eaf1; --mute:#8d99aa;
+  --up:#3dbb85; --down:#ef6b61; --entry:#60a5fa; --sl:#ef6b61; --tp:#3dbb85; --lvl:#d4a94a; --hi:#a78bfa;
+  --accent:#60a5fa; --accent-soft:#16263d; --warn-soft:#2b2010; --warn:#e0a446; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0e1218; --panel:#161c25; --line:#283140; --grid:#1d2430; --fg:#e5eaf1; --mute:#8d99aa;
+  --up:#3dbb85; --down:#ef6b61; --entry:#60a5fa; --sl:#ef6b61; --tp:#3dbb85; --lvl:#d4a94a; --hi:#a78bfa;
+  --accent:#60a5fa; --accent-soft:#16263d; --warn-soft:#2b2010; --warn:#e0a446; color-scheme:dark}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:14.5px;line-height:1.55}
+.wrap{max-width:1180px;margin:0 auto;padding-block:16px 32px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:12px}
+h1{font-size:21px;margin:0} .sub{color:var(--mute);font-size:13px}
+.tabs{display:flex;gap:6px;flex-wrap:wrap}
+.tab{font:inherit;border:1px solid var(--line);background:var(--panel);color:var(--fg);border-radius:8px;padding:7px 12px;cursor:pointer;display:flex;gap:8px;align-items:center}
+.tab[aria-selected="true"]{border-color:var(--accent);background:var(--accent-soft);font-weight:700}
+.tab b{font-family:var(--f-num);font-weight:600}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--mute)} .dot.sig{background:var(--up)}
+.main{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:12px}
+@media (max-width:900px){.main{grid-template-columns:minmax(0,1fr)}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px;min-width:0}
+.card h2{font-size:14px;margin:0 0 6px;display:flex;justify-content:space-between;gap:8px}
+.card h2 small{color:var(--mute);font-weight:400}
+.chartbox{overflow-x:auto} svg.c{width:100%;min-width:560px;height:auto;display:block}
+.verdict{font-size:16px;font-weight:700;margin:2px 0 6px}
+.pill{display:inline-block;font-size:11.5px;padding:1px 8px;border-radius:99px;font-weight:500}
+.p-up{background:rgba(22,134,90,.14);color:var(--up)} .p-dn{background:rgba(200,68,58,.14);color:var(--down)} .p-n{background:var(--warn-soft);color:var(--warn)}
+table.t{border-collapse:collapse;width:100%;font-size:13px}
+table.t td{padding:5px 4px;border-top:1px solid var(--line)} table.t td.n{font-family:var(--f-num);text-align:right}
+.note{font-size:12.5px;color:var(--mute)}
+ul.plain{margin:4px 0 0;padding-left:18px} ul.plain li{margin:3px 0}
+.empty{padding:40px 10px;text-align:center;color:var(--mute)}
+.sigrow{border-top:1px solid var(--line);padding:6px 0;font-size:13px}
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>RC 실시간 차트 분석</h1>
+    <div class="sub" id="sub">RC비너스가 15분마다 MT5 차트를 읽고 석준님 SMC+CRT 기준으로 판정해 여기에 올려요. 주문은 하지 않아요.</div>
+  </header>
+  <div class="tabs" id="tabs"></div>
+  <div class="main">
+    <div style="display:flex;flex-direction:column;gap:12px;min-width:0">
+      <section class="card"><h2>4시간봉 <small id="h4note"></small></h2><div class="chartbox"><svg class="c" id="ch4"></svg></div></section>
+      <section class="card"><h2>15분봉 <small id="m15note"></small></h2><div class="chartbox"><svg class="c" id="cm15"></svg></div></section>
+    </div>
+    <aside style="display:flex;flex-direction:column;gap:12px">
+      <section class="card" id="panel"><div class="empty">RC가 첫 분석을 올리면 여기에 판정이 보여요.</div></section>
+      <section class="card"><h2>최근 신호 <small>가상 채점</small></h2><div id="sigs" class="note">아직 신호가 없어요.</div></section>
+    </aside>
+  </div>
+  <p class="note">선 색: <span style="color:var(--lvl)">■</span> 4H CRT 범위(CRH/CRL) · <span style="color:var(--hi)">■</span> 전일·런던·아시아 고저 · <span style="color:var(--entry)">■</span> 진입 · <span style="color:var(--sl)">■</span> 손절 · <span style="color:var(--tp)">■</span> 목표. 투자 결정은 석준님이 하세요.</p>
+</div>
+
+<script>
+let DOCS={}, SIGS=[], cur=null;
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const dig=p=>p>=1000?2:p>=50?3:5;
+const fmt=(v,p)=>v==null?"—":(+v).toFixed(dig(p||v));
+const colorOf=k=>({crt:"--lvl",hl:"--hi",entry:"--entry",sl:"--sl",tp:"--tp"}[k]||"--mute");
+
+function chart(id,bars,levels,price){
+  const svg=document.getElementById(id);
+  if(!bars||!bars.length){svg.setAttribute("viewBox","0 0 600 120");svg.innerHTML=`<text x="300" y="60" text-anchor="middle" fill="var(--mute)" font-size="13">봉 자료 없음</text>`;return}
+  const W=760,H=320,L=8,R=150,T=12,B=22,n=bars.length,cw=(W-L-R)/n;
+  const ys=[];bars.forEach(b=>ys.push(b[2],b[3]));
+  const lv=(levels||[]).filter(l=>l.price!=null);
+  const lo0=Math.min(...ys),hi0=Math.max(...ys),span=hi0-lo0;
+  lv.forEach(l=>{if(l.price>lo0-span*.6&&l.price<hi0+span*.6)ys.push(l.price)});
+  let lo=Math.min(...ys),hi=Math.max(...ys);const m=(hi-lo)*.05;lo-=m;hi+=m;
+  const Y=v=>T+(hi-v)/(hi-lo)*(H-T-B),X=i=>L+i*cw+cw/2;
+  let g="";
+  for(let k=0;k<=4;k++){const y=T+k*(H-T-B)/4;g+=`<line x1="${L}" x2="${W-R}" y1="${y}" y2="${y}" stroke="var(--grid)"/>`}
+  const step=Math.max(1,Math.round(n/6));
+  bars.forEach((b,i)=>{const[t,o,h,l,c]=b,up=c>=o,col=up?"var(--up)":"var(--down)",x=X(i),bw=Math.max(1.5,cw*.62);
+    g+=`<line x1="${x}" x2="${x}" y1="${Y(h)}" y2="${Y(l)}" stroke="${col}"/>`;
+    g+=`<rect x="${x-bw/2}" y="${Y(Math.max(o,c))}" width="${bw}" height="${Math.max(1,Math.abs(Y(o)-Y(c)))}" fill="${col}"/>`;
+    if(i%step===0)g+=`<text x="${x}" y="${H-6}" text-anchor="middle" font-size="10" fill="var(--mute)" font-family="JetBrains Mono,monospace">${esc(String(t).slice(5,16).replace("T"," "))}</text>`;});
+  const labs=[];
+  lv.forEach(l=>{if(l.price<lo||l.price>hi)return;const col=`var(${colorOf(l.kind)})`,dash=(l.kind==="hl")?'stroke-dasharray="5 4"':'';
+    g+=`<line x1="${L}" x2="${W-R+4}" y1="${Y(l.price)}" y2="${Y(l.price)}" stroke="${col}" stroke-width="${l.kind==="crt"||l.kind==="entry"?1.6:1.1}" ${dash}/>`;
+    labs.push({y:Y(l.price),t:`${l.name} ${fmt(l.price,l.price)}`,col});});
+  if(price!=null&&price>=lo&&price<=hi){g+=`<line x1="${L}" x2="${W-R+4}" y1="${Y(price)}" y2="${Y(price)}" stroke="var(--fg)" stroke-dasharray="2 3"/>`;labs.push({y:Y(price),t:`현재 ${fmt(price,price)}`,col:"var(--fg)"})}
+  labs.sort((a,b)=>a.y-b.y);for(let i=1;i<labs.length;i++)if(labs[i].y-labs[i-1].y<13)labs[i].y=labs[i-1].y+13;
+  labs.forEach(a=>g+=`<text x="${W-R+8}" y="${a.y+4}" font-size="11" fill="${a.col}" font-weight="600" font-family="JetBrains Mono,monospace">${esc(a.t)}</text>`);
+  svg.setAttribute("viewBox",`0 0 ${W} ${H}`);svg.setAttribute("role","img");svg.innerHTML=g;
+}
+
+function trendPill(v){return v==="상승"?`<span class="pill p-up">상승</span>`:v==="하락"?`<span class="pill p-dn">하락</span>`:`<span class="pill p-n">${esc(v||"—")}</span>`}
+
+function render(){
+  const syms=Object.keys(DOCS).sort();
+  if(!cur||!DOCS[cur])cur=syms[0]||null;
+  $("#tabs").innerHTML=syms.map(s=>{const d=DOCS[s];return`<button class="tab" data-s="${esc(s)}" aria-selected="${s===cur}"><span class="dot ${d.card?"sig":""}"></span>${esc(s)} <b>${fmt(d.price,d.price)}</b></button>`}).join("");
+  $("#tabs").querySelectorAll(".tab").forEach(b=>b.onclick=()=>{cur=b.dataset.s;render()});
+  const d=DOCS[cur]; if(!d)return;
+  $("#sub").textContent=`마지막 분석 ${d.at||"—"} (KST) · RC비너스가 15분마다 갱신 · 주문은 하지 않아요.`;
+  const lv=(d.levels||[]).slice(); if(d.card){["entry","sl","tp"].forEach(k=>{if(d.card[k]!=null)lv.push({name:{entry:"진입",sl:"손절",tp:"목표"}[k],price:d.card[k],kind:k})})}
+  chart("ch4",d.h4,lv,d.price); chart("cm15",d.m15,lv,d.price);
+  $("#h4note").textContent=d.h4?`최근 ${d.h4.length}개`:""; $("#m15note").textContent=d.m15?`최근 ${d.m15.length}개`:"";
+  const t=d.trend||{};
+  let h=`<div class="verdict">${d.card?`<span style="color:var(--up)">신호: ${esc(d.card.dir)} (${esc(d.card.grade||"")})</span>`:esc(d.status||"자리 없음")}</div>
+    <table class="t"><tr><td>주봉</td><td>${trendPill(t.w)}</td></tr><tr><td>일봉</td><td>${trendPill(t.d)}</td></tr><tr><td>4시간</td><td>${trendPill(t.h4)}</td></tr>
+    <tr><td>4H 범위 위치</td><td class="n">${d.pos!=null?Math.round(d.pos*100)+"%":"—"}</td></tr><tr><td>변동성</td><td class="n">${d.vol!=null?(+d.vol).toFixed(2)+"배":"—"}</td></tr></table>`;
+  if(d.card){const c=d.card;h+=`<table class="t" style="margin-top:8px"><tr><td>진입</td><td class="n">${fmt(c.entry,c.entry)}</td></tr><tr><td>손절</td><td class="n">${fmt(c.sl,c.sl)}</td></tr><tr><td>목표</td><td class="n">${fmt(c.tp,c.tp)}</td></tr><tr><td>손익비</td><td class="n">${c.rr!=null?"1 : "+(+c.rr).toFixed(2):"—"}</td></tr></table>
+    <div style="margin-top:8px"><b style="font-size:13px">근거</b><ul class="plain">${(c.reasons||[]).map(r=>`<li>${esc(r)}</li>`).join("")}</ul></div>
+    <div style="margin-top:4px"><b style="font-size:13px;color:var(--down)">반대 근거</b><ul class="plain"><li>${esc(c.against||"")}</li></ul></div>`;}
+  if(d.watch)h+=`<div style="margin-top:8px"><b style="font-size:13px">지켜볼 곳</b><ul class="plain">${(Array.isArray(d.watch)?d.watch:[d.watch]).map(w=>`<li>${esc(w)}</li>`).join("")}</ul></div>`;
+  $("#panel").innerHTML=h;
+  const ss=SIGS.filter(s=>!cur||s.sym===cur).slice(0,8);
+  $("#sigs").innerHTML=ss.length?ss.map(s=>`<div class="sigrow"><b>${esc(s.sym)} ${esc(s.dir)}</b> <span class="note">${esc(s.at||"")} · ${esc(s.grade||"")}</span><br>진입 ${fmt(s.entry,s.entry)} · 손절 ${fmt(s.sl,s.sl)} · 목표 ${fmt(s.tp,s.tp)} · 결과 <b>${s.result_r!=null?((s.result_r>=0?"+":"")+(+s.result_r).toFixed(2)+"R"):esc(s.status||"진행 중")}</b></div>`).join(""):"아직 신호가 없어요.";
+}
+
+(async()=>{
+  const db=await window.claude?.use?.("db");
+  if(!db){$("#panel").innerHTML='<div class="empty">로그인해야 차트가 보여요.</div>';return}
+  db.collection("charts").onSnapshot(s=>{DOCS={};s.docs.forEach(x=>{const v=x.data();if(v&&v.sym)DOCS[v.sym]=v});render()});
+  db.collection("signals").onSnapshot(s=>{SIGS=s.docs.map(x=>x.data()).filter(Boolean).sort((a,b)=>(b.at||"").localeCompare(a.at||""));render()});
+})();
+</script>
