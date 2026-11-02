@@ -58,7 +58,7 @@ ul.plain{margin:4px 0 0;padding-left:18px} ul.plain li{margin:3px 0}
       <section class="card"><h2>최근 신호 <small>가상 채점</small></h2><div id="sigs" class="note">아직 신호가 없어요.</div></section>
     </aside>
   </div>
-  <p class="note">선 색: <span style="color:var(--lvl)">■</span> 4H CRT 범위(CRH/CRL) · <span style="color:var(--hi)">■</span> 전일·런던·아시아 고저 · <span style="color:var(--entry)">■</span> 진입 · <span style="color:var(--sl)">■</span> 손절 · <span style="color:var(--tp)">■</span> 목표. 투자 결정은 석준님이 하세요.</p>
+  <p class="note">SMC 표시: HH·HL·LH·LL = 스윙 고저 · <b>BOS</b> = 같은 방향 구조 돌파 · <b style="color:var(--warn)">CHoCH/MSS</b> = 방향 전환 돌파(몸통 마감) · 상자 = 오더블록(OB)·FVG · 점선 = 같은 높이 고점/저점(EQH/EQL, 유동성) · 빨강/초록 배경 = 프리미엄/디스카운트.<br>선 색: <span style="color:var(--lvl)">■</span> 4H CRT 범위(CRH/CRL) · <span style="color:var(--hi)">■</span> 전일·런던·아시아 고저 · <span style="color:var(--entry)">■</span> 진입 · <span style="color:var(--sl)">■</span> 손절 · <span style="color:var(--tp)">■</span> 목표. 투자 결정은 석준님이 하세요.</p>
 </div>
 
 <script>
@@ -69,10 +69,12 @@ const dig=p=>p>=1000?2:p>=50?3:5;
 const fmt=(v,p)=>v==null?"—":(+v).toFixed(dig(p||v));
 const colorOf=k=>({crt:"--lvl",hl:"--hi",entry:"--entry",sl:"--sl",tp:"--tp"}[k]||"--mute");
 
-function chart(id,bars,levels,price){
+function chart(id,bars,levels,price,smc){
   const svg=document.getElementById(id);
   if(!bars||!bars.length){svg.setAttribute("viewBox","0 0 600 120");svg.innerHTML=`<text x="300" y="60" text-anchor="middle" fill="var(--mute)" font-size="13">봉 자료 없음</text>`;return}
-  const W=760,H=320,L=8,R=150,T=12,B=22,n=bars.length,cw=(W-L-R)/n;
+  const W=760,H=360,L=8,R=150,T=12,B=22,n=bars.length,cw=(W-L-R)/n;
+  smc=smc||{};
+  const idx=t=>{if(t==null)return null;const s=String(t);let k=bars.findIndex(b=>String(b[0])>=s);return k<0?(String(bars[n-1][0])<s?n-1:0):k};
   const ys=[];bars.forEach(b=>ys.push(b[2],b[3]));
   const lv=(levels||[]).filter(l=>l.price!=null);
   const lo0=Math.min(...ys),hi0=Math.max(...ys),span=hi0-lo0;
@@ -81,11 +83,35 @@ function chart(id,bars,levels,price){
   const Y=v=>T+(hi-v)/(hi-lo)*(H-T-B),X=i=>L+i*cw+cw/2;
   let g="";
   for(let k=0;k<=4;k++){const y=T+k*(H-T-B)/4;g+=`<line x1="${L}" x2="${W-R}" y1="${y}" y2="${y}" stroke="var(--grid)"/>`}
+  const cl=v=>Math.max(T,Math.min(H-B,Y(v)));
+  // 프리미엄/디스카운트: 범위 50% 위는 프리미엄, 아래는 디스카운트
+  if(smc.pd&&smc.pd.hi!=null&&smc.pd.lo!=null){const eq=(smc.pd.hi+smc.pd.lo)/2;
+    g+=`<rect x="${L}" y="${cl(smc.pd.hi)}" width="${W-R-L}" height="${Math.max(0,cl(eq)-cl(smc.pd.hi))}" fill="var(--down)" opacity=".05"/>`;
+    g+=`<rect x="${L}" y="${cl(eq)}" width="${W-R-L}" height="${Math.max(0,cl(smc.pd.lo)-cl(eq))}" fill="var(--up)" opacity=".05"/>`;
+    g+=`<line x1="${L}" x2="${W-R}" y1="${Y(eq)}" y2="${Y(eq)}" stroke="var(--mute)" stroke-dasharray="1 4"/>`;
+    g+=`<text x="${L+4}" y="${cl(smc.pd.hi)+12}" font-size="10" fill="var(--down)">프리미엄</text><text x="${L+4}" y="${cl(smc.pd.lo)-4}" font-size="10" fill="var(--up)">디스카운트</text>`;}
+  // OB·FVG 상자
+  const box=(z,col,lab)=>{const i0=idx(z.t0),i1=z.t1?idx(z.t1):n-1;if(i0==null)return;const x0=L+i0*cw,x1=L+(i1+1)*cw;
+    g+=`<rect x="${x0}" y="${cl(z.top)}" width="${Math.max(2,x1-x0)}" height="${Math.max(1,cl(z.bottom)-cl(z.top))}" fill="${col}" opacity="${z.filled?.08:.2}" stroke="${col}" stroke-opacity=".6"/>`;
+    g+=`<text x="${x0+3}" y="${cl(z.top)+10}" font-size="9.5" fill="${col}" font-weight="600">${lab}</text>`;};
+  (smc.obs||[]).forEach(z=>box(z,z.dir==="bull"?"var(--up)":"var(--down)",(z.dir==="bull"?"강세 OB":"약세 OB")));
+  (smc.fvgs||[]).forEach(z=>box(z,z.dir==="bull"?"var(--entry)":"var(--hi)",(z.dir==="bull"?"강세 FVG":"약세 FVG")+(z.filled?" (메움)":"")));
   const step=Math.max(1,Math.round(n/6));
   bars.forEach((b,i)=>{const[t,o,h,l,c]=b,up=c>=o,col=up?"var(--up)":"var(--down)",x=X(i),bw=Math.max(1.5,cw*.62);
     g+=`<line x1="${x}" x2="${x}" y1="${Y(h)}" y2="${Y(l)}" stroke="${col}"/>`;
     g+=`<rect x="${x-bw/2}" y="${Y(Math.max(o,c))}" width="${bw}" height="${Math.max(1,Math.abs(Y(o)-Y(c)))}" fill="${col}"/>`;
     if(i%step===0)g+=`<text x="${x}" y="${H-6}" text-anchor="middle" font-size="10" fill="var(--mute)" font-family="JetBrains Mono,monospace">${esc(String(t).slice(5,16).replace("T"," "))}</text>`;});
+  // 스윙 고점·저점 표시(HH/HL/LH/LL)
+  (smc.swings||[]).forEach(s=>{const i=idx(s.t);if(i==null)return;const x=X(i),hiSw=s.type==="H",y=hiSw?Y(s.price)-6:Y(s.price)+14;
+    g+=`<text x="${x}" y="${y}" text-anchor="middle" font-size="10" font-weight="700" fill="${hiSw?"var(--down)":"var(--up)"}">${esc(s.label||(hiSw?"H":"L"))}</text>`;});
+  // 구조 돌파: BOS / CHoCH(MSS)
+  (smc.breaks||[]).forEach(b=>{const i0=idx(b.from_t),i1=idx(b.to_t);if(i0==null||i1==null)return;const col=b.type==="BOS"?"var(--fg)":"var(--warn)";
+    g+=`<line x1="${X(i0)}" x2="${X(i1)}" y1="${Y(b.price)}" y2="${Y(b.price)}" stroke="${col}" stroke-width="1.3" stroke-dasharray="${b.type==="BOS"?"0":"4 2"}"/>`;
+    g+=`<text x="${(X(i0)+X(i1))/2}" y="${Y(b.price)+(b.dir==="bull"?-4:11)}" text-anchor="middle" font-size="10" font-weight="700" fill="${col}">${esc(b.type==="CHoCH"?"CHoCH/MSS":"BOS")}</text>`;});
+  // 유동성: 같은 높이 고점/저점(EQH/EQL)
+  (smc.liq||[]).forEach(q=>{const i0=idx(q.t0),i1=q.t1?idx(q.t1):n-1;if(i0==null)return;
+    g+=`<line x1="${X(i0)}" x2="${X(i1)}" y1="${Y(q.price)}" y2="${Y(q.price)}" stroke="var(--lvl)" stroke-width="2" stroke-dasharray="1 3"/>`;
+    g+=`<text x="${X(i1)+3}" y="${Y(q.price)+3}" font-size="9.5" fill="var(--lvl)" font-weight="700">${esc(q.name||"EQ")}${q.swept?" ✓쓸림":""}</text>`;});
   const labs=[];
   lv.forEach(l=>{if(l.price<lo||l.price>hi)return;const col=`var(${colorOf(l.kind)})`,dash=(l.kind==="hl")?'stroke-dasharray="5 4"':'';
     g+=`<line x1="${L}" x2="${W-R+4}" y1="${Y(l.price)}" y2="${Y(l.price)}" stroke="${col}" stroke-width="${l.kind==="crt"||l.kind==="entry"?1.6:1.1}" ${dash}/>`;
@@ -106,7 +132,9 @@ function render(){
   const d=DOCS[cur]; if(!d)return;
   $("#sub").textContent=`마지막 분석 ${d.at||"—"} (KST) · RC비너스가 15분마다 갱신 · 주문은 하지 않아요.`;
   const lv=(d.levels||[]).slice(); if(d.card){["entry","sl","tp"].forEach(k=>{if(d.card[k]!=null)lv.push({name:{entry:"진입",sl:"손절",tp:"목표"}[k],price:d.card[k],kind:k})})}
-  chart("ch4",d.h4,lv,d.price); chart("cm15",d.m15,lv,d.price);
+  chart("ch4",d.h4,lv,d.price,(d.smc||{}).h4); chart("cm15",d.m15,lv,d.price,(d.smc||{}).m15);
+  const sm=(d.smc||{}).h4||{};
+  if(!d.smc)$("#h4note").dataset.miss="1";
   $("#h4note").textContent=d.h4?`최근 ${d.h4.length}개`:""; $("#m15note").textContent=d.m15?`최근 ${d.m15.length}개`:"";
   const t=d.trend||{};
   let h=`<div class="verdict">${d.card?`<span style="color:var(--up)">신호: ${esc(d.card.dir)} (${esc(d.card.grade||"")})</span>`:esc(d.status||"자리 없음")}</div>
