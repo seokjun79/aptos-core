@@ -80,7 +80,7 @@ function chart(id,bars,levels,price,smc){
   smc=smc||{};
   if(SIMPLE){smc={...smc,
     fvgs:(smc.fvgs||[]).filter(z=>!z.filled).slice(-2),
-    obs:(smc.obs||[]).filter(z=>!z.filled&&!z.t1).slice(-2),
+    obs:(smc.obs||[]).filter(z=>!z.t1).slice(-2).map(z=>({...z,filled:false})),
     breaks:(smc.breaks||[]).filter(b=>b.level!=="internal").slice(-2),
     swings:(smc.swings||[]).slice(-4),
     liq:(smc.liq||[]).filter(q=>!q.swept).slice(-2)};
