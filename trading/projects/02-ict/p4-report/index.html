@@ -64,7 +64,7 @@ ul.plain,ol.plain{margin:0;padding-left:20px} ul.plain li,ol.plain li{margin:5px
   <div class="alert">
     <b>가장 중요한 발견.</b> 30핍 넘게 진 <b>58건</b>이 <b class="big">−2,985핍</b>이에요. 이 58건만 빼면 나머지 <b>973건은 +1,914핍</b>이에요.
     손절 주문을 건 거래는 <b>1%</b>뿐이고, 하루 넘게 들고 간 19건은 26%만 이겼어요.
-    <br><span class="note">석준님 진입 실력은 이미 + 예요. 돈을 잃은 이유는 큰 손실 몇 번이에요.</span>
+    <br><span class="note"><b>고침(11/2):</b> "58건만 막으면 +1,914핍"은 과장이었어요. 실제로 30핍 손절을 걸면, 버티다 회복해 이긴 거래도 같이 잘려요. 아래 '손실 끊기 재계산'을 보세요.</span>
   </div>
 
   <section class="card">
@@ -110,7 +110,7 @@ ul.plain,ol.plain{margin:0;padding-left:20px} ul.plain li,ol.plain li{margin:5px
   <section class="card">
     <h2>표 ③ "석준 × ICT 통합 모델" 초안: 발전 방향 5가지</h2>
     <div class="model">
-      <div class="rule"><div class="no">1</div><div><b>손절을 먼저 건다.</b> 스윕 극값 + 1핍, 최대 30핍. 하루 넘겨 들고 가지 않는다.<div class="ev">근거: 30핍 넘은 손실 58건이 −2,985핍. 이것만 막아도 나머지 973건 +1,914핍이 남아요.</div></div></div>
+      <div class="rule"><div class="no">1</div><div><b>손절을 먼저 건다.</b> 스윕 극값 + 1핍, 최대 30핍. 하루 넘겨 들고 가지 않는다.<div class="ev">근거(재계산): 실거래 1,031건에 손절 30핍·하루 넘김 금지를 붙이면 −1,071 → −570핍(+501). 개선은 대부분 금(−226 → +232)과 2025년(+9 → +505, 최대 낙폭 790 → 222). 금 뺀 외환은 거의 그대로.</div></div></div>
       <div class="rule"><div class="no">2</div><div><b>A급 자리에 집중한다.</b> CRT 스윕 + MSS 몸통 마감 + 킬존 + 4H 같은 방향.<div class="ev">근거: 35건 중 71% 승리. 진입은 OB·FVG 되돌림(26건 65%).</div></div></div>
       <div class="rule"><div class="no">3</div><div><b>범위 위쪽에서 역으로 파는 매도를 줄인다.</b><div class="ev">근거: 157건 중 39%만 이김. 매도 전체도 44%로 매수(53%)보다 약해요.</div></div></div>
       <div class="rule"><div class="no">4</div><div><b>흐름 반대로 들어갈 때는 MSS 확정을 기다린다.</b><div class="ev">근거: 흐름 반대 진입 401건 46%. 스윕+MSS 확정이 있는 거래 전체는 58%였어요(흐름 반대만 따로 본 숫자는 백테스트에서 확인).</div></div></div>
@@ -135,6 +135,18 @@ ul.plain,ol.plain{margin:0;padding-left:20px} ul.plain li,ol.plain li{margin:5px
       <li>같은 패턴을 MT5 전체에서 찾으면 157건 52%·+1.6핍이에요. 일봉·4H 같은 방향 조건은 FTMO에서도 효과가 없었어요.</li>
     </ul>
     <p class="note">FTMO는 체결가가 없어 진입가를 5분봉 시가로 근사했고, 핍·최대 이익·최대 역행은 FTMO 기록 값을 썼어요. 29건은 적어서 참고용이에요.</p>
+  </section>
+
+  <section class="card">
+    <h2>백테스트 결과 (11/2)</h2>
+    <div class="scroll"><table>
+      <tr><th>시험</th><th>결과</th><th>뜻</th></tr>
+      <tr><td>EA A급 (쓸고 반전), 기계로 전부 진입</td><td class="n" style="color:var(--bad)">2024~25 −0.22R</td><td>불합격</td></tr>
+      <tr><td>석준 A+ (흐름 따라 돌파), 기계로 전부 진입</td><td class="n" style="color:var(--bad)">2024~25 −0.05~−0.08R</td><td>불합격. 금만 +0.05R(우연과 구분 안 됨)</td></tr>
+      <tr><td>실거래 1,031건 + 손실 끊기 규칙</td><td class="n">−1,071 → −570핍</td><td>2025년은 +505핍, 낙폭 222핍</td></tr>
+      <tr><td>석준님이 고른 A+ vs 기계 A+</td><td>차이 5개</td><td>변동성 클 때, 범위 밖·런던 고저 돌파, 4H 같은 방향은 오히려 나쁨. 하지만 어느 칸도 비용 뒤 +는 아님</td></tr>
+    </table></div>
+    <p class="note" style="margin-top:8px">요약: 석준님 자리를 기계가 전부 들어가면 비용을 못 넘어요. FTMO 때의 72%는 규칙에 없는 '고르기·손 청산'에서 나왔고, 2025년 거래는 손실 끊기를 붙이면 +였어요.</p>
   </section>
 
   <section class="card">
