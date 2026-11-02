@@ -47,7 +47,11 @@ ul.plain{margin:4px 0 0;padding-left:18px} ul.plain li{margin:3px 0}
     <h1>RC 실시간 차트 분석</h1>
     <div class="sub" id="sub">RC비너스가 15분마다 MT5 차트를 읽고 석준님 SMC+CRT 기준으로 판정해 여기에 올려요. 주문은 하지 않아요.</div>
   </header>
-  <div class="tabs" id="tabs"></div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:space-between">
+    <div class="tabs" id="tabs"></div>
+    <button class="tab" id="mode" type="button">자세히 보기</button>
+  </div>
+  <section class="card" id="story" style="border-color:var(--accent)"><div class="note">RC가 올린 분석을 불러오는 중이에요.</div></section>
   <div class="main">
     <div style="display:flex;flex-direction:column;gap:12px;min-width:0">
       <section class="card"><h2>4시간봉 <small id="h4note"></small></h2><div class="chartbox"><svg class="c" id="ch4"></svg></div></section>
@@ -62,18 +66,25 @@ ul.plain{margin:4px 0 0;padding-left:18px} ul.plain li{margin:3px 0}
 </div>
 
 <script>
-let DOCS={}, SIGS=[], cur=null;
+let DOCS={}, SIGS=[], cur=null, SIMPLE=true;
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const dig=p=>p>=1000?2:p>=50?3:5;
 const fmt=(v,p)=>v==null?"—":(+v).toFixed(dig(p||v));
-const colorOf=k=>({crt:"--lvl",hl:"--hi",entry:"--entry",sl:"--sl",tp:"--tp"}[k]||"--mute");
+const colorOf=k=>({crt:"--lvl",hl:"--hi",mss:"--warn",entry:"--entry",sl:"--sl",tp:"--tp"}[k]||"--mute");
 
 function chart(id,bars,levels,price,smc){
   const svg=document.getElementById(id);
   if(!bars||!bars.length){svg.setAttribute("viewBox","0 0 600 120");svg.innerHTML=`<text x="300" y="60" text-anchor="middle" fill="var(--mute)" font-size="13">봉 자료 없음</text>`;return}
   const W=760,H=360,L=8,R=150,T=12,B=22,n=bars.length,cw=(W-L-R)/n;
   smc=smc||{};
+  if(SIMPLE){smc={...smc,
+    fvgs:(smc.fvgs||[]).filter(z=>!z.filled).slice(-2),
+    obs:(smc.obs||[]).filter(z=>!z.filled&&!z.t1).slice(-2),
+    breaks:(smc.breaks||[]).filter(b=>b.level!=="internal").slice(-2),
+    swings:(smc.swings||[]).slice(-4),
+    liq:(smc.liq||[]).filter(q=>!q.swept).slice(-2)};
+    levels=(levels||[]).filter(l=>["crt","mss","entry","sl","tp"].includes(l.kind)||/전일/.test(l.name));}
   const idx=t=>{if(t==null)return null;const s=String(t);let k=bars.findIndex(b=>String(b[0])>=s);return k<0?(String(bars[n-1][0])<s?n-1:0):k};
   const ys=[];bars.forEach(b=>ys.push(b[2],b[3]));
   const lv=(levels||[]).filter(l=>l.price!=null);
@@ -130,6 +141,8 @@ function render(){
   $("#tabs").innerHTML=syms.map(s=>{const d=DOCS[s];return`<button class="tab" data-s="${esc(s)}" aria-selected="${s===cur}"><span class="dot ${d.card?"sig":""}"></span>${esc(s)} <b>${fmt(d.price,d.price)}</b></button>`}).join("");
   $("#tabs").querySelectorAll(".tab").forEach(b=>b.onclick=()=>{cur=b.dataset.s;render()});
   const d=DOCS[cur]; if(!d)return;
+  $("#mode").textContent=SIMPLE?"자세히 보기":"간단히 보기";
+  $("#story").innerHTML=storyHTML(d);
   $("#sub").textContent=`마지막 분석 ${d.at||"—"} (KST) · RC비너스가 15분마다 갱신 · 주문은 하지 않아요.`;
   const lv=(d.levels||[]).slice(); if(d.card){["entry","sl","tp"].forEach(k=>{if(d.card[k]!=null)lv.push({name:{entry:"진입",sl:"손절",tp:"목표"}[k],price:d.card[k],kind:k})})}
   chart("ch4",d.h4,lv,d.price,(d.smc||{}).h4); chart("cm15",d.m15,lv,d.price,(d.smc||{}).m15);
@@ -148,6 +161,25 @@ function render(){
   const ss=SIGS.filter(s=>!cur||s.sym===cur).slice(0,8);
   $("#sigs").innerHTML=ss.length?ss.map(s=>`<div class="sigrow"><b>${esc(s.sym)} ${esc(s.dir)}</b> <span class="note">${esc(s.at||"")} · ${esc(s.grade||"")}</span><br>진입 ${fmt(s.entry,s.entry)} · 손절 ${fmt(s.sl,s.sl)} · 목표 ${fmt(s.tp,s.tp)} · 결과 <b>${s.result_r!=null?((s.result_r>=0?"+":"")+(+s.result_r).toFixed(2)+"R"):esc(s.status||"진행 중")}</b></div>`).join(""):"아직 신호가 없어요.";
 }
+
+function storyHTML(d){
+  const t=d.trend||{}, h4=(d.smc||{}).h4||{};
+  let lines=Array.isArray(d.story)&&d.story.length?d.story.slice():null;
+  if(!lines){
+    lines=[];
+    const ext=(h4.breaks||[]).filter(b=>b.level!=="internal").slice(-1)[0];
+    lines.push(`큰 그림: 주봉 ${t.w||"—"}, 일봉 ${t.d||"—"}, 4시간 ${t.h4||"—"}.`+(ext?` 4시간봉 마지막 큰 구조 돌파는 ${ext.dir==="bull"?"위로":"아래로"} ${fmt(ext.price,ext.price)} (${ext.type==="CHoCH"?"방향 전환":"추세 이어짐"}).`:""));
+    if(h4.pd&&h4.pd.hi!=null){const p=(d.price-h4.pd.lo)/(h4.pd.hi-h4.pd.lo);lines.push(p>1?`지금 위치: ${fmt(d.price,d.price)}는 마지막 4시간 다리 고점(${fmt(h4.pd.hi,h4.pd.hi)}) 위로 올라온 상태 → 매우 비싼 쪽. 새로 사기보다 되돌림을 기다리는 구간.`:p<0?`지금 위치: ${fmt(d.price,d.price)}는 마지막 4시간 다리 저점(${fmt(h4.pd.lo,h4.pd.lo)}) 아래 → 매우 싼 쪽. 새로 팔기보다 반등을 기다리는 구간.`:`지금 위치: ${fmt(d.price,d.price)}는 4시간 다리의 ${Math.round(p*100)}% 지점 → ${p>=.5?"비싼 쪽(프리미엄). 여기서 새로 사기는 불리":"싼 쪽(디스카운트). 매수 자리를 찾는 구간"}.`)}
+    const ob=(h4.obs||[]).filter(z=>!z.filled&&!z.t1).slice(-1)[0];
+    if(ob)lines.push(`가까운 4시간 ${ob.dir==="bull"?"강세":"약세"} OB: ${fmt(ob.bottom,ob.bottom)}~${fmt(ob.top,ob.top)}. 가격이 여기로 오면 작은 시간대 MSS를 기다리는 자리.`);
+  }
+  const w=Array.isArray(d.watch)?d.watch:(d.watch?[d.watch]:[]);
+  const head=d.card?`<span style="color:var(--up)">지금 신호 있음: ${esc(d.card.dir)} ${esc(d.card.grade||"")}</span>`:`지금은 기다리는 중 (${esc(d.status||"자리 없음")})`;
+  return `<div class="verdict">${esc(cur)} — ${head}</div>
+    <ol style="margin:4px 0 0;padding-left:20px">${lines.map(l=>`<li style="margin:3px 0">${esc(l)}</li>`).join("")}</ol>
+    ${w.length?`<div style="margin-top:8px"><b>다음에 볼 것:</b><ul class="plain">${w.map(x=>`<li>${esc(x)}</li>`).join("")}</ul></div>`:""}`;
+}
+$("#mode").onclick=()=>{SIMPLE=!SIMPLE;render()};
 
 (async()=>{
   const db=await window.claude?.use?.("db");
