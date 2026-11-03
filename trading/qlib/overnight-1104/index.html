@@ -46,11 +46,11 @@ ul{margin:0;padding-left:20px;display:grid;gap:6px}
         <tr><td>외환 47종목 v1<br><span class="note">하루 예측, 매일 사고팔기</span></td><td class="n">연 −24.9%</td><td class="n">연 −0.9%</td><td><span class="pill bad">비용이 다 먹음</span></td></tr>
         <tr><td>외환 v2 1등<br><span class="note">석준님 SMC·ICT 재료 추가, 5일</span></td><td class="n">2022 +3.5%<br>→ 23~24 −1.5%</td><td class="n">—</td><td><span class="pill bad">불합격</span></td></tr>
         <tr><td>외환 v2 2등<br><span class="note">기본 재료, 5일</span></td><td class="n">2022 +0.5%<br>→ 23~24 −3.5%</td><td class="n">—</td><td><span class="pill bad">불합격</span></td></tr>
-        <tr><td>미국 나스닥100<br><span class="note">5일 예측</span></td><td class="n">지수보다 연 −6.9%</td><td class="n">연 +28.5%<br>최대 하락 −19%</td><td><span class="pill mid">한 구간만 좋음</span></td></tr>
-        <tr><td>한국 코스피200+코스닥150<br><span class="note">5일 예측</span></td><td class="n">지수보다 연 +33.1%</td><td class="n">연 +10.0%<br>최대 하락 −80%</td><td><span class="pill mid">들쭉날쭉</span></td></tr>
+        <tr><td>미국 나스닥100<br><span class="note">5일 예측</span></td><td class="n">지수보다 연 −7.3%<br>IR −0.48</td><td class="n">지수보다 연 +30.1%<br>IR 1.35 · MDD −34% (지수 −24%)</td><td><span class="pill bad">불합격</span></td></tr>
+        <tr><td>한국 코스피200+코스닥150<br><span class="note">5일 예측</span></td><td class="n">지수보다 연 +35.1%<br>IR 1.05</td><td class="n">지수보다 연 +10.6%<br>IR 0.27 · MDD −63% (지수 −48%)</td><td><span class="pill bad">불합격</span></td></tr>
       </tbody>
     </table></div>
-    <p class="note">검증 = 고른 방법을 처음 보는 기간에 시험한 것. 최종 = 맨 마지막(2024년~)에 딱 한 번 본 것. 두 구간 모두 좋아야 믿을 수 있어요.</p>
+    <p class="note">검증 = 처음 보는 기간(2022~23). 최종 = 맨 마지막(2024년~)에 딱 한 번 본 것. <b>합격 기준(3개 모두)</b>: ① 두 구간 모두 비용 후 지수보다 높음 ② 두 구간 모두 IR 0.5 이상 ③ 최종 최대 하락(MDD)이 지수보다 나쁘지 않음. 미국 비교 대상은 같은 101종목 똑같은 비중 평균(나스닥100 지수 파일 없음).</p>
   </section>
 
   <section>
@@ -58,7 +58,7 @@ ul{margin:0;padding-left:20px;display:grid;gap:6px}
     <ul>
       <li><b>AI가 거의 못 배웠어요.</b> 결정나무를 1~4개만 쓰고 멈췄어요. 옛날에 배운 패턴이 다음 기간에 거의 안 통했다는 뜻이에요.</li>
       <li><b>주식은 결과가 부풀려졌을 수 있어요.</b> 지금 지수에 남아 있는 종목만 썼어요(생존 편향 = 망하거나 빠진 회사가 빠져 있음). 한국은 2023년 2차전지 급등이 크게 섞였어요.</li>
-      <li><b>한국 최종 구간 최대 하락이 −80%</b>예요. 수익보다 위험이 훨씬 커요.</li>
+      <li><b>한국 최종 구간 최대 하락이 −63%</b>로 지수(−48%)보다 깊었어요. (처음 보고의 −80%는 잘못 옮긴 숫자라 고쳤어요.)</li>
       <li><b>미국은 거래량 숫자가 일부 틀렸어요.</b> 주식 분할이 반영 안 된 채로 계산됐어요(분할 목록이 없어서 고치지 못함).</li>
       <li>딥러닝(GRU)과 XGBoost도 돌려 봤는데, 기본 LightGBM보다 나빴어요.</li>
     </ul>
