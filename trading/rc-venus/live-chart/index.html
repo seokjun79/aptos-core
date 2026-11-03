@@ -155,7 +155,9 @@ function chart(id,bars,levels,price,smc){
   labs.sort((a,b)=>a.y-b.y);for(let i=1;i<labs.length;i++)if(labs[i].y-labs[i-1].y<13)labs[i].y=labs[i-1].y+13;
   labs.forEach(a=>g+=`<text x="${W-R+8}" y="${a.y+4}" font-size="11" fill="${a.col}" font-weight="600" font-family="JetBrains Mono,monospace">${esc(a.t)}</text>`);
   // 이동평균선
-  const line=(arr,col,w)=>{const pts=arr.map((v,i)=>v==null?null:`${X(i).toFixed(1)},${cl(v).toFixed(1)}`).filter(Boolean);if(pts.length>1)g+=`<polyline points="${pts.join(" ")}" fill="none" stroke="${col}" stroke-width="${w}" opacity=".9"/>`};
+  // 화면 범위 밖 값은 그리지 않고 선을 끊음(가장자리에 눌린 가짜 선 방지)
+  const line=(arr,col,w)=>{let seg=[];const flush=()=>{if(seg.length>1)g+=`<polyline points="${seg.join(" ")}" fill="none" stroke="${col}" stroke-width="${w}" opacity=".9"/>`;seg=[]};
+    arr.forEach((v,i)=>{if(v==null||v<lo||v>hi){flush();return}seg.push(`${X(i).toFixed(1)},${Y(v).toFixed(1)}`)});flush()};
   if(IND){
   line(ma20,"#f59e0b",1.4); line(ma200,"#8b5cf6",1.8);
   const last=a=>{for(let i=a.length-1;i>=0;i--)if(a[i]!=null)return a[i];return null};
@@ -187,7 +189,7 @@ function render(){
   chart("ch4",d.h4,lv,d.price,(d.smc||{}).h4); chart("cm15",d.m15,lv,d.price,(d.smc||{}).m15); chart("cm5",d.m5,lv,d.price,(d.smc||{}).m5);
   const sm=(d.smc||{}).h4||{};
   if(!d.smc)$("#h4note").dataset.miss="1";
-  $("#h4note").textContent=d.h4?`최근 ${d.h4.length}개`:""; $("#m15note").textContent=d.m15?`최근 ${d.m15.length}개`:""; $("#m5note").textContent=d.m5?`최근 ${d.m5.length}개`:"RC가 다음 업데이트부터 올려요";
+  const shown=(a,k)=>a?`최근 ${Math.min(a.length,k)}개`:""; $("#h4note").textContent=shown(d.h4,120); $("#m15note").textContent=shown(d.m15,96); $("#m5note").textContent=d.m5?shown(d.m5,144):"아직 자료 없음";
   const t=d.trend||{};
   let h=`<div class="verdict">${d.card?`<span style="color:var(--up)">신호: ${esc(d.card.dir)} (${esc(d.card.grade||"")})</span>`:esc(d.status||"자리 없음")}</div>
     <table class="t"><tr><td>주봉</td><td>${trendPill(t.w)}</td></tr><tr><td>일봉</td><td>${trendPill(t.d)}</td></tr><tr><td>4시간</td><td>${trendPill(t.h4)}</td></tr>
