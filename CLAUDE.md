@@ -25,6 +25,12 @@
 - 투자·경매 입찰은 정보만 주고, 결정은 석준님이 한다고 알린다.
 - FX 차트 분석은 `trading/rules/smc-crt-analysis.md` 기준(SMC+CRT, MSS = 마지막 다리가 시작된 스윙, 몸통 마감 확정)으로만 한다.
 
+## 퀀트·AI 매매 도구: Microsoft qlib (석준님 지시, 2026-11-03)
+
+- https://github.com/microsoft/qlib — 마이크로소프트가 만든 AI 알고리즘 트레이딩 프레임워크. 보조지표를 넘어 머신러닝·딥러닝 모델로 매매 신호를 예측하고 퀀트 전략을 고도화할 때 **항상 qlib를 쓴다.**
+- 설치 위치: RC PC `C:\Users\kun00\venus\qlib_env` (pyqlib 0.9.7, lightgbm 4.7.0, 가상환경 안에만). 실행은 RC비너스에게 맡긴다.
+- 주의: 출처 모르는 pickle·모델 파일은 열지 않는다. sudo·관리자 권한 기능(NFS mount)은 쓰지 않는다. 결과는 개발/검증/최종 구간을 나눠 확인한다.
+
 ## 작업 현황판
 
 https://claude.ai/artifact/8gHYgfmGCUFGEHRZmHJ3vq — `tasks` 컬렉션을 ArtifactData로 갱신한다 (맡길 때·소식 올 때·끝날 때).
