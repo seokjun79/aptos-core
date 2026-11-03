@@ -54,7 +54,7 @@ ul.plain{margin:4px 0 0;padding-left:18px} ul.plain li{margin:3px 0}
   <section class="card" id="story" style="border-color:var(--accent)"><div class="note">RC가 올린 분석을 불러오는 중이에요.</div></section>
   <div class="main">
     <div style="display:flex;flex-direction:column;gap:12px;min-width:0">
-      <section class="card"><h2>4시간봉 <small id="h4note"></small></h2><div class="chartbox"><svg class="c" id="ch4"></svg></div></section>
+      <section class="card"><h2><span id="h4title">4시간봉</span> <small id="h4note"></small></h2><div class="chartbox"><svg class="c" id="ch4"></svg></div></section>
       <section class="card"><h2>15분봉 <small id="m15note"></small></h2><div class="chartbox"><svg class="c" id="cm15"></svg></div></section>
       <section class="card"><h2>5분봉 <small id="m5note"></small></h2><div class="chartbox"><svg class="c" id="cm5"></svg></div></section>
     </div>
@@ -180,6 +180,7 @@ function render(){
   $("#tabs").querySelectorAll(".tab").forEach(b=>b.onclick=()=>{cur=b.dataset.s;render()});
   const d=DOCS[cur]; if(!d)return;
   $("#mode").textContent=SIMPLE?"자세히 보기":"간단히 보기";
+  $("#h4title").textContent=(d.tf_labels&&d.tf_labels.h4)||"4시간봉";
   $("#story").innerHTML=storyHTML(d);
   $("#sub").textContent=`마지막 분석 ${d.at||"—"} (KST) · RC비너스가 15분마다 갱신 · 주문은 하지 않아요.`;
   const lv=(d.levels||[]).slice(); if(d.card){["entry","sl","tp"].forEach(k=>{if(d.card[k]!=null)lv.push({name:{entry:"진입",sl:"손절",tp:"목표"}[k],price:d.card[k],kind:k})})}
