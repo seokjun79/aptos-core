@@ -56,6 +56,7 @@ ul.plain{margin:4px 0 0;padding-left:18px} ul.plain li{margin:3px 0}
     <div style="display:flex;flex-direction:column;gap:12px;min-width:0">
       <section class="card"><h2>4시간봉 <small id="h4note"></small></h2><div class="chartbox"><svg class="c" id="ch4"></svg></div></section>
       <section class="card"><h2>15분봉 <small id="m15note"></small></h2><div class="chartbox"><svg class="c" id="cm15"></svg></div></section>
+      <section class="card"><h2>5분봉 <small id="m5note"></small></h2><div class="chartbox"><svg class="c" id="cm5"></svg></div></section>
     </div>
     <aside style="display:flex;flex-direction:column;gap:12px">
       <section class="card" id="panel"><div class="empty">RC가 첫 분석을 올리면 여기에 판정이 보여요.</div></section>
@@ -158,10 +159,10 @@ function render(){
   $("#story").innerHTML=storyHTML(d);
   $("#sub").textContent=`마지막 분석 ${d.at||"—"} (KST) · RC비너스가 15분마다 갱신 · 주문은 하지 않아요.`;
   const lv=(d.levels||[]).slice(); if(d.card){["entry","sl","tp"].forEach(k=>{if(d.card[k]!=null)lv.push({name:{entry:"진입",sl:"손절",tp:"목표"}[k],price:d.card[k],kind:k})})}
-  chart("ch4",d.h4,lv,d.price,(d.smc||{}).h4); chart("cm15",d.m15,lv,d.price,(d.smc||{}).m15);
+  chart("ch4",d.h4,lv,d.price,(d.smc||{}).h4); chart("cm15",d.m15,lv,d.price,(d.smc||{}).m15); chart("cm5",d.m5,lv,d.price,(d.smc||{}).m5);
   const sm=(d.smc||{}).h4||{};
   if(!d.smc)$("#h4note").dataset.miss="1";
-  $("#h4note").textContent=d.h4?`최근 ${d.h4.length}개`:""; $("#m15note").textContent=d.m15?`최근 ${d.m15.length}개`:"";
+  $("#h4note").textContent=d.h4?`최근 ${d.h4.length}개`:""; $("#m15note").textContent=d.m15?`최근 ${d.m15.length}개`:""; $("#m5note").textContent=d.m5?`최근 ${d.m5.length}개`:"RC가 다음 업데이트부터 올려요";
   const t=d.trend||{};
   let h=`<div class="verdict">${d.card?`<span style="color:var(--up)">신호: ${esc(d.card.dir)} (${esc(d.card.grade||"")})</span>`:esc(d.status||"자리 없음")}</div>
     <table class="t"><tr><td>주봉</td><td>${trendPill(t.w)}</td></tr><tr><td>일봉</td><td>${trendPill(t.d)}</td></tr><tr><td>4시간</td><td>${trendPill(t.h4)}</td></tr>
