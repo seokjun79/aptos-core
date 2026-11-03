@@ -74,7 +74,9 @@ const dig=p=>p>=1000?2:p>=50?3:5;
 const fmt=(v,p)=>v==null?"—":(+v).toFixed(dig(p||v));
 const colorOf=k=>({crt:"--lvl",hl:"--hi",mss:"--warn",entry:"--entry",sl:"--sl",tp:"--tp"}[k]||"--mute");
 
+const IND_SYMS=["QLD","TQQQ"]; // 보조지표(MA20·MA200·RSI)는 이 종목에만
 function chart(id,bars,levels,price,smc){
+  const IND=IND_SYMS.includes(cur);
   const svg=document.getElementById(id);
   if(!bars||!bars.length){svg.setAttribute("viewBox","0 0 600 120");svg.innerHTML=`<text x="300" y="60" text-anchor="middle" fill="var(--mute)" font-size="13">봉 자료 없음</text>`;return}
   // 보조지표: 이동평균 20·200, RSI 14 — 받은 봉 전체로 계산하고 최근 구간만 그림
@@ -85,7 +87,7 @@ function chart(id,bars,levels,price,smc){
   const rsi=(()=>{const r=Array(closes.length).fill(null);let ag=0,al=0;for(let i=1;i<closes.length;i++){const ch=closes[i]-closes[i-1],gn=Math.max(ch,0),ls=Math.max(-ch,0);
     if(i<=14){ag+=gn/14;al+=ls/14;if(i===14)r[i]=al===0?100:100-100/(1+ag/al)}else{ag=(ag*13+gn)/14;al=(al*13+ls)/14;r[i]=al===0?100:100-100/(1+ag/al)}}return r.slice(off)})();
   bars=full.slice(off);
-  const W=760,H=360,L=8,R=150,T=12,B=22,n=bars.length,cw=(W-L-R)/n,RH=78,HT=H+RH+14;
+  const W=760,H=360,L=8,R=150,T=12,B=22,n=bars.length,cw=(W-L-R)/n,RH=78,HT=IND?H+RH+14:H;
   smc=smc||{};
   if(SIMPLE){smc={...smc,
     fvgs:(smc.fvgs||[]).filter(z=>!z.filled).slice(-2),
@@ -154,6 +156,7 @@ function chart(id,bars,levels,price,smc){
   labs.forEach(a=>g+=`<text x="${W-R+8}" y="${a.y+4}" font-size="11" fill="${a.col}" font-weight="600" font-family="JetBrains Mono,monospace">${esc(a.t)}</text>`);
   // 이동평균선
   const line=(arr,col,w)=>{const pts=arr.map((v,i)=>v==null?null:`${X(i).toFixed(1)},${cl(v).toFixed(1)}`).filter(Boolean);if(pts.length>1)g+=`<polyline points="${pts.join(" ")}" fill="none" stroke="${col}" stroke-width="${w}" opacity=".9"/>`};
+  if(IND){
   line(ma20,"#f59e0b",1.4); line(ma200,"#8b5cf6",1.8);
   const last=a=>{for(let i=a.length-1;i>=0;i--)if(a[i]!=null)return a[i];return null};
   g+=`<text x="${L+4}" y="${T+10}" font-size="10.5" font-weight="600"><tspan fill="#f59e0b">MA20 ${fmt(last(ma20),price)}</tspan><tspan dx="10" fill="#8b5cf6">MA200 ${last(ma200)==null?"자료 부족":fmt(last(ma200),price)}</tspan></text>`;
@@ -164,6 +167,7 @@ function chart(id,bars,levels,price,smc){
   const rp=rsi.map((v,i)=>v==null?null:`${X(i).toFixed(1)},${RY(v).toFixed(1)}`).filter(Boolean);
   if(rp.length>1)g+=`<polyline points="${rp.join(" ")}" fill="none" stroke="var(--entry)" stroke-width="1.4"/>`;
   const rl=last(rsi); g+=`<text x="${L+4}" y="${rt+11}" font-size="10.5" font-weight="600" fill="var(--entry)">RSI(14) ${rl==null?"—":rl.toFixed(1)}${rl!=null?(rl>=70?" 과열":rl<=30?" 침체":""):""}</text>`;
+  }
   svg.setAttribute("viewBox",`0 0 ${W} ${HT}`);svg.setAttribute("role","img");svg.innerHTML=g;
 }
 
