@@ -31,6 +31,12 @@
 - 설치 위치: RC PC `C:\Users\kun00\venus\qlib_env` (pyqlib 0.9.7, lightgbm 4.7.0, 가상환경 안에만). 실행은 RC비너스에게 맡긴다.
 - 주의: 출처 모르는 pickle·모델 파일은 열지 않는다. sudo·관리자 권한 기능(NFS mount)은 쓰지 않는다. 결과는 개발/검증/최종 구간을 나눠 확인한다.
 
+## 보조 코딩 AI: OpenAI Codex (석준님 지시, 2026-11-04)
+
+- RC PC에 Codex CLI(codex-cli 0.166.0, 석준님 ChatGPT 계정)가 있다. RC비너스가 `codex exec`로 코드 검사·두 번째 의견·단순 코딩을 맡긴다.
+- 보내지 않는 것: 키·토큰·계좌번호, auth.json·.env 같은 비밀 파일, 개인정보, ICT 강의 원문. MT5·EA·주문 파일은 맡기지 않는다.
+- 기본은 읽기 전용 샌드박스. Codex가 파일을 고치게 하려면 석준님 허락이 필요하다. Codex 결과는 RC가 확인한 뒤에만 쓴다.
+
 ## 작업 현황판
 
 https://claude.ai/artifact/8gHYgfmGCUFGEHRZmHJ3vq — `tasks` 컬렉션을 ArtifactData로 갱신한다 (맡길 때·소식 올 때·끝날 때).

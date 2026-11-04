@@ -7,6 +7,7 @@
 | qlib (pyqlib) | 마이크로소프트 AI 퀀트 연구 도구 | github.com/microsoft/qlib · pyqlib 0.9.7, lightgbm 4.7.0 | RC PC `C:\Users\kun00\venus\qlib_env` (가상환경 안에만) | 코드 검사 후 설치, 석준님 승인 | 2026-11-03 |
 | xgboost, torch (CPU) | qlib 딥러닝 모델용 | pip · xgboost 3.4.1, torch 2.15.0+cpu | RC PC `qlib_env` 안 | 석준님이 RC 창에서 직접 승인 | 2026-11-04 |
 | oil-ui | 화면 디자인 스킬(설명서+보조 스크립트) | github.com/oil-oil/oil-ui · 커밋 5b03da0 · MIT | 이 저장소 `.claude/skills/oil-ui/` (SOURCE.txt) | 코드 검사: 악성 없음. 자동 업데이트·버전 확인 끔(settings.json env) | 2026-11-04 |
+| Codex CLI | OpenAI 코딩 AI(명령어 버전) — RC가 코드 검사·보조 코딩에 씀 | npm @openai/codex · codex-cli 0.166.0 | RC PC `C:\Users\kun00\AppData\Roaming\npm\codex` · 석준님 ChatGPT 계정 로그인 | 석준님이 RC 창에서 직접 승인. 키·비밀 파일·개인정보는 보내지 않음, 기본 읽기 전용 | 2026-11-04 |
 
 규칙
 - 출처를 모르는 pickle·모델 파일은 열지 않는다.
