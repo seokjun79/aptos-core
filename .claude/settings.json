@@ -27,5 +27,9 @@
       "Bash(python3 *)",
       "Bash(curl *)"
     ]
+  },
+  "env": {
+    "OIL_NO_UPDATE_CHECK": "1",
+    "OIL_NO_AUTO_UPDATE": "1"
   }
 }

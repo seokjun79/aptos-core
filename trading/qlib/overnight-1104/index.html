@@ -1,87 +1,132 @@
-<title>qlib 밤샘 결과 11/4</title>
+<title>qlib 전략 판정표</title>
 <meta name="claude:viewport-fit-sides" content="cover">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;600;700&family=IBM+Plex+Mono:wght@500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
 <style>
-/* 한 줄 결론 → 표 → 이유 → 다음 할 일, 휴대폰 한 칸 흐름 */
+/* 방향: 시험 성적표. 한 화면 주인공 = "합격 0 / 7". 전략마다 한 줄, 기준 ①②③ 칸에 통과·탈락 도장 */
 :root{
-  --bg:#f6f7f5;--fg:#1d2420;--muted:#5d6862;--line:#d9dfdb;--card:#ffffff;
-  --bad:#b4372f;--bad-bg:#fbe9e7;--mid:#9a6a00;--mid-bg:#fbf1d9;--ok:#2d7a4b;--ok-bg:#e3f2e8;--accent:#2f5d50;
+  --bg:#f4f5f1;--paper:#ffffff;--ink:#1c211d;--muted:#5f6a63;--rule:#d8ddd6;
+  --fail:#b3322a;--fail-bg:#f9e6e3;--pass:#25744a;--pass-bg:#e1f1e7;--wait:#8a6a12;--wait-bg:#f6eed4;
   --sans:"IBM Plex Sans KR",system-ui,sans-serif;--mono:"IBM Plex Mono",ui-monospace,monospace;
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
-  --bg:#141917;--fg:#e4eae6;--muted:#9aa69f;--line:#2c3531;--card:#1b221f;
-  --bad:#f08a80;--bad-bg:#3a1f1c;--mid:#e5bb5c;--mid-bg:#352c16;--ok:#7fd19e;--ok-bg:#183024;--accent:#8cc3b1;color-scheme:dark}}
+  --bg:#121614;--paper:#1a1f1c;--ink:#e6ebe7;--muted:#9ba69f;--rule:#2d3530;
+  --fail:#f2877d;--fail-bg:#3a1f1c;--pass:#7fd3a0;--pass-bg:#173021;--wait:#e3c062;--wait-bg:#33290f;color-scheme:dark}}
 :root[data-theme="dark"]{
-  --bg:#141917;--fg:#e4eae6;--muted:#9aa69f;--line:#2c3531;--card:#1b221f;
-  --bad:#f08a80;--bad-bg:#3a1f1c;--mid:#e5bb5c;--mid-bg:#352c16;--ok:#7fd19e;--ok-bg:#183024;--accent:#8cc3b1;color-scheme:dark}
-body{background:var(--bg);color:var(--fg);font-family:var(--sans);font-size:15px;line-height:1.6}
-.wrap{max-width:760px;margin:0 auto;padding-block:24px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:22px}
-h1{font-size:1.45rem;margin:0;text-wrap:balance}
-h2{font-size:1.08rem;margin:0 0 8px;color:var(--accent)}
-.sub{color:var(--muted);font-size:.85rem;margin-top:4px}
-.verdict{background:var(--card);border:1px solid var(--line);border-left:5px solid var(--bad);border-radius:8px;padding:14px 16px;font-weight:600}
-.tbl{overflow-x:auto}
-table{border-collapse:collapse;width:100%;min-width:560px;font-size:.88rem}
-th,td{padding:9px 8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
-th{color:var(--muted);font-weight:600;font-size:.8rem}
-td.n{font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
-.pill{display:inline-block;padding:2px 8px;border-radius:999px;font-size:.78rem;font-weight:700;white-space:nowrap}
-.bad{background:var(--bad-bg);color:var(--bad)}.mid{background:var(--mid-bg);color:var(--mid)}.ok{background:var(--ok-bg);color:var(--ok)}
-ul{margin:0;padding-left:20px;display:grid;gap:6px}
-.note{color:var(--muted);font-size:.82rem}
+  --bg:#121614;--paper:#1a1f1c;--ink:#e6ebe7;--muted:#9ba69f;--rule:#2d3530;
+  --fail:#f2877d;--fail-bg:#3a1f1c;--pass:#7fd3a0;--pass-bg:#173021;--wait:#e3c062;--wait-bg:#33290f;color-scheme:dark}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.65}
+.wrap{max-width:720px;margin:0 auto;padding-block:20px 56px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:28px}
+.kicker{font-size:.78rem;letter-spacing:.06em;color:var(--muted)}
+.score{display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap}
+.score .big{font-family:var(--mono);font-weight:600;font-size:3.6rem;line-height:1;color:var(--fail);font-variant-numeric:tabular-nums}
+.score .big small{font-size:1.6rem;color:var(--muted)}
+.score p{margin:0;font-size:1.05rem;font-weight:600;max-width:24em;text-wrap:balance}
+h2{font-size:1rem;margin:0 0 10px}
+.rules{display:grid;gap:6px;margin:0;padding:0;list-style:none}
+.rules li{display:grid;grid-template-columns:1.8em 1fr;gap:4px}
+.rules b{font-family:var(--mono);color:var(--muted)}
+.sheet{background:var(--paper);border:1px solid var(--rule);border-radius:6px}
+.row{display:grid;grid-template-columns:1fr auto;gap:10px 14px;padding:14px 16px;border-top:1px solid var(--rule)}
+.row:first-child{border-top:0}
+.name{font-weight:700}
+.name span{display:block;font-weight:400;font-size:.82rem;color:var(--muted)}
+.marks{display:flex;gap:6px;align-items:flex-start}
+.m{font-style:normal;width:2.1em;height:2.1em;border-radius:50%;display:grid;place-items:center;font-family:var(--mono);font-size:.8rem;font-weight:600}
+.m.x{background:var(--fail-bg);color:var(--fail)}.m.o{background:var(--pass-bg);color:var(--pass)}.m.w{background:var(--wait-bg);color:var(--wait)}
+.nums{grid-column:1/-1;display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:4px 16px;font-size:.84rem;color:var(--muted)}
+.nums em{white-space:nowrap;font-style:normal;font-family:var(--mono);font-variant-numeric:tabular-nums;color:var(--ink)}
+.neg{color:var(--fail)!important}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:.8rem;color:var(--muted);margin-top:8px}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend .m{width:1.6em;height:1.6em;font-size:.7rem}
+ul.plain{margin:0;padding-left:1.1em;display:grid;gap:6px}
+.next{border-left:3px solid var(--wait);padding:4px 0 4px 14px}
+.foot{font-size:.8rem;color:var(--muted)}
 </style>
 <div class="wrap">
-  <header>
-    <h1>qlib AI 밤샘 시험 결과</h1>
-    <div class="sub">2026-11-04 아침 · RC비너스 실행, 매니저 비너스 정리 · 원본: RC PC learning\qlib_overnight_report.md</div>
+  <header style="display:grid;gap:10px">
+    <div class="kicker">QLIB AI 전략 판정 · 2026-11-04 · RC비너스 실행, 매니저 비너스 정리</div>
+    <div class="score">
+      <div class="big">0<small> / 7 합격</small></div>
+      <p>지금 실전에 적용할 AI 전략은 없어요. 시험한 7개 모두 불합격이에요.</p>
+    </div>
   </header>
 
-  <div class="verdict">결론: 외환·미국·한국 모두 시험은 끝났지만, 믿고 매매에 쓸 만한 AI 신호는 아직 없어요.</div>
-
   <section>
-    <h2>시험별 결과 (거래 비용 뺀 뒤)</h2>
-    <div class="tbl"><table>
-      <thead><tr><th>시험</th><th>검증 구간</th><th>최종 구간</th><th>판단</th></tr></thead>
-      <tbody>
-        <tr><td>외환 47종목 v1<br><span class="note">하루 예측, 매일 사고팔기</span></td><td class="n">연 −24.9%</td><td class="n">연 −0.9%</td><td><span class="pill bad">비용이 다 먹음</span></td></tr>
-        <tr><td>외환 v2 1등<br><span class="note">석준님 SMC·ICT 재료 추가, 5일</span></td><td class="n">2022 +3.5%<br>→ 23~24 −1.5%</td><td class="n">—</td><td><span class="pill bad">불합격</span></td></tr>
-        <tr><td>외환 v2 2등<br><span class="note">기본 재료, 5일</span></td><td class="n">2022 +0.5%<br>→ 23~24 −3.5%</td><td class="n">—</td><td><span class="pill bad">불합격</span></td></tr>
-        <tr><td>미국 나스닥100<br><span class="note">5일 예측</span></td><td class="n">지수보다 연 −7.3%<br>IR −0.48</td><td class="n">지수보다 연 +30.1%<br>IR 1.35 · MDD −34% (지수 −24%)</td><td><span class="pill bad">불합격</span></td></tr>
-        <tr><td>한국 코스피200+코스닥150<br><span class="note">5일 예측</span></td><td class="n">지수보다 연 +35.1%<br>IR 1.05</td><td class="n">지수보다 연 +10.6%<br>IR 0.27 · MDD −63% (지수 −48%)</td><td><span class="pill bad">불합격</span></td></tr>
-        <tr><td>미국 딥러닝 (GRU)<br><span class="note">GRU·LSTM·ALSTM 중 검증으로 고름, 10일 보유</span></td><td class="n">지수보다 연 +18.0%<br>IR 0.86</td><td class="n">지수보다 연 −14.1%<br>IR −0.51 · MDD −52% (지수 −24%)</td><td><span class="pill bad">불합격</span></td></tr>
-        <tr><td>한국 딥러닝 (ALSTM)<br><span class="note">4개 모델 중 검증으로 고름, 10일 보유</span></td><td class="n">지수보다 연 +42.5%<br>IR 1.46</td><td class="n">지수보다 연 +9.1%<br>IR 0.19 · MDD −32% (지수 −48%)</td><td><span class="pill bad">불합격</span></td></tr>
-      </tbody>
-    </table></div>
-    <p class="note">검증 = 처음 보는 기간(2022~23). 최종 = 맨 마지막(2024년~)에 딱 한 번 본 것. <b>합격 기준(3개 모두)</b>: ① 두 구간 모두 비용 후 지수보다 높음 ② 두 구간 모두 IR 0.5 이상 ③ 최종 최대 하락(MDD)이 지수보다 나쁘지 않음. 미국 비교 대상은 같은 101종목 똑같은 비중 평균(나스닥100 지수 파일 없음).</p>
+    <h2>합격 기준 (3개 모두 넘어야 합격)</h2>
+    <ul class="rules">
+      <li><b>①</b>처음 보는 두 기간(2022~23, 2024~) 모두 거래 비용 뺀 뒤 지수보다 더 벌 것</li>
+      <li><b>②</b>두 기간 모두 위험 대비 수익(IR)이 0.5 이상일 것 — 들쭉날쭉하지 않고 꾸준히 더 벌었는지</li>
+      <li><b>③</b>2024~ 기간에 가장 크게 떨어진 폭(MDD)이 지수보다 깊지 않을 것</li>
+    </ul>
+    <div class="legend"><span><i class="m o">○</i>통과</span><span><i class="m x">✕</i>탈락</span><span>외환은 비교할 지수가 없어 ①을 "비용 뺀 뒤 플러스"로 봤어요</span></div>
   </section>
 
   <section>
-    <h2>왜 아직 믿으면 안 되나</h2>
-    <ul>
-      <li><b>AI가 거의 못 배웠어요.</b> 결정나무를 1~4개만 쓰고 멈췄어요. 옛날에 배운 패턴이 다음 기간에 거의 안 통했다는 뜻이에요.</li>
-      <li><b>주식은 결과가 부풀려졌을 수 있어요.</b> 지금 지수에 남아 있는 종목만 썼어요(생존 편향 = 망하거나 빠진 회사가 빠져 있음). 한국은 2023년 2차전지 급등이 크게 섞였어요.</li>
-      <li><b>한국 최종 구간 최대 하락이 −63%</b>로 지수(−48%)보다 깊었어요. (처음 보고의 −80%는 잘못 옮긴 숫자라 고쳤어요.)</li>
-      <li><b>미국은 거래량 숫자가 일부 틀렸어요.</b> 주식 분할이 반영 안 된 채로 계산됐어요(분할 목록이 없어서 고치지 못함).</li>
-      <li>딥러닝(GRU)과 XGBoost도 돌려 봤는데, 기본 LightGBM보다 나빴어요.</li>
+    <h2>주식 (나스닥100 · 코스피200+코스닥150)</h2>
+    <div class="sheet">
+      <div class="row">
+        <div class="name">한국 · 딥러닝 ALSTM<span>10일 보유, 1종목씩 교체</span></div>
+        <div class="marks"><i class="m o">①</i><i class="m x">②</i><i class="m o">③</i></div>
+        <div class="nums"><div>지수보다 <em>+42.5% → +9.1%</em></div><div>IR <em>1.46 → <span class="neg">0.19</span></em></div><div>MDD <em>−32%</em> (지수 −48%)</div></div>
+      </div>
+      <div class="row">
+        <div class="name">한국 · 기본 AI LightGBM<span>매일 2종목씩 교체</span></div>
+        <div class="marks"><i class="m o">①</i><i class="m x">②</i><i class="m x">③</i></div>
+        <div class="nums"><div>지수보다 <em>+35.1% → +10.6%</em></div><div>IR <em>1.05 → <span class="neg">0.27</span></em></div><div>MDD <em class="neg">−63%</em> (지수 −48%)</div></div>
+      </div>
+      <div class="row">
+        <div class="name">미국 · 기본 AI LightGBM<span>매일 2종목씩 교체</span></div>
+        <div class="marks"><i class="m x">①</i><i class="m x">②</i><i class="m x">③</i></div>
+        <div class="nums"><div>지수보다 <em><span class="neg">−7.3%</span> → +30.1%</em></div><div>IR <em><span class="neg">−0.48</span> → 1.35</em></div><div>MDD <em class="neg">−34%</em> (지수 −24%)</div></div>
+      </div>
+      <div class="row">
+        <div class="name">미국 · 딥러닝 GRU<span>10일 보유, 1종목씩 교체</span></div>
+        <div class="marks"><i class="m x">①</i><i class="m x">②</i><i class="m x">③</i></div>
+        <div class="nums"><div>지수보다 <em>+18.0% → <span class="neg">−14.1%</span></em></div><div>IR <em>0.86 → <span class="neg">−0.51</span></em></div><div>MDD <em class="neg">−52%</em> (지수 −24%)</div></div>
+      </div>
+    </div>
+    <p class="foot">숫자는 "2022~23 → 2024~" 순서, 1년 기준. 지금 지수에 남은 회사만 써서 실제보다 좋게 나왔을 수 있어요(생존 편향). 미국 지수는 같은 101종목을 똑같이 나눠 산 평균이에요.</p>
+  </section>
+
+  <section>
+    <h2>외환·금·지수 47종목</h2>
+    <div class="sheet">
+      <div class="row">
+        <div class="name">석준님 SMC·ICT 재료 추가<span>5일 예측, 1종목씩 교체 · v2 1등</span></div>
+        <div class="marks"><i class="m x">①</i></div>
+        <div class="nums"><div>2022 <em>+3.5%</em> → 2023~24 <em class="neg">−1.5%</em></div></div>
+      </div>
+      <div class="row">
+        <div class="name">기본 재료<span>5일 예측, 1종목씩 교체 · v2 2등</span></div>
+        <div class="marks"><i class="m x">①</i></div>
+        <div class="nums"><div>2022 <em>+0.5%</em> → 2023~24 <em class="neg">−3.5%</em></div></div>
+      </div>
+      <div class="row">
+        <div class="name">기본 재료 v1<span>하루 예측, 매일 사고팔기</span></div>
+        <div class="marks"><i class="m x">①</i></div>
+        <div class="nums"><div>2022~24 <em class="neg">−24.9%</em> → 2025~ <em class="neg">−0.9%</em></div><div>비용 전엔 +19.9%, 거래 비용이 다 먹음</div></div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>시험에서 알게 된 것</h2>
+    <ul class="plain">
+      <li><b>모델을 바꿔도 같았어요.</b> 기본 AI든 딥러닝이든 옛날 패턴이 다음 기간에 이어지지 않았어요.</li>
+      <li><b>덜 사고팔수록 나아졌어요.</b> 10일 보유·1종목 교체로 바꾸니 8개 후보 전부 2022~23 성적이 좋아졌어요. 다만 2024~까지 넘긴 건 없어요.</li>
+      <li><b>석준님 CRT 위치는 AI도 중요하게 봤어요.</b> "4시간 CRT 범위 안 가격 위치"가 재료 168개 중 4위였어요. 혼자서 비용을 이기진 못했어요.</li>
     </ul>
   </section>
 
-  <section>
-    <h2>석준님 SMC·ICT 규칙에서 건진 것</h2>
-    <ul>
-      <li><b>"4시간 CRT 범위 안에서 지금 가격 위치"</b>가 AI 재료 168개 중 <b>4위</b>로 많이 쓰였어요(하루 예측).</li>
-      <li><b>"뉴욕 세션 흐름"</b>은 13위였어요. 나머지 SMC 재료는 거의 쓰이지 않았어요.</li>
-      <li>즉 석준님이 보시는 CRT 위치는 AI도 "중요하다"고 봤지만, 그것만으로 비용을 이기지는 못했어요.</li>
+  <section class="next">
+    <h2>지금 진행 중</h2>
+    <ul class="plain">
+      <li>미국·한국 <b>상장 기업 전체</b>로 다시 시험해요. 한국은 상장폐지 345개 포함 2,905종목이에요.</li>
+      <li>재료에 <b>매크로(환율·금리·유가 등)</b>와 <b>한국 수급(외국인·기관·개인)</b>을 더해요. 합격 기준은 위 3개 그대로예요.</li>
+      <li>자료 모으는 데 4~5일 걸려요(추정). 한국 가격이 먼저 끝나면 그것부터 시험해요.</li>
     </ul>
   </section>
 
-  <section>
-    <h2>실시간 차트 신호 (어제 11/3)</h2>
-    <ul>
-      <li>신호 10건 중 결과가 난 9건: 3승 6패, 합계 −0.98R(손절 1번 크기의 약 1배 손실).</li>
-      <li>감시 프로그램과 15분 반복은 계속 돌고 있어요. 주문은 하지 않았어요.</li>
-    </ul>
-  </section>
-
-  <p class="note">AI 점수 상위·하위 10종목 표는 RC PC의 results_us_final.md, results_kr_final.md에 있어요. 점수 동점이 많아 순서에 의미가 거의 없고, 매매 권유가 아니에요. 투자 결정은 석준님이 하세요.</p>
+  <p class="foot">원본: RC PC learning\qlib_overnight_report.md, results_dl_*.md. 이 페이지는 정보 정리이고 매매 권유가 아니에요. 투자 결정은 석준님이 해요.</p>
 </div>
