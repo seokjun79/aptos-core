@@ -188,7 +188,7 @@ function chart(id,bars,levels,price,smc){
   const ys=[];bars.forEach(b=>ys.push(b[2],b[3]));
   const lv=(levels||[]).filter(l=>l.price!=null);
   const lo0=Math.min(...ys),hi0=Math.max(...ys),span=hi0-lo0;
-  lv.forEach(l=>{if(l.price>lo0-span*.6&&l.price<hi0+span*.6)ys.push(l.price)});
+  lv.forEach(l=>{if(["entry","sl","tp"].includes(l.kind)||(l.price>lo0-span*.6&&l.price<hi0+span*.6))ys.push(l.price)});
   let lo=Math.min(...ys),hi=Math.max(...ys);const m=(hi-lo)*.05;lo-=m;hi+=m;
   const Y=v=>T+(hi-v)/(hi-lo)*(H-T-B),X=i=>L+i*cw+cw/2;
   let g="";
