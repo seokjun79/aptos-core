@@ -28,7 +28,7 @@
 ## 퀀트·AI 매매 도구: Microsoft qlib (석준님 지시, 2026-11-03)
 
 - https://github.com/microsoft/qlib — 마이크로소프트가 만든 AI 알고리즘 트레이딩 프레임워크. 보조지표를 넘어 머신러닝·딥러닝 모델로 매매 신호를 예측하고 퀀트 전략을 고도화할 때 **항상 qlib를 쓴다.**
-- 설치 위치: RC PC `C:\Users\kun00\venus\qlib_env` (pyqlib 0.9.7, lightgbm 4.7.0, 가상환경 안에만). 실행은 RC비너스에게 맡긴다.
+- 설치 위치: 집 PC `C:\Users\kun00\venus\qlib_env` (pyqlib 0.9.7, lightgbm 4.7.0, xgboost·torch CPU, 가상환경 안에만). RC·JC가 같은 PC라 둘 다 쓴다: **주식 시험은 JC비너스, FX 시험은 RC비너스**. 무거운 학습은 PC 전체에서 한 번에 하나만(`C:\Users\kun00\qlib_lock.txt`로 순서), 남은 메모리 3GB 아래면 멈춤.
 - 주의: 출처 모르는 pickle·모델 파일은 열지 않는다. sudo·관리자 권한 기능(NFS mount)은 쓰지 않는다. 결과는 개발/검증/최종 구간을 나눠 확인한다.
 
 ## 보조 코딩 AI: OpenAI Codex (석준님 지시, 2026-11-04)
