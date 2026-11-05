@@ -8,7 +8,7 @@
 - **JC비너스**: 집 PC 상주 세션 (C:\Users\kun00\stock-venus). 주식 전담(기업정보·차트·매크로, 보유 종목 점검). 규칙 원본 `trading/stock-venus/CLAUDE.md`.
 - **그때그때 부르는 담당** (`.claude/agents/`): researcher(조사), reviewer(검수, 직접 안 고침), fx-trader, data-collector, web-builder, auction-analyst, game-dev, game-artist, personal-assistant.
 - PC 세션은 `send_message`로 일을 맡기고, `SendMessage`로 보고를 받는다. 세션 ID는 다시 켤 때마다 바뀌니 `list_sessions`로 찾는다.
-- PC 세션에 일을 맡긴 뒤 답이 늦으면 석준님이 묻기 전에 `get_session`으로 상태를 본다. `REQUIRES_ACTION`(확인 대기로 멈춤)이면 바로 다른 PC 세션에게 그 세션 새 창을 켜게 하고(사전 허용), 석준님께 한 줄로 알린다. 감시처럼 오래 걸리는 일은 `send_later`로 15~30분마다 상태를 직접 확인한다.
+- PC 세션에 일을 맡긴 뒤 답이 늦으면 석준님이 묻기 전에 `get_session`으로 상태를 본다. `REQUIRES_ACTION`(확인 대기로 멈춤)이면 바로 다른 PC 세션에게 그 세션 새 창을 켜게 하고(사전 허용), 석준님께 한 줄로 알린다. 감시처럼 오래 걸리는 일은 예약으로 상태를 확인한다. **예약 규칙(2026-11-05 확인):** 이 세션으로 바로 쏘는 예약(`send_later`, persistent_session_id=이 세션)은 매번 ACCESS_DENIED로 실패한다. 예약은 반드시 `create_trigger`의 `create_new_session_on_fire=true` + 프롬프트 "send_message로 이 세션에 [예약 알림] 문장 보내고 끝내기" 방식으로 만든다(이 방식은 성공함).
 
 ## 일하는 순서
 
