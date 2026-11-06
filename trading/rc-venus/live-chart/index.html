@@ -64,6 +64,11 @@ body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:15
 .verdict .sym{font-size:15px;font-weight:700;color:var(--mute)}
 .verdict .dir{font-size:28px;line-height:1.15;font-weight:700}
 .verdict .dir.up{color:var(--up)} .verdict .dir.dn{color:var(--down)} .verdict .dir.n{font-size:22px}
+.rulebox{border:1px solid var(--line);border-radius:8px;padding:10px 12px;margin:0 0 12px;display:grid;gap:4px}
+.rulebox .k{font-size:12px;color:var(--mute);letter-spacing:.04em}
+.rulebox .st{font-size:24px;font-weight:700;line-height:1.2}
+.rulebox .st.cash{color:var(--mute)} .rulebox .st.one{color:var(--entry)} .rulebox .st.two{color:var(--up)}
+.rulebox .why{font-size:13px;color:var(--fg)}
 .grade{font-size:13px;font-weight:700;border:1.5px solid currentColor;border-radius:6px;padding:0 6px}
 .lv3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-bottom:10px}
 .lv3 div{background:var(--panel-2);border-radius:10px;padding:8px 9px;min-width:0}
@@ -290,6 +295,11 @@ function render(){
   let h=`<div class="verdict"><span class="sym">${esc(cur)}</span>`+(c
     ?`<span class="dir ${k}">${k==="dn"?"▼":k==="up"?"▲":""} ${esc(c.dir)}</span>${c.grade?`<span class="grade ${k}" style="color:var(--${k==="dn"?"down":k==="up"?"up":"mute"})">${esc(c.grade)}급</span>`:""}`
     :`<span class="dir n">기다리는 중</span><span class="note">${esc(d.status||"자리 없음")}</span>`)+`</div>`;
+  // 규칙 상태(QLD·TQQQ·IQQ): d.rule {state,text} 또는 story 첫 줄 "규칙..."에서 읽음
+  if(IND_SYMS.includes(cur)){const rl=(d.rule&&d.rule.text)||((Array.isArray(d.story)&&/^규칙/.test(d.story[0]||""))?d.story[0]:"");
+    if(rl){const st=(d.rule&&d.rule.state)||((rl.match(/→\s*([^\[]+)/)||[])[1]||"").trim();
+      const cls=/QLD|2배/.test(st)?"two":/QQQ|1배/.test(st)?"one":"cash";
+      h+=`<div class="rulebox"><span class="k">규칙 상태 · 추세+변동성 3단계</span><span class="st ${cls}">${esc(st||"—")}</span><span class="why">${esc(rl.replace(/\s*→.*$/,""))}</span></div>`;}}
   if(c){h+=`<div class="lv3"><div class="e"><span>진입</span><b>${fmt(c.entry,c.entry)}</b></div><div class="l"><span>손절</span><b>${fmt(c.sl,c.sl)}</b></div><div class="t"><span>목표</span><b>${fmt(c.tp,c.tp)}</b></div></div>
     <div class="rr"><span>손익비 <b>${c.rr!=null?"1 : "+(+c.rr).toFixed(2):"—"}</b></span><span>지금 <b>${fmt(d.price,d.price)}</b></span></div>`;}
   h+=`<div class="trend"><div><em>주봉</em>${trendPill(t.w)}</div><div><em>일봉</em>${trendPill(t.d)}</div><div><em>4시간</em>${trendPill(t.h4)}</div></div>`;
