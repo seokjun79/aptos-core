@@ -7,7 +7,7 @@
 :root{
   --bg:#eceff3; --panel:#ffffff; --panel-2:#f5f7fa; --line:#d8dde5; --grid:#e9edf2; --fg:#10151c; --mute:#566273;
   --up:#0f7a55; --down:#c23a31; --entry:#1c5fd4; --sl:#c23a31; --tp:#0f7a55; --lvl:#86620f; --hi:#6a3fd2;
-  --warn:#a35c00; --bos:#8a6f00; --ma20:#c27403; --ma200:#7a4bd9;
+  --warn:#a35c00; --bos:#8a6f00; --ma20:#c27403; --ma50:#1f8a70; --ma200:#7a4bd9;
   --accent:#10151c; --up-soft:#dcf1e8; --down-soft:#f8e1de; --n-soft:#f3e9d6; --entry-soft:#e1eafb;
   --f-body:"IBM Plex Sans KR",system-ui,sans-serif; --f-num:"JetBrains Mono",ui-monospace,monospace;
   --r:14px;
@@ -15,13 +15,13 @@
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
   --bg:#0a0d11; --panel:#12161c; --panel-2:#181d25; --line:#252c37; --grid:#1b212a; --fg:#e9edf2; --mute:#8f9aab;
   --up:#37c78e; --down:#f26a5f; --entry:#62a8ff; --sl:#f26a5f; --tp:#37c78e; --lvl:#dcaa47; --hi:#b592ff;
-  --warn:#eaa646; --bos:#e6c443; --ma20:#f5a524; --ma200:#a98bfa;
+  --warn:#eaa646; --bos:#e6c443; --ma20:#f5a524; --ma50:#4fd1a5; --ma200:#a98bfa;
   --accent:#e9edf2; --up-soft:#10291f; --down-soft:#2e1513; --n-soft:#2a2112; --entry-soft:#14243b;
   color-scheme:dark}}
 :root[data-theme="dark"]{
   --bg:#0a0d11; --panel:#12161c; --panel-2:#181d25; --line:#252c37; --grid:#1b212a; --fg:#e9edf2; --mute:#8f9aab;
   --up:#37c78e; --down:#f26a5f; --entry:#62a8ff; --sl:#f26a5f; --tp:#37c78e; --lvl:#dcaa47; --hi:#b592ff;
-  --warn:#eaa646; --bos:#e6c443; --ma20:#f5a524; --ma200:#a98bfa;
+  --warn:#eaa646; --bos:#e6c443; --ma20:#f5a524; --ma50:#4fd1a5; --ma200:#a98bfa;
   --accent:#e9edf2; --up-soft:#10291f; --down-soft:#2e1513; --n-soft:#2a2112; --entry-soft:#14243b;
   color-scheme:dark}
 *{box-sizing:border-box}
@@ -143,7 +143,7 @@ button:focus-visible{outline:2px solid var(--entry);outline-offset:2px}
   <section class="card sigs"><div class="kicker">최근 신호 <small>가상 채점</small></div><div id="sigs" class="note">아직 신호가 없어요.</div></section>
   <details class="legend">
     <summary>차트 표시 읽는 법</summary>
-    <p>SMC 표시: HH·HL·LH·LL = 스윙 고저 · <b style="color:var(--bos)">BOS</b> = 같은 방향 구조 돌파 · <b style="color:var(--warn)">CHoCH/MSS</b> = 방향 전환 돌파(몸통 마감) · 상자 = 오더블록(OB)·FVG · 점선 = 같은 높이 고점/저점(EQH/EQL, 유동성) · 빨강/초록 배경 = 프리미엄/디스카운트.<br>선 색: 4H CRH/CRL = 기준 4시간 캔들의 고점·저점(그 캔들에만 짧게 표시) · <span style="color:var(--hi)">■</span> 전일·런던·아시아 고저 · 오른쪽 바깥 ◀ 표시: <span style="color:var(--entry)">■</span> 진입 · <span style="color:var(--sl)">■</span> 손절 · <span style="color:var(--tp)">■</span> 목표. QLD·TQQQ만 MA20·MA200·RSI(14)를 함께 그려요.</p>
+    <p>SMC 표시: HH·HL·LH·LL = 스윙 고저 · <b style="color:var(--bos)">BOS</b> = 같은 방향 구조 돌파 · <b style="color:var(--warn)">CHoCH/MSS</b> = 방향 전환 돌파(몸통 마감) · 상자 = 오더블록(OB)·FVG · 점선 = 같은 높이 고점/저점(EQH/EQL, 유동성) · 빨강/초록 배경 = 프리미엄/디스카운트.<br>선 색: 4H CRH/CRL = 기준 4시간 캔들의 고점·저점(그 캔들에만 짧게 표시) · <span style="color:var(--hi)">■</span> 전일·런던·아시아 고저 · 오른쪽 바깥 ◀ 표시: <span style="color:var(--entry)">■</span> 진입 · <span style="color:var(--sl)">■</span> 손절 · <span style="color:var(--tp)">■</span> 목표. QLD·TQQQ·IQQ만 EMA20·EMA50·EMA200과 RSI(14)를 함께 그려요.</p>
     <p>자료: RC비너스가 석준님 MT5(IC Markets) 차트에서 읽은 값. 투자 결정은 석준님이 하세요.</p>
   </details>
 </div>
@@ -159,19 +159,20 @@ const colorOf=k=>({crt:"--lvl",hl:"--hi",mss:"--warn",entry:"--entry",sl:"--sl",
 const dk=v=>/매도|sell|short|하락/i.test(v||"")?"dn":/매수|buy|long|상승/i.test(v||"")?"up":"n";
 // 차트 색은 :root 토큰에서 읽어 SVG에 실제 색으로 넣음(밝은/어두운 화면 모두 또렷하게)
 const tokens=()=>{const cs=getComputedStyle(document.documentElement),o={};
-  ["--bg","--panel","--line","--grid","--fg","--mute","--up","--down","--entry","--sl","--tp","--lvl","--hi","--warn","--bos","--ma20","--ma200"].forEach(k=>o[k]=cs.getPropertyValue(k).trim());return o};
+  ["--bg","--panel","--line","--grid","--fg","--mute","--up","--down","--entry","--sl","--tp","--lvl","--hi","--warn","--bos","--ma20","--ma50","--ma200"].forEach(k=>o[k]=cs.getPropertyValue(k).trim());return o};
 const paint=g=>{const t=tokens();return g.replace(/var\((--[\w-]+)\)/g,(m,k)=>t[k]||m)};
 
-const IND_SYMS=["QLD","TQQQ"]; // 보조지표(MA20·MA200·RSI)는 이 종목에만
+const IND_SYMS=["QLD","TQQQ","IQQ"]; // 보조지표(EMA20·50·200, RSI)는 이 종목에만
 function chart(id,bars,levels,price,smc){
   const IND=IND_SYMS.includes(cur);
   const svg=document.getElementById(id);
   if(!bars||!bars.length){svg.setAttribute("viewBox","0 0 600 120");svg.innerHTML=`<text x="300" y="60" text-anchor="middle" fill="var(--mute)" font-size="15">봉 자료 없음</text>`;svg.innerHTML=paint(svg.innerHTML);return}
-  // 보조지표: 이동평균 20·200, RSI 14 — 받은 봉 전체로 계산하고 최근 구간만 그림
+  // 보조지표: 지수이동평균(EMA) 20·50·200, RSI 14 — 받은 봉 전체로 계산하고 최근 구간만 그림
   const full=bars, SHOWN={ch4:120,cm15:96,cm5:144}[id]||full.length, off=Math.max(0,full.length-SHOWN);
   const closes=full.map(b=>+b[4]);
-  const sma=p=>closes.map((_,i)=>i+1<p?null:closes.slice(i+1-p,i+1).reduce((a,c)=>a+c,0)/p);
-  const ma20=sma(20).slice(off), ma200=sma(200).slice(off);
+  // EMA: 첫 값은 처음 p개 평균, 그다음 k=2/(p+1)로 이어감
+  const ema=p=>{const r=Array(closes.length).fill(null),k=2/(p+1);if(closes.length<p)return r;let e=closes.slice(0,p).reduce((a,c)=>a+c,0)/p;r[p-1]=e;for(let i=p;i<closes.length;i++){e=closes[i]*k+e*(1-k);r[i]=e}return r};
+  const ma20=ema(20).slice(off), ma50=ema(50).slice(off), ma200=ema(200).slice(off);
   const rsi=(()=>{const r=Array(closes.length).fill(null);let ag=0,al=0;for(let i=1;i<closes.length;i++){const ch=closes[i]-closes[i-1],gn=Math.max(ch,0),ls=Math.max(-ch,0);
     if(i<=14){ag+=gn/14;al+=ls/14;if(i===14)r[i]=al===0?100:100-100/(1+ag/al)}else{ag=(ag*13+gn)/14;al=(al*13+ls)/14;r[i]=al===0?100:100-100/(1+ag/al)}}return r.slice(off)})();
   bars=full.slice(off);
@@ -247,9 +248,9 @@ function chart(id,bars,levels,price,smc){
   const line=(arr,col,w)=>{let seg=[];const flush=()=>{if(seg.length>1)g+=`<polyline points="${seg.join(" ")}" fill="none" stroke="${col}" stroke-width="${w}" opacity=".9"/>`;seg=[]};
     arr.forEach((v,i)=>{if(v==null||v<lo||v>hi){flush();return}seg.push(`${X(i).toFixed(1)},${Y(v).toFixed(1)}`)});flush()};
   if(IND){
-  line(ma20,"var(--ma20)",1.6); line(ma200,"var(--ma200)",2);
+  line(ma20,"var(--ma20)",1.5); line(ma50,"var(--ma50)",1.7); line(ma200,"var(--ma200)",2);
   const last=a=>{for(let i=a.length-1;i>=0;i--)if(a[i]!=null)return a[i];return null};
-  g+=`<text x="${L+4}" y="${T+10}" font-size="12" font-weight="600"><tspan fill="var(--ma20)">MA20 ${fmt(last(ma20),price)}</tspan><tspan dx="10" fill="var(--ma200)">MA200 ${last(ma200)==null?"자료 부족":fmt(last(ma200),price)}</tspan></text>`;
+  g+=`<text x="${L+4}" y="${T+10}" font-size="12" font-weight="600"><tspan fill="var(--ma20)">EMA20 ${fmt(last(ma20),price)}</tspan><tspan dx="10" fill="var(--ma50)">EMA50 ${last(ma50)==null?"자료 부족":fmt(last(ma50),price)}</tspan><tspan dx="10" fill="var(--ma200)">EMA200 ${last(ma200)==null?"자료 부족":fmt(last(ma200),price)}</tspan></text>`;
   // RSI(14) 아래 칸
   const rt=H+8, rb=H+8+RH, RY=v=>rt+(100-v)/100*(rb-rt);
   g+=`<rect x="${L}" y="${rt}" width="${W-R-L}" height="${RH}" fill="var(--grid)" opacity=".5"/>`;
