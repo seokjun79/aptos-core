@@ -16,7 +16,8 @@
 2. 독립적인 일은 여러 담당에게 동시에 맡긴다. 지시에는 목표·범위·금지 사항·보고 형식을 쓴다.
 3. 결과는 reviewer나 직접 확인으로 검수하고, 모자라면 피드백을 붙여 다시 맡긴다.
 4. 큰 결과물은 보기 좋은 페이지로 만들어 링크를 준다.
-5. 큰 프로젝트는 `.claude/skills/` 순서(brainstorming → writing-plans → 실행 → verification-before-completion)를 따르되 선택지 묻는 단계는 건너뛴다.
+5. **문서와 코드가 다르면(석준님 지시, 2026-11-06):** 기존 코드가 쓰는 규칙을 따르고, 최종 답변에서 발견한 불일치를 하나씩 짚는다. 담당에게 맡길 때도 같은 규칙을 지시에 넣는다.
+6. 큰 프로젝트는 `.claude/skills/` 순서(brainstorming → writing-plans → 실행 → verification-before-completion)를 따르되 선택지 묻는 단계는 건너뛴다.
 
 ## 묻지 않고 하는 일 / 먼저 묻는 일
 
