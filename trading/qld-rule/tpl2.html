@@ -27,7 +27,15 @@ tr.hit td{background:var(--hl);font-weight:700} tr.now td{background:var(--now);
 .cv{background:var(--paper);border:1px solid var(--rule);border-radius:8px;padding:10px;position:relative;height:360px}
 .cv.s{height:300px}
 .foot{font-size:.8rem;color:var(--muted)}
-.cmp td:first-child,.cmp th:first-child{text-align:left} .cmp table{min-width:640px}
+.lvs{display:grid;gap:8px}
+.lv{background:var(--paper);border:1px solid var(--rule);border-radius:8px;padding:10px 12px;display:grid;gap:8px}
+.lv.hit{border-color:var(--buy);background:var(--hl)} .lv.now{background:var(--now)}
+.lvh{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:baseline} .lvh b{font-family:var(--mono);font-size:1.05rem} .lvh span{font-size:.82rem;color:var(--muted)} .lvh em{font-style:normal;font-weight:700;margin-left:auto}
+.lv.wait .lvh em{color:var(--wait)}
+.lvb{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:6px}
+.bx{border-radius:6px;padding:8px 10px;font-size:.86rem;line-height:1.55;background:var(--bg)} .bx i{display:block;font-style:normal;font-weight:700;font-size:.78rem}
+.bx.b i{color:var(--buy)} .bx.k i{color:var(--line)} .bx.s i{color:var(--sell)} .bx small{color:var(--muted)}
+.cmp td:first-child,.cmp th:first-child{text-align:left} .cmp table{min-width:0;font-size:.8rem} .cmp td,.cmp th{white-space:normal;padding:6px}
 </style>
 <div class="wrap">
   <div><span class="stamp">기준: %%DATE%% · QQQ 656.10달러 · QLD 74.11달러</span></div>
@@ -42,9 +50,9 @@ tr.hit td{background:var(--hl);font-weight:700} tr.now td{background:var(--now);
 
   <section><h2>QQQ 가격별 할 일과 손익 표</h2>
     <div class="tabs" role="group" aria-label="투자 금액"><button type="button" data-t="t5" aria-pressed="true">500만원 살 때</button><button type="button" data-t="t10" aria-pressed="false">1,000만원 살 때</button></div>
-    <div class="tbl" id="t5"><table>%%HEAD%%<tbody>%%T5%%</tbody></table></div>
-    <div class="tbl" id="t10" hidden><table>%%HEAD%%<tbody>%%T10%%</tbody></table></div>
-    <p class="foot">모두 미국 정규장 <b>종가</b> 기준이에요(장중 가격 아님). 손익은 687.07달러에 산 뒤 그 가격으로 끝났을 때예요. "여기서 꺾이면"은 그 칸 가격이 산 뒤 가장 높은 종가일 때, 거기서 떨어지면 언제 팔지예요. QLD 예상가는 QQQ 움직임의 2배로 어림한 값이에요.</p></section>
+    <div class="lvs" id="t5">%%T5%%</div>
+    <div class="lvs" id="t10" hidden>%%T10%%</div>
+    <p class="foot">모두 미국 정규장 <b>종가</b> 기준이에요(장중 가격 아님). 손익은 687.07달러에 산 뒤 그 가격으로 끝났을 때예요. 칸마다 "QQQ가 그 가격까지 올랐다가 떨어지면" 언제 파는지예요. %는 11/6 종가 656.10달러 대비예요. QLD 예상가는 QQQ 움직임의 2배로 어림한 값이에요.</p></section>
 
   <section><h2>QQQ 가격별 계좌 금액 (1,000만원 기준, 손가락으로 눌러 보기)</h2>
     <div class="cv"><canvas id="c1" aria-label="QQQ 가격별 계좌 금액"></canvas></div>
