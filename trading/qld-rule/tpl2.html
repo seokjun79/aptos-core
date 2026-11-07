@@ -35,7 +35,7 @@ tr.hit td{background:var(--hl);font-weight:700} tr.now td{background:var(--now);
 .lvb{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:6px}
 .bx{border-radius:6px;padding:8px 10px;font-size:.86rem;line-height:1.55;background:var(--bg)} .bx i{display:block;font-style:normal;font-weight:700;font-size:.78rem}
 .bx.b i{color:var(--buy)} .bx.k i{color:var(--line)} .bx.s i{color:var(--sell)} .bx small{color:var(--muted)}
-.cmp td:first-child,.cmp th:first-child{text-align:left} .cmp table{min-width:0;font-size:.8rem} .cmp td,.cmp th{white-space:normal;padding:6px}
+.sig{min-width:0;font-size:.82rem} .sig td,.sig th{white-space:normal} .cmp td:first-child,.cmp th:first-child{text-align:left} .cmp table{min-width:0;font-size:.8rem} .cmp td,.cmp th{white-space:normal;padding:6px}
 </style>
 <div class="wrap">
   <div><span class="stamp">기준: %%DATE%% · QQQ 656.10달러 · QLD 74.11달러</span></div>
@@ -58,10 +58,18 @@ tr.hit td{background:var(--hl);font-weight:700} tr.now td{background:var(--now);
     <div class="cv"><canvas id="c1" aria-label="QQQ 가격별 계좌 금액"></canvas></div>
     <p class="foot">파란 선 = 500만원만 샀을 때 계좌 전체(나머지 500만원은 현금). 초록 선 = 1,000만원 샀을 때. 오른쪽 눈금 = 그때 QLD 가격. 사기 전(687 아래)은 현금 1,000만원 그대로.</p></section>
 
-  <section><h2>QQQ·QLD 최근 16개월 종가 · 200일선 · RSI</h2>
+  <section><h2>QQQ·QLD 2년 종가 · 200일선 · RSI · 과거 사기/팔기 신호</h2>
     <div class="cv"><canvas id="c2" aria-label="QQQ QLD 16개월"></canvas></div>
     <div class="cv s" style="height:170px"><canvas id="c3" aria-label="QQQ RSI"></canvas></div>
-    <p class="foot">파란 선 QQQ 종가, 회색 선 QQQ 200일선, 초록 점선 사기선(200일선 위 1%), 빨간 점선 매도선(200일선 아래 1%), 노란 선 QLD 종가(오른쪽 눈금). 아래 칸은 QQQ RSI(14): 70 위 과열, 30 아래 과매도. 200일선은 자료 200일이 쌓인 2026년 4월부터 그려져요. 공식 사기·매도 가격(687.07/673.50)은 나스닥100 지수로 계산해서 QQQ 선과 1달러 안쪽 차이가 있어요.</p></section>
+    <p class="foot">파란 선 QQQ 종가 · 회색 200일선 · 초록 점선 사기선(200일선 위 1%) · 빨간 점선 매도선(200일선 아래 1%) · 노란 선 QLD 종가(오른쪽 눈금) · ▲ 사기 신호 · ▼ 팔기 신호. 아래 칸 QQQ RSI(14): 70 위 과열, 30 아래 과매도. 자료: 2024-01~2026-11-06 정규장 종가(분할 조정), 200일선은 2024-10-16부터 끝까지.</p>
+    <div class="tbl"><table class="sig"><thead><tr><th>날짜(종가)</th><th>신호</th><th>QQQ</th><th>QLD</th><th>그 구간 QLD 손익(1,000만원)</th></tr></thead><tbody>
+    <tr><td>2025-03-10</td><td class="neg">팔기</td><td>472.73</td><td>45.46</td><td>—</td></tr>
+    <tr><td>2025-05-12</td><td class="pos">사기</td><td>507.85</td><td>50.33</td><td></td></tr>
+    <tr><td>2026-03-20</td><td class="neg">팔기</td><td>582.06</td><td>62.13</td><td class="pos">+234만원 (50.33→62.13)</td></tr>
+    <tr><td>2026-04-08</td><td class="pos">사기</td><td>606.09</td><td>67.08</td><td></td></tr>
+    <tr><td>2026-11-05</td><td class="neg">팔기</td><td>647.05</td><td>72.27</td><td class="pos">+77만원 (67.08→72.27)</td></tr>
+    </tbody></table></div>
+    <p class="foot">QQQ 200일선 기준으로 그린 과거 신호예요(신호 날 종가로 사고판 것으로 계산, 비용 제외, 전부 1,000만원). 공식 규칙은 나스닥100 지수 기준이라 날짜가 하루 이틀 다를 수 있어요.</p></section>
 
   <section class="cmp"><h2>부분 매도를 넣으면? (과거 1986~2026, 10년 단위 362번)</h2>
     <div class="tbl"><table><thead><tr><th>방법</th><th>10년 중간(1년당)</th><th>가장 나빴던 10년</th><th>반 토막</th><th>가장 크게 떨어진 폭</th><th>2022년</th></tr></thead><tbody>%%TR%%</tbody></table></div>
@@ -89,7 +97,9 @@ function draw(){
   {label:'200일선',data:D.sma,borderColor:C.muted,borderWidth:1.6,pointRadius:0},
   {label:'사기선',data:mk(1.01),borderColor:C.buy,borderDash:[6,4],borderWidth:1.4,pointRadius:0},
   {label:'매도선',data:mk(0.99),borderColor:C.sell,borderDash:[6,4],borderWidth:1.4,pointRadius:0},
-  {label:'QLD 종가 (오른쪽)',data:D.q,yAxisID:'y2',borderColor:C.wait,borderWidth:1.5,pointRadius:0}]},
+  {label:'QLD 종가 (오른쪽)',data:D.q,yAxisID:'y2',borderColor:C.wait,borderWidth:1.5,pointRadius:0},
+  {label:'사기 신호',data:D.bp,showLine:false,pointRadius:7,pointStyle:'triangle',backgroundColor:C.buy,borderColor:C.buy},
+  {label:'팔기 신호',data:D.sp,showLine:false,pointRadius:7,pointStyle:'triangle',rotation:180,backgroundColor:C.sell,borderColor:C.sell}]},
   options:{maintainAspectRatio:false,interaction:{mode:'index',intersect:false},scales:{x:{grid:{color:C.rule},ticks:{maxTicksLimit:8}},y:{grid:{color:C.rule},title:{display:true,text:'QQQ(달러)'}},y2:{position:'right',grid:{drawOnChartArea:false},title:{display:true,text:'QLD(달러)'}}}}});
  new Chart(document.getElementById('c3'),{type:'line',data:{labels:D.d,datasets:[
   {label:'QQQ RSI(14)',data:D.rsi,borderColor:C.wait,borderWidth:1.6,pointRadius:0},
