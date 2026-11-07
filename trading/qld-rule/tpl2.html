@@ -86,6 +86,24 @@ tr.hit td{background:var(--hl);font-weight:700} tr.now td{background:var(--now);
     <tr><td>1440일선은 두 상품이 같은 자리에 모여요</td><td>QQQ 91.0 · QLD 90.3</td></tr>
     </tbody></table></div>
     <p class="foot">그래서 사고파는 신호는 QLD 선보다 출렁임이 작은 QQQ 선으로 보는 게 헛신호가 적어요(지금 규칙과 같아요).</p></section>
+  <section><h2>QQQ+QLD 합성선 · 합리적 가격 범위 · RSI · MACD</h2>
+    <div class="verdict" style="gap:4px"><div class="kicker">합성선 만드는 법</div>
+      <div>QQQ는 덜 출렁이고 QLD는 2배 출렁여서, <b>출렁임이 같아지게 QQQ 2/3 + QLD 1/3</b>로 하루 수익률을 섞어 한 줄로 만들었어요(2018~2026 자료로 계산: QQQ 1년 출렁임 23.8%, QLD 47.7%).</div>
+      <div>그 선의 <b>200일 평균 = 합리적 가격</b>, 평균에서 떨어진 정도를 <b>표준편차(σ)</b>로 재서 비싼·싼 범위를 그렸어요.</div></div>
+    <div class="tbl"><table class="sig"><thead><tr><th>합성선 위치</th><th>QQQ 가격으로</th><th>QLD 가격으로</th><th>뜻</th></tr></thead><tbody>
+      <tr><td>+2σ</td><td>792.23</td><td>104.86</td><td>많이 비쌈</td></tr>
+      <tr><td>+1σ</td><td>739.76</td><td>93.01</td><td>비싼 편</td></tr>
+      <tr class="hit"><td><b>200일 평균 (합리적 가격)</b></td><td><b>687.28</b></td><td><b>81.15</b></td><td>규칙의 사기 가격 687.07과 거의 같음</td></tr>
+      <tr class="now"><td>지금 (−0.59σ)</td><td>656.10</td><td>74.11</td><td>평균보다 약간 쌈</td></tr>
+      <tr><td>−1σ</td><td>634.80</td><td>69.30</td><td>싼 편</td></tr>
+      <tr><td>−2σ</td><td>582.33</td><td>57.44</td><td>많이 쌈 (2018년 이후 2.7%의 날만 여기 아래)</td></tr>
+    </tbody></table></div>
+    <p class="foot">QQQ·QLD 가격은 "QLD가 QQQ의 2배로 움직인다"고 보고 거꾸로 바꾼 값(11/6 종가 기준, 근사). 과거 큰 바닥의 위치: 2018-12 −3.2σ · 2020-03 −2.1σ · 2022-10 −1.7σ · 2025-04 −3.3σ · 2026-03 −1.6σ.</p>
+    <div class="chk" id="chk5"></div>
+    <div class="cv"><canvas id="c5" aria-label="합성선과 범위"></canvas></div>
+    <div class="cv s" style="height:150px"><canvas id="c6" aria-label="합성선 RSI"></canvas></div>
+    <div class="cv s" style="height:170px"><canvas id="c7" aria-label="합성선 MACD"></canvas></div>
+    <p class="foot">아래 두 칸은 합성선의 RSI(14)와 MACD(12·26·9)예요. 11/6: RSI 31.0(30 바로 위) · MACD −3.55가 신호선 −2.17 아래(10/13에 아래로 꺾인 뒤 계속 약함). MACD 막대가 0 위로 올라오면 하락 힘이 줄었다는 뜻이에요.</p></section>
   <section class="cmp"><h2>차트에서 찾은 특이점 (2024-10~2026-11-06 종가)</h2>
     <div class="tbl"><table class="sig"><thead><tr><th>특이점</th><th>숫자</th><th>뜻</th></tr></thead><tbody>
     <tr><td>팔기 신호 날 RSI가 항상 낮음</td><td>28.5 · 35.2 · 26.9</td><td>매도선을 깨는 날은 이미 많이 빠진 날. 2026-03-20에 582.06에 팔고 2026-04-08에 606.09에 다시 삼(24달러 비싸게)</td></tr>
@@ -142,6 +160,16 @@ function draw(){
  const ch4=new Chart(document.getElementById('c4'),{type:'line',data:{labels:lab,datasets:ds},options:{maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{display:false},tooltip:{filter:i=>!i.dataset.hidden}},scales:{x:{grid:{color:C.rule},ticks:{maxTicksLimit:8}},y:{grid:{color:C.rule},title:{display:true,text:'2024-10-16 = 100'}}}}});
  const box=document.getElementById('chk');
  ds.forEach((d,i)=>{const l=document.createElement('label');l.innerHTML=`<input type="checkbox" id="cb${i}" ${d.hidden?'':'checked'}><i style="background:${d.borderColor}"></i>${d.label}`;l.querySelector('input').onchange=e=>{ch4.setDatasetVisibility(i,e.target.checked);ch4.update()};box.appendChild(l)});
+
+ const BL=J.blend,lb=BL.d;
+ const d5=[['합성선',BL.B,C.ink,2.4,[]],['200일 평균',BL.m,C.buy,1.8,[]],['+1σ',BL.u1,C.sell,1.2,[4,3]],['+2σ',BL.u2,C.sell,1.2,[1,3]],['−1σ',BL.d1,C.line,1.2,[4,3]],['−2σ',BL.d2,C.line,1.2,[1,3]],['QQQ (맞춤)',BL.qn,'#7fa7e8',1.2,[]],['QLD (맞춤)',BL.ln,C.wait,1.2,[]]];
+ const on5=['합성선','200일 평균','+1σ','+2σ','−1σ','−2σ'];
+ const ds5=d5.map(([lbl,data,col,w,dash])=>({label:lbl,data,borderColor:col,borderWidth:w,borderDash:dash,pointRadius:0,hidden:!on5.includes(lbl)}));
+ const ch5=new Chart(document.getElementById('c5'),{type:'line',data:{labels:lb,datasets:ds5},options:{maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{display:false},tooltip:{filter:i=>!i.dataset.hidden}},scales:{x:{grid:{color:C.rule},ticks:{maxTicksLimit:8}},y:{grid:{color:C.rule},title:{display:true,text:'합성선 (2018-01=100)'}}}}});
+ const b5=document.getElementById('chk5');
+ ds5.forEach((d,i)=>{const l=document.createElement('label');l.innerHTML=`<input type="checkbox" id="cc${i}" ${d.hidden?'':'checked'}><i style="background:${d.borderColor}"></i>${d.label}`;l.querySelector('input').onchange=e=>{ch5.setDatasetVisibility(i,e.target.checked);ch5.update()};b5.appendChild(l)});
+ new Chart(document.getElementById('c6'),{type:'line',data:{labels:lb,datasets:[{label:'RSI',data:BL.rsi,borderColor:C.wait,borderWidth:1.5,pointRadius:0},{label:'70',data:lb.map(()=>70),borderColor:C.sell,borderDash:[3,3],borderWidth:1,pointRadius:0},{label:'30',data:lb.map(()=>30),borderColor:C.buy,borderDash:[3,3],borderWidth:1,pointRadius:0}]},options:{maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{display:false}},scales:{x:{display:false},y:{min:0,max:100,ticks:{stepSize:30},grid:{color:C.rule},title:{display:true,text:'RSI'}}}}});
+ new Chart(document.getElementById('c7'),{data:{labels:lb,datasets:[{type:'bar',label:'막대',data:BL.hist,backgroundColor:BL.hist.map(v=>v>=0?C.buy:C.sell)},{type:'line',label:'MACD',data:BL.macd,borderColor:C.line,borderWidth:1.4,pointRadius:0},{type:'line',label:'신호선',data:BL.sig,borderColor:C.wait,borderWidth:1.2,pointRadius:0}]},options:{maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{display:false}},scales:{x:{grid:{color:C.rule},ticks:{maxTicksLimit:8}},y:{grid:{color:C.rule},title:{display:true,text:'MACD'}}}}});
 }
 draw();
 </script>
