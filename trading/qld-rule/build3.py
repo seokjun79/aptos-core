@@ -66,7 +66,7 @@ qqq=dict(d=[x[0][5:] for x in d],c=[x[1] for x in d],q=[QLDD.get(x[0][5:]) for x
 tr_rows=""
 if TR:
     for r in TR: tr_rows+="<tr>"+"".join(f"<td>{c}</td>" for c in r)+"</tr>"
-J=json.dumps(dict(chart=data,qqq=qqq,BUY=BUY,SELL=SELL,CUR=CUR,X=X,QLDB=QLDB,QLD0=QLD0))
+J=json.dumps(dict(daily=json.load(open('daily2.json')),chart=data,qqq=qqq,BUY=BUY,SELL=SELL,CUR=CUR,X=X,QLDB=QLDB,QLD0=QLD0))
 tpl=open("tpl2.html",encoding="utf-8").read()
 out=(tpl.replace("%%DATE%%",DATE).replace("%%HEAD%%",head).replace("%%T5%%",rows_html(t5,500)).replace("%%T10%%",rows_html(t10,1000))
  .replace("%%J%%",J).replace("%%XP%%",f"{X*100:g}").replace("%%QLDB%%",f"{QLDB:.2f}").replace("%%QLDS%%",f"{QLDS:.2f}")
