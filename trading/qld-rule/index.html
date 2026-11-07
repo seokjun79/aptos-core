@@ -109,8 +109,8 @@ function draw(){
  const D=J.daily,n=D.c.length,mk=(f)=>D.sma.map(v=>v==null?null:+(v*f).toFixed(2));
  new Chart(document.getElementById('c2'),{type:'line',data:{labels:D.d,datasets:[
   {label:'QQQ 종가',data:D.c,borderColor:C.line,borderWidth:2,pointRadius:0},
-  {label:'200일선',data:D.sma,borderColor:C.muted,borderWidth:1.6,pointRadius:0},
-  {label:'1440일선',data:D.m1440,borderColor:'#a06cd5',borderWidth:1.8,pointRadius:0},
+  {label:'QQQ 200일선 (왼쪽)',data:D.sma,borderColor:C.muted,borderWidth:1.6,pointRadius:0},
+  {label:'QQQ 1440일선 (왼쪽)',data:D.m1440,borderColor:'#a06cd5',borderWidth:1.8,pointRadius:0},
   {label:'사기선',data:mk(1.01),borderColor:C.buy,borderDash:[6,4],borderWidth:1.4,pointRadius:0},
   {label:'매도선',data:mk(0.99),borderColor:C.sell,borderDash:[6,4],borderWidth:1.4,pointRadius:0},
   {label:'QLD 종가 (오른쪽)',data:D.q,yAxisID:'y2',borderColor:C.wait,borderWidth:1.5,pointRadius:0},
