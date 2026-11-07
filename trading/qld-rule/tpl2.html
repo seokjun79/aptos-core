@@ -39,6 +39,10 @@ tr.hit td{background:var(--hl);font-weight:700} tr.now td{background:var(--now);
 </style>
 <div class="wrap">
   <div><span class="stamp">기준: %%DATE%% · QQQ 656.10달러 · QLD 74.11달러</span></div>
+  <section class="verdict" style="gap:4px"><div class="kicker">세 줄 요약</div>
+    <div>① <b>지금은 기다리기.</b> QQQ 656.10 → <b>687.07 넘게 끝나면 QLD 사기</b>(1,000만원 중 500만원).</div>
+    <div>② <b>산 뒤 QQQ 673.50 밑으로 끝나면 전부 팔기</b>(500만원 기준 약 −20만원에서 멈춤).</div>
+    <div>③ 1440일선은 446.74로 지금보다 <b>32% 아래</b>. 2023년 9월 이후 QQQ가 가장 가까이 간 것도 +22%(2025-04-08) — 아주 큰 폭락 때만 닿는 바닥선.</div></section>
   <section class="verdict"><div class="kicker">지금 할 일 (전체 1,000만원)</div><div class="big">기다리기 · 현금 1,000만원</div>
     <div>QQQ가 <b>687.07달러</b>(지금보다 +30.97달러, +4.7%) 넘게 끝난 다음 날 QLD를 사요.</div></section>
   <div class="cards">
@@ -61,7 +65,7 @@ tr.hit td{background:var(--hl);font-weight:700} tr.now td{background:var(--now);
   <section><h2>QQQ·QLD 2년 종가 · 200일선 · RSI · 과거 사기/팔기 신호</h2>
     <div class="cv"><canvas id="c2" aria-label="QQQ QLD 16개월"></canvas></div>
     <div class="cv s" style="height:170px"><canvas id="c3" aria-label="QQQ RSI"></canvas></div>
-    <p class="foot">파란 선 QQQ 종가 · 회색 200일선 · 초록 점선 사기선(200일선 위 1%) · 빨간 점선 매도선(200일선 아래 1%) · 노란 선 QLD 종가(오른쪽 눈금) · ▲ 사기 신호 · ▼ 팔기 신호. 아래 칸 QQQ RSI(14): 70 위 과열, 30 아래 과매도. 자료: 2024-01~2026-11-06 정규장 종가(분할 조정), 200일선은 2024-10-16부터 끝까지.</p>
+    <p class="foot">파란 선 QQQ 종가 · 회색 200일선 · 보라 1440일선(약 5년 9개월 평균) · 초록 점선 사기선(200일선 위 1%) · 빨간 점선 매도선(200일선 아래 1%) · 노란 선 QLD 종가(오른쪽 눈금) · ▲ 사기 신호 · ▼ 팔기 신호. 아래 칸 QQQ RSI(14): 70 위 과열, 30 아래 과매도. 자료: 2024-01~2026-11-06 정규장 종가(분할 조정), 200일선은 2024-10-16부터 끝까지.</p>
     <div class="tbl"><table class="sig"><thead><tr><th>날짜(종가)</th><th>신호</th><th>QQQ</th><th>QLD</th><th>그 구간 QLD 손익(1,000만원)</th></tr></thead><tbody>
     <tr><td>2025-03-10</td><td class="neg">팔기</td><td>472.73</td><td>45.46</td><td>—</td></tr>
     <tr><td>2025-05-12</td><td class="pos">사기</td><td>507.85</td><td>50.33</td><td></td></tr>
@@ -106,6 +110,7 @@ function draw(){
  new Chart(document.getElementById('c2'),{type:'line',data:{labels:D.d,datasets:[
   {label:'QQQ 종가',data:D.c,borderColor:C.line,borderWidth:2,pointRadius:0},
   {label:'200일선',data:D.sma,borderColor:C.muted,borderWidth:1.6,pointRadius:0},
+  {label:'1440일선',data:D.m1440,borderColor:'#a06cd5',borderWidth:1.8,pointRadius:0},
   {label:'사기선',data:mk(1.01),borderColor:C.buy,borderDash:[6,4],borderWidth:1.4,pointRadius:0},
   {label:'매도선',data:mk(0.99),borderColor:C.sell,borderDash:[6,4],borderWidth:1.4,pointRadius:0},
   {label:'QLD 종가 (오른쪽)',data:D.q,yAxisID:'y2',borderColor:C.wait,borderWidth:1.5,pointRadius:0},
