@@ -2,77 +2,64 @@
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
 <style>
-/* 방향: 신호등 판정 카드 + 가격 사다리 + 차트 + 성적표. 주인공 = 지금 할 일 한 단어 */
-:root{--bg:#f4f5f2;--paper:#fff;--ink:#1b211d;--muted:#5f6a63;--rule:#d8ddd6;--buy:#1f7a4d;--sell:#b3322a;--wait:#8a6a12;--line:#2e5aa8;
+/* 방향: 가격표(시나리오) 중심 판정서. 1,000만원 기준, 11/6 종가 */
+:root{--bg:#f4f5f2;--paper:#fff;--ink:#1b211d;--muted:#5f6a63;--rule:#d8ddd6;--buy:#1f7a4d;--sell:#b3322a;--wait:#8a6a12;--line:#2e5aa8;--hl:#e6f3ec;--now:#f6eed4;
 --sans:"IBM Plex Sans KR",system-ui,sans-serif;--mono:"IBM Plex Mono",ui-monospace,monospace}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#121614;--paper:#1a1f1c;--ink:#e6ebe7;--muted:#9ba69f;--rule:#2d3530;--buy:#6fd39c;--sell:#f2877d;--wait:#e3c062;--line:#8fb3ff;color-scheme:dark}}
-:root[data-theme="dark"]{--bg:#121614;--paper:#1a1f1c;--ink:#e6ebe7;--muted:#9ba69f;--rule:#2d3530;--buy:#6fd39c;--sell:#f2877d;--wait:#e3c062;--line:#8fb3ff;color-scheme:dark}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#121614;--paper:#1a1f1c;--ink:#e6ebe7;--muted:#9ba69f;--rule:#2d3530;--buy:#6fd39c;--sell:#f2877d;--wait:#e3c062;--line:#8fb3ff;--hl:#173021;--now:#33290f;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#121614;--paper:#1a1f1c;--ink:#e6ebe7;--muted:#9ba69f;--rule:#2d3530;--buy:#6fd39c;--sell:#f2877d;--wait:#e3c062;--line:#8fb3ff;--hl:#173021;--now:#33290f;color-scheme:dark}
 body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.6}
-.wrap{max-width:760px;margin:0 auto;padding-block:20px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:22px}
-.kicker{font-size:.8rem;color:var(--muted)}
-.verdict{background:var(--paper);border:1px solid var(--rule);border-radius:8px;padding:18px;display:grid;gap:6px}
-.verdict .big{font-size:2.4rem;font-weight:700;color:var(--wait);line-height:1.1}
-h2{font-size:1rem;margin:0 0 8px}
-.ladder{display:grid;gap:8px}
-.step{display:grid;grid-template-columns:7.5em 1fr auto;gap:10px;align-items:center;background:var(--paper);border:1px solid var(--rule);border-radius:8px;padding:12px 14px}
-.step b{font-family:var(--mono);font-size:1.15rem;font-variant-numeric:tabular-nums}
-.step .tag{font-weight:700}
-.step.buy .tag,.step.buy b{color:var(--buy)} .step.sell .tag,.step.sell b{color:var(--sell)} .step.cur .tag{color:var(--wait)}
-.step small{color:var(--muted);font-family:var(--mono);white-space:nowrap}
-.chart{background:var(--paper);border:1px solid var(--rule);border-radius:8px;padding:8px;overflow-x:auto}
-svg{width:100%;min-width:520px;height:auto;display:block}
-.g{stroke:var(--rule)} .ax{fill:var(--muted);font-size:11px;font-family:var(--mono)}
+.wrap{max-width:820px;margin:0 auto;padding-block:20px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:22px}
+.wrap>*{min-width:0} .kicker{font-size:.8rem;color:var(--muted)} h2{font-size:1.02rem;margin:0 0 8px}
+.verdict{background:var(--paper);border:1px solid var(--rule);border-radius:8px;padding:18px;display:grid;gap:4px}
+.verdict .big{font-size:2.2rem;font-weight:700;color:var(--wait);line-height:1.15}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px}
+.card{background:var(--paper);border:1px solid var(--rule);border-radius:8px;padding:12px} .card b{display:block;font-family:var(--mono);font-size:1.25rem}
+.card.buy b{color:var(--buy)} .card.sell b{color:var(--sell)}
+.tbl{overflow-x:auto} table{border-collapse:collapse;width:100%;font-size:.88rem;background:var(--paper);min-width:640px}
+td,th{border:1px solid var(--rule);padding:7px 8px;text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap} td:nth-child(3),td:nth-child(5),th:nth-child(3),th:nth-child(5){text-align:left;white-space:normal}
+th{color:var(--muted);font-weight:600;font-size:.8rem} tr.hit td{background:var(--hl);font-weight:700} tr.now td{background:var(--now)}
+td.act{font-weight:600}
+.chart{background:var(--paper);border:1px solid var(--rule);border-radius:8px;padding:8px;overflow-x:auto} svg{width:100%;min-width:560px;height:auto;display:block}
+.g{stroke:var(--rule)} .ax{fill:var(--muted);font-size:11px;font-family:var(--mono)} .lb{font-size:12px;font-weight:600;font-family:var(--mono);fill:var(--ink)} .lbl{font-size:13px;fill:var(--ink)}
+.buy{stroke:var(--buy);stroke-width:1.6;stroke-dasharray:6 4} .sell{stroke:var(--sell);stroke-width:1.6;stroke-dasharray:6 4} .cur{stroke:var(--wait);stroke-width:1.4}
+.buyt{fill:var(--buy)} .sellt{fill:var(--sell)} .curt{fill:var(--wait)}
+.p100{fill:none;stroke:var(--buy);stroke-width:2.6} .p50{fill:none;stroke:var(--line);stroke-width:2.6} .flat{stroke:var(--muted);stroke-width:2} .lossdot{fill:var(--sell)}
 .px{fill:none;stroke:var(--line);stroke-width:2} .dot{fill:var(--wait)}
-.buy{stroke:var(--buy);stroke-width:1.6;stroke-dasharray:6 4} .sell{stroke:var(--sell);stroke-width:1.6;stroke-dasharray:6 4}
-.lb{font-size:12px;font-weight:600;font-family:var(--mono)} .buyt{fill:var(--buy)} .sellt{fill:var(--sell)} .curt{fill:var(--wait)}
-.tbl{overflow-x:auto} table{border-collapse:collapse;width:100%;font-size:.92rem;background:var(--paper)}
-td,th{border:1px solid var(--rule);padding:8px;text-align:right;font-variant-numeric:tabular-nums} td:first-child,th:first-child{text-align:left}
-th{color:var(--muted);font-weight:600;font-size:.82rem} tr.me td{font-weight:700}
+.bmed{fill:var(--buy)} .bwor{fill:var(--sell);opacity:.8} .base{stroke:var(--muted);stroke-dasharray:3 3}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:.82rem;color:var(--muted)} .legend i{display:inline-block;width:18px;height:3px;vertical-align:middle;margin-right:6px}
 .neg{color:var(--sell)} .foot{font-size:.8rem;color:var(--muted)}
 </style>
 <div class="wrap">
-  <div class="kicker">QLD 매수 규칙 · 11월 6일(목) 종가 기준 · 가격은 QQQ로 판단</div>
-  <section class="verdict">
-    <div class="kicker">지금 할 일</div>
-    <div class="big">기다리기</div>
-    <div>QQQ 656.1달러 → 사기 가격 687.07달러까지 <b>30.97달러</b> 남음</div>
-  </section>
-  <section>
-    <h2>가격 사다리</h2>
-    <div class="ladder">
-      <div class="step buy"><span class="tag">QLD 사기</span><span>QQQ가 이 가격 넘게 끝난 다음 날</span><span><b>687.07</b><br><small>QLD 약 81.11</small></span></div>
-      <div class="step sell"><span class="tag">QLD 팔기</span><span>산 뒤 QQQ가 이 가격 밑으로 끝난 다음 날 전부</span><span><b>673.50</b><br><small>QLD 약 78.0</small></span></div>
-      <div class="step cur"><span class="tag">지금 종가</span><span>사기 가격 아래 → 기다리기</span><span><b>656.10</b><br><small>QLD 74.11</small></span></div>
-    </div>
-    <p class="foot">사는 날 얼마나 살지: 최근 20일 QQQ 하루 평균 움직임이 9.9달러 넘으면 절반, 9.9달러 이하면 전부. 11/6 종가 기준 10.5달러 → 사면 절반.</p>
-  </section>
-  <section>
-    <h2>QQQ 종가와 사기·팔기 가격 (최근 3개월)</h2>
-    <div class="chart"><svg viewBox="0 0 720 300" role="img" aria-label="QQQ 종가와 사기·팔기 가격선">
-<line x1="44" x2="624" y1="232.8" y2="232.8" class="g"/><text x="38" y="236.8" class="ax" text-anchor="end">660</text><line x1="44" x2="624" y1="191.4" y2="191.4" class="g"/><text x="38" y="195.4" class="ax" text-anchor="end">680</text><line x1="44" x2="624" y1="149.9" y2="149.9" class="g"/><text x="38" y="153.9" class="ax" text-anchor="end">700</text><line x1="44" x2="624" y1="108.5" y2="108.5" class="g"/><text x="38" y="112.5" class="ax" text-anchor="end">720</text><line x1="44" x2="624" y1="67.1" y2="67.1" class="g"/><text x="38" y="71.1" class="ax" text-anchor="end">740</text><line x1="44" x2="624" y1="25.7" y2="25.7" class="g"/><text x="38" y="29.7" class="ax" text-anchor="end">760</text><text x="44.0" y="292" class="ax" text-anchor="middle">08/13</text><text x="189.0" y="292" class="ax" text-anchor="middle">09/03</text><text x="334.0" y="292" class="ax" text-anchor="middle">09/25</text><text x="479.0" y="292" class="ax" text-anchor="middle">10/16</text><text x="624.0" y="292" class="ax" text-anchor="middle">11/06</text>
-<line x1="44" x2="624" y1="176.7" y2="176.7" class="buy"/>
-<text x="630" y="180.7" class="lb buyt">사기 687</text>
-<line x1="44" x2="624" y1="204.8" y2="204.8" class="sell"/>
-<text x="630" y="208.8" class="lb sellt">팔기 674</text>
-<polyline points="44.0,83.5 53.7,85.6 63.3,88.1 73.0,113.7 82.7,116.7 92.3,127.3 102.0,122.1 111.7,136.9 121.3,127.8 131.0,126.4 140.7,106.2 150.3,115.9 160.0,115.2 169.7,134.1 179.3,130.8 189.0,113.4 198.7,110.7 208.3,111.9 218.0,116.2 227.7,132.0 237.3,119.1 247.0,130.9 256.7,140.5 266.3,140.2 276.0,114.9 285.7,105.5 295.3,64.1 305.0,51.7 314.7,64.6 324.3,64.9 334.0,57.8 343.7,74.3 353.3,71.4 363.0,67.6 372.7,62.9 382.3,47.3 392.0,33.6 401.7,26.4 411.3,30.4 421.0,51.4 430.7,43.8 440.3,54.6 450.0,59.7 459.7,90.0 469.3,92.0 479.0,129.7 488.7,111.9 498.3,113.4 508.0,97.8 517.7,140.7 527.3,140.8 537.0,124.7 546.7,105.9 556.3,96.9 566.0,118.2 575.7,169.6 585.3,189.1 595.0,180.4 604.7,166.6 614.3,259.6 624.0,240.8" class="px"/>
-<circle cx="624.0" cy="240.8" r="5" class="dot"/>
-<text x="630" y="244.8" class="lb curt">지금 656</text>
+  <div class="kicker">QLD 매수 판정 · 11월 6일(목) QQQ 종가 656.10달러 기준 · 전체 금액 1,000만원</div>
+  <section class="verdict"><div class="kicker">지금 할 일</div><div class="big">기다리기 · 현금 1,000만원</div>
+    <div>QQQ가 <b>687.07달러</b>(지금보다 +4.7%) 넘게 끝난 다음 날 QLD를 사요.</div></section>
+  <div class="cards">
+    <div class="card buy"><span class="kicker">QLD 사기</span><b>QQQ 687.07</b>QLD 약 81.11</div>
+    <div class="card sell"><span class="kicker">QLD 팔기 (산 뒤)</span><b>QQQ 673.50</b>QLD 약 77.90</div>
+    <div class="card"><span class="kicker">살 금액</span><b>500만원</b>최근 20일 QQQ 하루 평균 움직임 9.9달러 넘으면 50% · 이하면 1,000만원(100%) · 11/6 기준 10.5달러 → 50%</div>
+    <div class="card"><span class="kicker">한 번 사서 손절하면</span><b class="neg">−20만원</b>500만원 샀을 때 (1,000만원이면 −40만원)</div>
+  </div>
+  <section><h2>QQQ 오르내림별 할 일과 손익 (1,000만원 기준)</h2>
+    <div class="tbl"><table><thead><tr><th>QQQ 변동</th><th>QQQ 가격</th><th>할 일</th><th>QLD 예상가</th><th>QLD에 넣는 돈</th><th>손익 (500만원 샀을 때)</th><th>손익 (1,000만원 샀을 때)</th></tr></thead><tbody><tr class=""><td>+20%</td><td>787.32</td><td class="act">QLD 들고 있기</td><td>104.77</td><td>500 / 1,000만원</td><td>+146만원</td><td>+292만원</td></tr><tr class=""><td>+15%</td><td>754.51</td><td class="act">QLD 들고 있기</td><td>97.03</td><td>500 / 1,000만원</td><td>+98만원</td><td>+196만원</td></tr><tr class=""><td>+12.5%</td><td>738.11</td><td class="act">QLD 들고 있기</td><td>93.16</td><td>500 / 1,000만원</td><td>+74만원</td><td>+149만원</td></tr><tr class=""><td>+10%</td><td>721.71</td><td class="act">QLD 들고 있기</td><td>89.28</td><td>500 / 1,000만원</td><td>+50만원</td><td>+101만원</td></tr><tr class=""><td>+7.5%</td><td>705.31</td><td class="act">QLD 들고 있기</td><td>85.41</td><td>500 / 1,000만원</td><td>+27만원</td><td>+53만원</td></tr><tr class=""><td>+5%</td><td>688.91</td><td class="act">QLD 들고 있기</td><td>81.54</td><td>500 / 1,000만원</td><td>+3만원</td><td>+5만원</td></tr><tr class="hit"><td>+4.7%</td><td>687.07</td><td class="act">QLD 사기</td><td>81.11</td><td>500 / 1,000만원</td><td>0만원</td><td>0만원</td></tr><tr class=""><td>+2.7%</td><td>673.50</td><td class="act">기다리기</td><td>78.04</td><td>0 (현금)</td><td>—</td><td>—</td></tr><tr class="now"><td>0% (지금)</td><td>656.10</td><td class="act">기다리기</td><td>74.11</td><td>0 (현금)</td><td>—</td><td>—</td></tr><tr class=""><td>-5%</td><td>623.29</td><td class="act">기다리기</td><td>66.70</td><td>0 (현금)</td><td>—</td><td>—</td></tr><tr class=""><td>-10%</td><td>590.49</td><td class="act">기다리기</td><td>59.29</td><td>0 (현금)</td><td>—</td><td>—</td></tr><tr class=""><td>-15%</td><td>557.69</td><td class="act">기다리기</td><td>51.88</td><td>0 (현금)</td><td>—</td><td>—</td></tr></tbody></table></div>
+    <p class="foot">위로 갈수록 QQQ가 올랐을 때예요. 손익은 687.07달러에서 산 뒤 그 가격이 되었을 때 기준이에요. QLD 예상가는 "QQQ 변동의 2배" 근사치라 실제와 조금 다를 수 있어요.</p></section>
+  <section><h2>QQQ 가격별 계좌 손익 그래프</h2>
+    <div class="chart"><svg viewBox="0 0 720 320" role="img" aria-label="QQQ 가격별 계좌 손익"><line x1="56" x2="700" y1="272.7" y2="272.7" class="g"/><text x="50" y="276.7" class="ax" text-anchor="end">-50</text><line x1="56" x2="700" y1="236.0" y2="236.0" class="g"/><text x="50" y="240.0" class="ax" text-anchor="end">+0</text><line x1="56" x2="700" y1="199.3" y2="199.3" class="g"/><text x="50" y="203.3" class="ax" text-anchor="end">+50</text><line x1="56" x2="700" y1="162.7" y2="162.7" class="g"/><text x="50" y="166.7" class="ax" text-anchor="end">+100</text><line x1="56" x2="700" y1="126.0" y2="126.0" class="g"/><text x="50" y="130.0" class="ax" text-anchor="end">+150</text><line x1="56" x2="700" y1="89.3" y2="89.3" class="g"/><text x="50" y="93.3" class="ax" text-anchor="end">+200</text><line x1="56" x2="700" y1="52.7" y2="52.7" class="g"/><text x="50" y="56.7" class="ax" text-anchor="end">+250</text><line x1="56" x2="700" y1="16.0" y2="16.0" class="g"/><text x="50" y="20.0" class="ax" text-anchor="end">+300</text><line x1="75.7" x2="75.7" y1="16" y2="280" class="g"/><text x="75.7" y="296" class="ax" text-anchor="middle">560</text><line x1="183.2" x2="183.2" y1="16" y2="280" class="g"/><text x="183.2" y="296" class="ax" text-anchor="middle">600</text><line x1="290.7" x2="290.7" y1="16" y2="280" class="g"/><text x="290.7" y="296" class="ax" text-anchor="middle">640</text><line x1="398.1" x2="398.1" y1="16" y2="280" class="g"/><text x="398.1" y="296" class="ax" text-anchor="middle">680</text><line x1="505.6" x2="505.6" y1="16" y2="280" class="g"/><text x="505.6" y="296" class="ax" text-anchor="middle">720</text><line x1="613.1" x2="613.1" y1="16" y2="280" class="g"/><text x="613.1" y="296" class="ax" text-anchor="middle">760</text><line x1="720.6" x2="720.6" y1="16" y2="280" class="g"/><text x="720.6" y="296" class="ax" text-anchor="middle">800</text>
+<line x1="333.9" x2="333.9" y1="16" y2="280" class="cur"/><text x="329.9" y="274" class="lb curt" text-anchor="end">지금 656</text>
+<line x1="380.7" x2="380.7" y1="16" y2="280" class="sell"/><text x="376.7" y="28" class="lb sellt" text-anchor="end">팔기 674</text>
+<line x1="417.1" x2="417.1" y1="16" y2="280" class="buy"/><text x="421.1" y="28" class="lb buyt">사기 687</text>
+<line x1="56.0" x2="417.1" y1="236.0" y2="236.0" class="flat"/>
+<polyline points="417.1,236.0 422.1,232.1 466.2,197.1 510.2,162.1 554.3,127.0 598.4,92.0 686.6,22.0" class="p100"/><polyline points="417.1,236.0 422.1,234.0 466.2,216.5 510.2,199.0 554.3,181.5 598.4,164.0 686.6,129.0" class="p50"/>
+<circle cx="380.7" cy="265.0" r="4" class="lossdot"/><circle cx="380.7" cy="250.5" r="4" class="lossdot"/>
+<text x="386.7" y="279.0" class="lb sellt">손절 시 −20만원 / −40만원</text>
+<text x="360" y="316" class="ax" text-anchor="middle">QQQ 종가(달러)</text>
 </svg></div>
-    <p class="foot">자료: Alpha Vantage QQQ 일별 종가. 사기·팔기 가격은 11/6 기준이며 200일선이 움직이면 매일 조금씩 바뀝니다.</p>
-  </section>
-  <section>
-    <h2>과거 성적 (1986~2026, 10년 단위 362번 계산)</h2>
-    <div class="tbl"><table>
-      <thead><tr><th>방법</th><th>10년 중간(1년당)</th><th>가장 나빴던 10년</th><th>반 토막 난 비율</th><th>2022년</th></tr></thead>
-      <tbody>
-        <tr class="me"><td>이 규칙 (QLD만)</td><td>+18.6%</td><td>+3.6%</td><td>0%</td><td class="neg">−17%</td></tr>
-        <tr><td>QLD 그냥 들고 있기</td><td>+16.1%</td><td class="neg">−27.2%</td><td class="neg">46%</td><td class="neg">−61%</td></tr>
-        <tr><td>나스닥100만 들고 있기</td><td>+13.9%</td><td class="neg">−7.8%</td><td class="neg">10%</td><td class="neg">−33%</td></tr>
-        <tr><td>가격 두 개만 (QLD 전부 / 현금)</td><td>+17.9%</td><td class="neg">−1.2%</td><td class="neg">1%</td><td class="neg">−17%</td></tr>
-        <tr><td>가격 두 개만 (QLD 70% / 현금)</td><td>+14.7%</td><td>+1.1%</td><td>0%</td><td class="neg">−12%</td></tr>
-        <tr><td>이 규칙 + 매일 나눠 사기</td><td>+16.0%</td><td>+3.8%</td><td>0%</td><td class="neg">−17%</td></tr>
-      </tbody>
-    </table></div>
-    <p class="foot">QLD가 생기기 전 기간은 나스닥100 자료로 2배를 계산(배당 제외). 가장 크게 떨어진 폭: 이 규칙 −52%, 가격 두 개만(전부) −73%, 가격 두 개만(70%) −56%. RC·Codex가 따로 다시 계산해 같은 결론을 확인했어요.</p>
-  </section>
+    <div class="legend"><span><i style="background:var(--line)"></i>500만원 샀을 때</span><span><i style="background:var(--buy)"></i>1,000만원 샀을 때</span><span><i style="background:var(--muted)"></i>사기 전(현금, 손익 0)</span></div></section>
+  <section><h2>10년 동안 했다면 1,000만원이 얼마가 되었나 (과거 1986~2026)</h2>
+    <div class="chart"><svg viewBox="0 0 720 230" role="img" aria-label="10년 뒤 1,000만원이 얼마가 되었나"><text x="142" y="42" class="lbl" text-anchor="end">이 규칙 (QLD만)</text><rect x="150" y="20" width="468.0" height="22" class="bmed"/><text x="624.0" y="36" class="lb">중간 5,506만원</text><rect x="150" y="46" width="121.0" height="22" class="bwor"/><text x="277.0" y="62" class="lb">최악 1,424만원</text><text x="142" y="110" class="lbl" text-anchor="end">나스닥100만</text><rect x="150" y="88" width="312.4" height="22" class="bmed"/><text x="468.4" y="104" class="lb">중간 3,675만원</text><rect x="150" y="114" width="37.7" height="22" class="bwor"/><text x="193.7" y="130" class="lb">최악 444만원</text><text x="142" y="178" class="lbl" text-anchor="end">QLD 그냥 들고 있기</text><rect x="150" y="156" width="378.2" height="22" class="bmed"/><text x="534.2" y="172" class="lb">중간 4,450만원</text><rect x="150" y="182" width="3.6" height="22" class="bwor"/><text x="159.6" y="198" class="lb">최악 42만원</text><line x1="235.0" x2="235.0" y1="10" y2="220" class="base"/><text x="239.0" y="224" class="ax">원금 1,000만원</text></svg></div>
+    <p class="foot">시작 날짜를 바꿔 가며 10년씩 362번 계산한 중간값과 가장 나빴던 경우예요. QLD가 생기기 전 기간은 나스닥100 자료로 2배를 계산했어요(배당 제외). 이 규칙도 중간에 계좌가 가장 크게 줄어든 폭은 −52%였어요.</p></section>
+  <section><h2>QQQ 최근 3개월과 사기·팔기 가격</h2><div class="chart"><svg viewBox="0 0 720 260" role="img" aria-label="QQQ 최근 3개월 종가"><line x1="44" x2="624" y1="198.8" y2="198.8" class="g"/><text x="38" y="202.8" class="ax" text-anchor="end">660</text><line x1="44" x2="624" y1="163.9" y2="163.9" class="g"/><text x="38" y="167.9" class="ax" text-anchor="end">680</text><line x1="44" x2="624" y1="128.9" y2="128.9" class="g"/><text x="38" y="132.9" class="ax" text-anchor="end">700</text><line x1="44" x2="624" y1="93.9" y2="93.9" class="g"/><text x="38" y="97.9" class="ax" text-anchor="end">720</text><line x1="44" x2="624" y1="58.9" y2="58.9" class="g"/><text x="38" y="62.9" class="ax" text-anchor="end">740</text><line x1="44" x2="624" y1="23.9" y2="23.9" class="g"/><text x="38" y="27.9" class="ax" text-anchor="end">760</text><text x="44.0" y="252" class="ax" text-anchor="middle">08/13</text><text x="189.0" y="252" class="ax" text-anchor="middle">09/03</text><text x="334.0" y="252" class="ax" text-anchor="middle">09/25</text><text x="479.0" y="252" class="ax" text-anchor="middle">10/16</text><text x="624.0" y="252" class="ax" text-anchor="middle">11/06</text>
+<line x1="44" x2="624" y1="151.5" y2="151.5" class="buy"/><text x="630" y="155.5" class="lb buyt">사기 687</text>
+<line x1="44" x2="624" y1="175.2" y2="175.2" class="sell"/><text x="630" y="179.2" class="lb sellt">팔기 674</text>
+<polyline points="44.0,72.8 53.7,74.5 63.3,76.6 73.0,98.2 82.7,100.7 92.3,109.7 102.0,105.4 111.7,117.8 121.3,110.1 131.0,109.0 140.7,91.9 150.3,100.1 160.0,99.5 169.7,115.5 179.3,112.7 189.0,98.0 198.7,95.7 208.3,96.7 218.0,100.3 227.7,113.7 237.3,102.8 247.0,112.8 256.7,120.9 266.3,120.6 276.0,99.3 285.7,91.3 295.3,56.3 305.0,45.8 314.7,56.8 324.3,57.0 334.0,51.0 343.7,65.0 353.3,62.5 363.0,59.3 372.7,55.3 382.3,42.1 392.0,30.5 401.7,24.5 411.3,27.9 421.0,45.6 430.7,39.2 440.3,48.3 450.0,52.6 459.7,78.2 469.3,79.9 479.0,111.7 488.7,96.7 498.3,98.0 508.0,84.8 517.7,121.0 527.3,121.2 537.0,107.5 546.7,91.7 556.3,84.1 566.0,102.0 575.7,145.5 585.3,162.0 595.0,154.6 604.7,143.0 614.3,221.5 624.0,205.7" class="px"/><circle cx="624.0" cy="205.7" r="5" class="dot"/><text x="630" y="209.7" class="lb curt">지금 656</text></svg></div>
+    <p class="foot">자료: Alpha Vantage QQQ 일별 종가. 사기·팔기 가격은 나스닥100 200일선에서 나와서 매일 조금씩 바뀌어요. 차트 페이지 QLD 탭에 매일 새 값이 나와요.</p></section>
 </div>
