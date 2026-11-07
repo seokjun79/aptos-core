@@ -1,0 +1,120 @@
+<title>전략 다시 짜기 성적표</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+/* 방향: 시험 성적표(판정표와 같은 틀). 주인공 = 오늘 시험 4개 결과, 그다음 지난 전략 정리, 다음 할 일 */
+:root{
+  --bg:#f4f5f1;--paper:#ffffff;--ink:#1c211d;--muted:#5f6a63;--rule:#d8ddd6;
+  --fail:#b3322a;--fail-bg:#f9e6e3;--pass:#25744a;--pass-bg:#e1f1e7;--wait:#8a6a12;--wait-bg:#f6eed4;
+  --sans:"IBM Plex Sans KR",system-ui,sans-serif;--mono:"IBM Plex Mono",ui-monospace,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#121614;--paper:#1a1f1c;--ink:#e6ebe7;--muted:#9ba69f;--rule:#2d3530;
+  --fail:#f2877d;--fail-bg:#3a1f1c;--pass:#7fd3a0;--pass-bg:#173021;--wait:#e3c062;--wait-bg:#33290f;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#121614;--paper:#1a1f1c;--ink:#e6ebe7;--muted:#9ba69f;--rule:#2d3530;
+  --fail:#f2877d;--fail-bg:#3a1f1c;--pass:#7fd3a0;--pass-bg:#173021;--wait:#e3c062;--wait-bg:#33290f;color-scheme:dark}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.65}
+.wrap{max-width:720px;margin:0 auto;padding-block:20px 56px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:28px}
+.kicker{font-size:.78rem;letter-spacing:.06em;color:var(--muted)}
+.score{display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap}
+.score .big{font-family:var(--mono);font-weight:600;font-size:3.6rem;line-height:1;color:var(--fail);font-variant-numeric:tabular-nums}
+.score .big small{font-size:1.6rem;color:var(--muted)}
+.score p{margin:0;font-size:1.05rem;font-weight:600;max-width:24em;text-wrap:balance}
+h2{font-size:1rem;margin:0 0 10px;text-wrap:balance}
+.sheet{background:var(--paper);border:1px solid var(--rule);border-radius:6px}
+.row{display:grid;grid-template-columns:1fr auto;gap:8px 14px;padding:14px 16px;border-top:1px solid var(--rule)}
+.row:first-child{border-top:0}
+.name{font-weight:700;min-width:0}
+.name span{display:block;font-weight:400;font-size:.82rem;color:var(--muted)}
+.tag{font-size:.78rem;font-weight:600;padding:2px 10px;border-radius:999px;align-self:start;white-space:nowrap}
+.tag.x{background:var(--fail-bg);color:var(--fail)}.tag.w{background:var(--wait-bg);color:var(--wait)}
+.nums{grid-column:1/-1;font-size:.86rem;color:var(--muted);display:grid;gap:2px}
+.nums em{font-style:normal;font-family:var(--mono);font-variant-numeric:tabular-nums;color:var(--ink)}
+.neg{color:var(--fail)!important}
+ul.plain{margin:0;padding-left:1.1em;display:grid;gap:6px}
+.next{border-left:3px solid var(--wait);padding:4px 0 4px 14px}
+.foot{font-size:.8rem;color:var(--muted)}
+</style>
+<div class="wrap">
+  <header style="display:grid;gap:10px">
+    <div class="kicker">전략 다시 짜기 · 2026-11-05~06 · RC·JC 시험, 매니저 비너스 정리</div>
+    <div class="score">
+      <div class="big">0<small> / 7 합격</small></div>
+      <p>11월 5~6일에 새로 시험한 7개 모두 불합격이에요. 한국 주식 AI 시험은 여기서 멈춰요.</p>
+    </div>
+  </header>
+
+  <section>
+    <h2>오늘 시험한 것</h2>
+    <div class="sheet">
+      <div class="row">
+        <div class="name">느린 추세 따라가기<span>외환·지수·금 17종목, 월 1회, 연구로 가장 많이 확인된 방법</span></div>
+        <i class="tag x">불합격</i>
+        <div class="nums"><div>1년 수익 <em class="neg">−10.8% → −9.6% → −2.2%</em> (2020~22 → 2023~24 → 2025~)</div><div>진 이유: 하루 넘길 때 내는 이자(스왑)와 작은 계좌(금은 한 번도 못 삼)</div></div>
+      </div>
+      <div class="row">
+        <div class="name">10개월 평균선 위에서만 들고 있기<span>코스피200·코스닥150·S&amp;P500·나스닥100</span></div>
+        <i class="tag x">불합격</i>
+        <div class="nums"><div>2010~17년, 그냥 들고 있기보다 1년 <em class="neg">−4~−6%p</em> 덜 벌었고 낙폭도 줄지 않음</div><div>2000·2008년 같은 큰 폭락 때만 효과</div></div>
+      </div>
+      <div class="row">
+        <div class="name">한국 AI 기본 모델 A<span>LightGBM, 상장 기업 전체(상장폐지 포함), 차트 재료</span></div>
+        <i class="tag x">불합격</i>
+        <div class="nums"><div>2022~23년, 지수보다 1년 <em class="neg">−23.7%</em>, 가장 크게 떨어진 폭 <em class="neg">−65~−78%</em></div></div>
+      </div>
+      <div class="row">
+        <div class="name">한국 AI 기본 모델 B<span>A + 금리·환율 같은 경제 재료</span></div>
+        <i class="tag x">불합격</i>
+        <div class="nums"><div>2022~23년, 지수보다 1년 <em class="neg">−4.3%</em>, 가장 크게 떨어진 폭 <em class="neg">−46~−55%</em></div><div>오를 종목을 아주 조금은 맞혔지만, 10개만 고르니 출렁이는 작은 회사가 뽑힘</div></div>
+      </div>
+      <div class="row">
+        <div class="name">한국 AI 딥러닝 A<span>ALSTM, 차트 재료</span></div>
+        <i class="tag x">불합격</i>
+        <div class="nums"><div>2022~23년, 지수보다 1년 <em class="neg">−6.2%</em>, IR <em class="neg">−0.33</em></div></div>
+      </div>
+      <div class="row">
+        <div class="name">한국 AI 딥러닝 B<span>ALSTM, 차트 + 경제 재료</span></div>
+        <i class="tag x">불합격</i>
+        <div class="nums"><div>2022~23년, 지수보다 1년 <em>+3.8%</em>였지만 꾸준함(IR) <em class="neg">0.12</em>로 기준 0.5에 못 미침</div><div>가장 크게 떨어진 폭 <em class="neg">−51%</em> (지수 −33%)</div></div>
+      </div>
+      <div class="row">
+        <div class="name">QLD·TQQQ 200일선 피하기<span>나스닥100이 200일 평균선 아래면 현금, 2배·3배</span></div>
+        <i class="tag x">불합격</i>
+        <div class="nums"><div>2016~ 가장 크게 떨어진 폭: 2배 <em class="neg">−64% → −43%</em>, 3배 <em class="neg">−82% → −58%</em> (그냥 보유 → 규칙)</div><div>2008·2022년처럼 천천히 오는 하락은 절반 넘게 줄였지만, 기준(0.6배 이하)에 조금 못 미침</div></div>
+      </div>
+    </div>
+    <p class="foot">합격 기준은 모두 시험 전에 정해 두었고, 결과를 본 뒤 바꾸지 않았어요. 거래 비용은 모두 뺐어요.</p>
+  </section>
+
+  <section>
+    <h2>지금까지 외환 전략 17개를 한 표로 모아 본 결과</h2>
+    <ul class="plain">
+      <li><b>합격 0개.</b> 스윕 EA, ICT 시험, 15분 신호, AI 외환 v1·v2 모두 여기에 들어가요.</li>
+      <li><b>반복된 실패 1:</b> 작게 이기는 것보다 거래 비용이 더 컸어요.</li>
+      <li><b>반복된 실패 2:</b> 과거 한 구간에서 좋던 조합이 다음 구간에서 무너졌어요.</li>
+      <li><b>15분 신호 최종:</b> 27건 중 6승, 합계 <span class="neg">−13.6R</span>. 오늘 멈췄어요.</li>
+      <li><b>스윕 EA:</b> 9종목 중 EURUSD만 과거 두 구간 모두 플러스였지만, 실제로는 체결이 거의 없었어요. 오늘 차트에서 뺐어요.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>그래도 다시 볼 만한 조각</h2>
+    <ul class="plain">
+      <li>일봉·주봉이 둘 다 반대인 신호는 거르기 (표본이 작아서 아직 가설)</li>
+      <li>자주 사고팔지 않기, 비용보다 클 때만 바꾸기</li>
+      <li>크게 지는 거래를 막는 손실 한도</li>
+    </ul>
+  </section>
+
+  <section class="next">
+    <h2>다음</h2>
+    <ul class="plain">
+      <li>한국 주식 AI 시험은 기본 AI·딥러닝 4개 모두 불합격이라 멈췄어요.</li>
+      <li>외환 AI 전진 기록은 주문 없이 계속 돌아요(2027-02-05까지).</li>
+      <li>후보 3번(금리 차이·추세·가치 묶음)은 스왑 비용이 1번을 무너뜨린 것과 같은 이유로 가망이 낮아 보류해요.</li>
+    </ul>
+  </section>
+
+  <p class="foot">원본: RC PC learning\strategy_reset_20261105.md, learning\strategy_reset\trend_results.md / JC PC qlib_work\strategy_reset\ma10_plan.md, kr_test 기록.</p>
+</div>
