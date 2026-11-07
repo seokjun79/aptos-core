@@ -148,8 +148,8 @@ button:focus-visible{outline:2px solid var(--entry);outline-offset:2px}
   <section class="card sigs"><div class="kicker">최근 신호 <small>가상 채점</small></div><div id="sigs" class="note">아직 신호가 없어요.</div></section>
   <details class="legend">
     <summary>차트 표시 읽는 법</summary>
-    <p>SMC 표시: HH·HL·LH·LL = 스윙 고저 · <b style="color:var(--bos)">BOS</b> = 같은 방향 구조 돌파 · <b style="color:var(--warn)">CHoCH/MSS</b> = 방향 전환 돌파(몸통 마감) · 상자 = 오더블록(OB)·FVG · 점선 = 같은 높이 고점/저점(EQH/EQL, 유동성) · 빨강/초록 배경 = 프리미엄/디스카운트.<br>선 색: 4H CRH/CRL = 기준 4시간 캔들의 고점·저점(그 캔들에만 짧게 표시) · <span style="color:var(--hi)">■</span> 전일·런던·아시아 고저 · 오른쪽 바깥 ◀ 표시: <span style="color:var(--entry)">■</span> 진입 · <span style="color:var(--sl)">■</span> 손절 · <span style="color:var(--tp)">■</span> 목표. QLD·TQQQ·IQQ만 EMA20·EMA50·EMA200과 RSI(14)를 함께 그려요.</p>
-    <p>자료: 외환·금은 RC비너스가 석준님 MT5(IC Markets)에서, QLD·TQQQ·IQQ는 JC비너스가 한국투자증권 조회로 읽은 값. 투자 결정은 석준님이 하세요.</p>
+    <p>SMC 표시: HH·HL·LH·LL = 스윙 고저 · <b style="color:var(--bos)">BOS</b> = 같은 방향 구조 돌파 · <b style="color:var(--warn)">CHoCH/MSS</b> = 방향 전환 돌파(몸통 마감) · 상자 = 오더블록(OB)·FVG · 점선 = 같은 높이 고점/저점(EQH/EQL, 유동성) · 빨강/초록 배경 = 프리미엄/디스카운트.<br>선 색: 4H CRH/CRL = 기준 4시간 캔들의 고점·저점(그 캔들에만 짧게 표시) · <span style="color:var(--hi)">■</span> 전일·런던·아시아 고저 · 오른쪽 바깥 ◀ 표시: <span style="color:var(--entry)">■</span> 진입 · <span style="color:var(--sl)">■</span> 손절 · <span style="color:var(--tp)">■</span> 목표. QLD·TQQQ·IQQ·QQQ만 EMA20·EMA50·EMA200과 RSI(14)를 함께 그려요.</p>
+    <p>자료: 외환·금은 RC비너스가 석준님 MT5(IC Markets)에서, QLD·TQQQ·IQQ·QQQ는 JC비너스가 한국투자증권 조회로 읽은 값. 투자 결정은 석준님이 하세요.</p>
   </details>
 </div>
 
@@ -167,7 +167,7 @@ const tokens=()=>{const cs=getComputedStyle(document.documentElement),o={};
   ["--bg","--panel","--line","--grid","--fg","--mute","--up","--down","--entry","--sl","--tp","--lvl","--hi","--warn","--bos","--ma20","--ma50","--ma200"].forEach(k=>o[k]=cs.getPropertyValue(k).trim());return o};
 const paint=g=>{const t=tokens();return g.replace(/var\((--[\w-]+)\)/g,(m,k)=>t[k]||m)};
 
-const IND_SYMS=["QLD","TQQQ","IQQ"]; // 보조지표(EMA20·50·200, RSI)는 이 종목에만
+const IND_SYMS=["QLD","TQQQ","IQQ","QQQ"]; // 보조지표(EMA20·50·200, RSI)는 이 종목에만
 function chart(id,bars,levels,price,smc){
   const IND=IND_SYMS.includes(cur);
   const svg=document.getElementById(id);
