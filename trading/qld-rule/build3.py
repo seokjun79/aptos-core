@@ -61,7 +61,8 @@ def acct(A,p): return A if p<BUY else round(A*qb(p)/QLDB,1)
 data=dict(x=xs,a500=[acct(500,p)+500 if False else (500+ (acct(500,p)-500)) for p in xs],a1000=[acct(1000,p) for p in xs])
 data["a500"]=[ (1000 if p<BUY else 500+acct(500,p)) for p in xs]   # 1,000만원 중 500만원 투자 시 계좌 총액
 data["a1000"]=[ (1000 if p<BUY else acct(1000,p)) for p in xs]
-qqq=dict(d=[x[0][5:] for x in d],c=[x[1] for x in d])
+QLDD=json.load(open("qld.json"))
+qqq=dict(d=[x[0][5:] for x in d],c=[x[1] for x in d],q=[QLDD.get(x[0][5:]) for x in d])
 tr_rows=""
 if TR:
     for r in TR: tr_rows+="<tr>"+"".join(f"<td>{c}</td>" for c in r)+"</tr>"

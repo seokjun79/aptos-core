@@ -58,7 +58,7 @@ tr.hit td{background:var(--hl);font-weight:700} tr.now td{background:var(--now);
     <div class="cv"><canvas id="c1" aria-label="QQQ 가격별 계좌 금액"></canvas></div>
     <p class="foot">파란 선 = 500만원만 샀을 때 계좌 전체(나머지 500만원은 현금). 초록 선 = 1,000만원 샀을 때. 오른쪽 눈금 = 그때 QLD 가격. 사기 전(687 아래)은 현금 1,000만원 그대로.</p></section>
 
-  <section><h2>QQQ 최근 3개월 종가와 사기·매도 가격</h2>
+  <section><h2>QQQ·QLD 최근 3개월 종가와 사기·매도 가격</h2>
     <div class="cv s"><canvas id="c2" aria-label="QQQ 최근 3개월"></canvas></div></section>
 
   <section class="cmp"><h2>부분 매도를 넣으면? (과거 1986~2026, 10년 단위 362번)</h2>
@@ -85,8 +85,9 @@ function draw(){
  new Chart(document.getElementById('c2'),{type:'line',data:{labels:J.qqq.d,datasets:[
   {label:'QQQ 종가',data:J.qqq.c,borderColor:C.line,borderWidth:2,pointRadius:0},
   {label:'사기 687.07',data:Array(n).fill(J.BUY),borderColor:C.buy,borderDash:[6,4],pointRadius:0,borderWidth:1.5},
-  {label:'전량 매도 673.50',data:Array(n).fill(J.SELL),borderColor:C.sell,borderDash:[6,4],pointRadius:0,borderWidth:1.5}]},
-  options:{maintainAspectRatio:false,interaction:{mode:'index',intersect:false},scales:{x:{grid:{color:C.rule},ticks:{maxTicksLimit:6}},y:{grid:{color:C.rule}}}}});
+  {label:'전량 매도 673.50',data:Array(n).fill(J.SELL),borderColor:C.sell,borderDash:[6,4],pointRadius:0,borderWidth:1.5},
+  {label:'QLD 종가 (오른쪽)',data:J.qqq.q,yAxisID:'y2',borderColor:C.wait,borderWidth:1.6,pointRadius:0}]},
+  options:{maintainAspectRatio:false,interaction:{mode:'index',intersect:false},scales:{x:{grid:{color:C.rule},ticks:{maxTicksLimit:6}},y:{grid:{color:C.rule},title:{display:true,text:'QQQ(달러)'}},y2:{position:'right',grid:{drawOnChartArea:false},title:{display:true,text:'QLD(달러)'}}}}});
 }
 draw();
 </script>
