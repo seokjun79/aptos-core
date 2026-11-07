@@ -56,7 +56,7 @@ tr.hit td{background:var(--hl);font-weight:700} tr.now td{background:var(--now);
 
   <section><h2>QQQ 가격별 계좌 금액 (1,000만원 기준, 손가락으로 눌러 보기)</h2>
     <div class="cv"><canvas id="c1" aria-label="QQQ 가격별 계좌 금액"></canvas></div>
-    <p class="foot">파란 선 = 500만원만 샀을 때 계좌 전체(나머지 500만원은 현금). 초록 선 = 1,000만원 샀을 때. 사기 전(687 아래)은 현금 1,000만원 그대로.</p></section>
+    <p class="foot">파란 선 = 500만원만 샀을 때 계좌 전체(나머지 500만원은 현금). 초록 선 = 1,000만원 샀을 때. 오른쪽 눈금 = 그때 QLD 가격. 사기 전(687 아래)은 현금 1,000만원 그대로.</p></section>
 
   <section><h2>QQQ 최근 3개월 종가와 사기·매도 가격</h2>
     <div class="cv s"><canvas id="c2" aria-label="QQQ 최근 3개월"></canvas></div></section>
@@ -79,8 +79,8 @@ function draw(){
   {type:'line',label:'1,000만원 샀을 때',data:J.chart.x.map((x,i)=>({x,y:J.chart.a1000[i]})),borderColor:C.buy,borderWidth:2.5,pointRadius:0},
   vline(J.CUR,C.wait,'지금 656.10'),vline(J.SELL,C.sell,'전량 매도 673.50'),vline(J.BUY,C.buy,'사기 687.07')]},
   options:{maintainAspectRatio:false,interaction:{mode:'nearest',axis:'x',intersect:false},
-   scales:{x:{type:'linear',title:{display:true,text:'QQQ 종가(달러)'},grid:{color:C.rule}},y:{title:{display:true,text:'계좌 금액(만원)'},grid:{color:C.rule},min:900,max:1300}},
-   plugins:{tooltip:{callbacks:{label:c=>`${c.dataset.label}: QQQ ${c.parsed.x.toFixed(2)} → ${c.parsed.y.toFixed(0)}만원`}}}}});
+   scales:{x:{type:'linear',title:{display:true,text:'QQQ 종가(달러)'},grid:{color:C.rule}},y:{title:{display:true,text:'계좌 금액(만원)'},grid:{color:C.rule},min:900,max:1300},y2:{position:'right',min:900*J.QLDB/1000,max:1300*J.QLDB/1000,title:{display:true,text:'QLD 가격(달러) · 1,000만원 선 기준'},grid:{drawOnChartArea:false},ticks:{callback:v=>v.toFixed(1)}}},
+   plugins:{tooltip:{callbacks:{label:c=>`${c.dataset.label}: QQQ ${c.parsed.x.toFixed(2)} → ${c.parsed.y.toFixed(0)}만원`,afterBody:it=>{const x=it[0].parsed.x;const q=x>=J.BUY?J.QLDB*(1+2*(x/J.BUY-1)):J.QLD0*(1+2*(x/J.CUR-1));return `QLD 약 ${q.toFixed(2)}달러`}}}}}});
  const n=J.qqq.c.length;
  new Chart(document.getElementById('c2'),{type:'line',data:{labels:J.qqq.d,datasets:[
   {label:'QQQ 종가',data:J.qqq.c,borderColor:C.line,borderWidth:2,pointRadius:0},
