@@ -35,7 +35,18 @@ tr.hit td{background:var(--hl);font-weight:700} tr.now td{background:var(--now);
 .lvb{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:6px}
 .bx{border-radius:6px;padding:8px 10px;font-size:.86rem;line-height:1.55;background:var(--bg)} .bx i{display:block;font-style:normal;font-weight:700;font-size:.78rem}
 .bx.b i{color:var(--buy)} .bx.k i{color:var(--line)} .bx.s i{color:var(--sell)} .bx small{color:var(--muted)}
-.sig{min-width:0;font-size:.82rem} .sig td,.sig th{white-space:normal} .chk{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:.85rem;margin-bottom:8px} .chk label{display:inline-flex;align-items:center;gap:5px;cursor:pointer} .chk i{display:inline-block;width:14px;height:3px} .cmp td:first-child,.cmp th:first-child{text-align:left} .cmp table{min-width:0;font-size:.8rem} .cmp td,.cmp th{white-space:normal;padding:6px}
+.sig{min-width:0;font-size:.82rem} .sig td,.sig th{white-space:normal} .chk{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:.85rem;margin-bottom:8px} .chk label{display:inline-flex;align-items:center;gap:5px;cursor:pointer} .chk i{display:inline-block;width:14px;height:3px} .smc svg{min-width:0;width:100%} .smc .ax{fill:var(--muted);font-size:11px;font-family:var(--mono)}
+.smc .up{fill:var(--buy)} .smc .dn{fill:var(--sell)} .smc .upw{stroke:var(--buy)} .smc .dnw{stroke:var(--sell)}
+.smc .prem{fill:var(--sell);opacity:.06} .smc .disc{fill:var(--buy);opacity:.06}
+.smc .fvg{fill:var(--sell);opacity:.16} .smc .fvg2{fill:var(--sell);opacity:.08} .smc .ob{fill:#a06cd5;opacity:.18}
+.smc .lab{font-size:11px;font-weight:600;font-family:var(--mono)} .smc .fvgt,.smc .fvg2t{fill:var(--sell)} .smc .obt{fill:#a06cd5}
+.smc .choch{stroke:var(--wait);stroke-width:1.6;stroke-dasharray:5 3} .smc .chocht{fill:var(--wait)}
+.smc .bos{stroke:var(--ink);stroke-width:1.6} .smc .bost{fill:var(--ink)}
+.smc .liq{stroke:var(--line);stroke-width:1.6;stroke-dasharray:1 3} .smc .liqt{fill:var(--line)}
+.smc .crt{stroke:var(--muted);stroke-width:1.2} .smc .crtt{fill:var(--muted)}
+.smc .eq{stroke:var(--muted);stroke-dasharray:1 4} .smc .eqt{fill:var(--muted)} .smc .mss{stroke:var(--sell);stroke-width:1.4;stroke-dasharray:6 3} .smc .msst{fill:var(--sell)}
+.smc .buy{stroke:var(--buy);stroke-width:1.6;stroke-dasharray:6 3} .smc .buyt{fill:var(--buy)} .smc .mt{fill:var(--muted)} .smc .dnt{fill:var(--sell)}
+.cmp td:first-child,.cmp th:first-child{text-align:left} .cmp table{min-width:0;font-size:.8rem} .cmp td,.cmp th{white-space:normal;padding:6px}
 </style>
 <div class="wrap">
   <div><span class="stamp">기준: %%DATE%% · QQQ 656.10달러 · QLD 74.11달러</span></div>
@@ -75,6 +86,21 @@ tr.hit td{background:var(--hl);font-weight:700} tr.now td{background:var(--now);
     </tbody></table></div>
     <p class="foot">QQQ 200일선 기준으로 그린 과거 신호예요(신호 날 종가로 사고판 것으로 계산, 비용 제외, 전부 1,000만원). 공식 규칙은 나스닥100 지수 기준이라 날짜가 하루 이틀 다를 수 있어요.</p></section>
 
+  <section><h2>ICT/SMC 일봉 분석 (11/6 종가 기준)</h2>
+    <div class="tabs" role="group" aria-label="종목"><button type="button" data-s="smcQ" aria-pressed="true">QQQ</button><button type="button" data-s="smcL" aria-pressed="false">QLD</button></div>
+    <div class="cv smc" id="smcQ" style="height:auto">%%SMCQ%%</div>
+    <div class="cv smc" id="smcL" style="height:auto" hidden>%%SMCL%%</div>
+    <div class="tbl"><table class="sig"><thead><tr><th>표시</th><th>QQQ</th><th>QLD</th><th>뜻</th></tr></thead><tbody>
+      <tr><td>고점 · MSS</td><td>762.86 (10/6)</td><td>101.62</td><td>하락 다리가 시작된 스윙 고점. 이걸 몸통으로 넘어야 일봉 상승 전환</td></tr>
+      <tr><td>CHoCH</td><td>699.27</td><td>85.79</td><td>9/16 저점을 10/30에 몸통으로 깸 → 상승 구조 무너짐</td></tr>
+      <tr><td>BOS</td><td>660.45</td><td>77.43</td><td>7/29 저점을 11/5에 몸통으로 깸 → 하락 이어감</td></tr>
+      <tr><td>FVG (첫 저항)</td><td>664.52~687.87</td><td>75.95~81.88</td><td>11/5 급락 공백. 위쪽 끝이 규칙 사기선(687.07)과 같은 자리</td></tr>
+      <tr><td>약세 OB</td><td>687.87~701.45</td><td>81.88~85.09</td><td>급락 직전 양봉(11/4)</td></tr>
+      <tr><td>CRT 기준봉 11/6</td><td>CRH 664.52 · CRL 653.99</td><td>75.95 · 73.61</td><td>11/5 안쪽 봉, 아직 스윕 없음</td></tr>
+      <tr><td>유동성</td><td>647.05</td><td>72.13</td><td>11/5 저점 아래 손절 물량. 쓸고 위로 마감하면 상승 CRT 후보</td></tr>
+      <tr><td>중간값</td><td>704.96</td><td>86.88</td><td>고점~저점 절반. 지금은 아래쪽 할인 구간</td></tr>
+    </tbody></table></div>
+    <p class="foot">주식은 4시간봉 대신 일봉으로 적용(장 6.5시간). 스윙 = 앞뒤 5봉, 돌파 확정 = 몸통 마감. 15분봉 이하는 이번에 못 봤어요.</p></section>
   <section><h2>QQQ와 QLD를 한 선으로 겹쳐 보기 (2024-10-16 = 100)</h2>
     <div class="chk" id="chk"></div>
     <div class="cv"><canvas id="c4" aria-label="QQQ QLD 겹쳐 보기"></canvas></div>
@@ -121,7 +147,8 @@ tr.hit td{background:var(--hl);font-weight:700} tr.now td{background:var(--now);
 </div>
 <script>
 const J=%%J%%;
-document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tabs button').forEach(x=>x.setAttribute('aria-pressed',x===b));['t5','t10'].forEach(id=>document.getElementById(id).hidden=id!==b.dataset.t)});
+document.querySelectorAll('.tabs button[data-t]').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tabs button[data-t]').forEach(x=>x.setAttribute('aria-pressed',x===b));['t5','t10'].forEach(id=>document.getElementById(id).hidden=id!==b.dataset.t)});
+document.querySelectorAll('.tabs button[data-s]').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tabs button[data-s]').forEach(x=>x.setAttribute('aria-pressed',x===b));['smcQ','smcL'].forEach(id=>document.getElementById(id).hidden=id!==b.dataset.s)});
 const css=k=>getComputedStyle(document.documentElement).getPropertyValue(k).trim();
 function draw(){
  if(!window.Chart)return;
