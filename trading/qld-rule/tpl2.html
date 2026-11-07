@@ -35,7 +35,7 @@ tr.hit td{background:var(--hl);font-weight:700} tr.now td{background:var(--now);
 .lvb{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:6px}
 .bx{border-radius:6px;padding:8px 10px;font-size:.86rem;line-height:1.55;background:var(--bg)} .bx i{display:block;font-style:normal;font-weight:700;font-size:.78rem}
 .bx.b i{color:var(--buy)} .bx.k i{color:var(--line)} .bx.s i{color:var(--sell)} .bx small{color:var(--muted)}
-.sig{min-width:0;font-size:.82rem} .sig td,.sig th{white-space:normal} .cmp td:first-child,.cmp th:first-child{text-align:left} .cmp table{min-width:0;font-size:.8rem} .cmp td,.cmp th{white-space:normal;padding:6px}
+.sig{min-width:0;font-size:.82rem} .sig td,.sig th{white-space:normal} .chk{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:.85rem;margin-bottom:8px} .chk label{display:inline-flex;align-items:center;gap:5px;cursor:pointer} .chk i{display:inline-block;width:14px;height:3px} .cmp td:first-child,.cmp th:first-child{text-align:left} .cmp table{min-width:0;font-size:.8rem} .cmp td,.cmp th{white-space:normal;padding:6px}
 </style>
 <div class="wrap">
   <div><span class="stamp">기준: %%DATE%% · QQQ 656.10달러 · QLD 74.11달러</span></div>
@@ -75,6 +75,17 @@ tr.hit td{background:var(--hl);font-weight:700} tr.now td{background:var(--now);
     </tbody></table></div>
     <p class="foot">QQQ 200일선 기준으로 그린 과거 신호예요(신호 날 종가로 사고판 것으로 계산, 비용 제외, 전부 1,000만원). 공식 규칙은 나스닥100 지수 기준이라 날짜가 하루 이틀 다를 수 있어요.</p></section>
 
+  <section><h2>QQQ와 QLD를 한 선으로 겹쳐 보기 (2024-10-16 = 100)</h2>
+    <div class="chk" id="chk"></div>
+    <div class="cv"><canvas id="c4" aria-label="QQQ QLD 겹쳐 보기"></canvas></div>
+    <p class="foot">두 가격을 2024-10-16 종가를 100으로 맞춰 같은 눈금에 그렸어요(110이면 그날보다 10% 오름). 이동평균선도 각자 같은 방식으로 바꿨어요. 체크를 켜고 끄면 선이 보였다 사라져요.</p>
+    <div class="tbl"><table class="sig"><thead><tr><th>겹쳐 보니 보이는 점</th><th>숫자 (2024-10-16 = 100)</th></tr></thead><tbody>
+    <tr><td>2년 동안 QLD(2배)는 QQQ의 2배가 아니라 약 1.4배만 올랐어요</td><td>QQQ 133.7 · QLD 146.0</td></tr>
+    <tr><td>떨어질 때는 QLD가 거의 2배 떨어졌어요</td><td>2025-02-19→04-08: QQQ −23% · QLD −42%<br>2026-10-06 고점→11-06: QQQ −14% · QLD −26%</td></tr>
+    <tr><td>지금 QLD는 자기 이동평균선을 QQQ보다 더 깊게 깼어요</td><td>200일선 대비 QQQ −3.6% · QLD −11%<br>300일선 대비 QQQ 0% · QLD −6%</td></tr>
+    <tr><td>1440일선은 두 상품이 같은 자리에 모여요</td><td>QQQ 91.0 · QLD 90.3</td></tr>
+    </tbody></table></div>
+    <p class="foot">그래서 사고파는 신호는 QLD 선보다 출렁임이 작은 QQQ 선으로 보는 게 헛신호가 적어요(지금 규칙과 같아요).</p></section>
   <section class="cmp"><h2>차트에서 찾은 특이점 (2024-10~2026-11-06 종가)</h2>
     <div class="tbl"><table class="sig"><thead><tr><th>특이점</th><th>숫자</th><th>뜻</th></tr></thead><tbody>
     <tr><td>팔기 신호 날 RSI가 항상 낮음</td><td>28.5 · 35.2 · 26.9</td><td>매도선을 깨는 날은 이미 많이 빠진 날. 2026-03-20에 582.06에 팔고 2026-04-08에 606.09에 다시 삼(24달러 비싸게)</td></tr>
@@ -124,6 +135,13 @@ function draw(){
   {label:'70',data:Array(n).fill(70),borderColor:C.sell,borderDash:[3,3],borderWidth:1,pointRadius:0},
   {label:'30',data:Array(n).fill(30),borderColor:C.buy,borderDash:[3,3],borderWidth:1,pointRadius:0}]},
   options:{maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{display:false}},scales:{x:{grid:{color:C.rule},ticks:{maxTicksLimit:8}},y:{min:0,max:100,grid:{color:C.rule},ticks:{stepSize:30}}}}});
+
+ const N=J.norm,lab=N.d,cols={QQQ:C.line,QLD:C.wait,'QQQ 200일':C.muted,'QQQ 300일':'#3fb8c4','QQQ 571일':'#d08a3c','QQQ 1440일':'#a06cd5','QLD 200일':'#8d6e3f','QLD 300일':'#2f8f79','QLD 571일':'#c25e8a','QLD 1440일':'#6b5bd2'};
+ const on=['QQQ','QLD','QQQ 200일','QLD 200일'];
+ const ds=Object.keys(N.s).map(k=>({label:k,data:N.s[k],borderColor:cols[k]||C.ink,borderWidth:(k==='QQQ'||k==='QLD')?2.2:1.4,borderDash:(k==='QQQ'||k==='QLD')?[]:[4,3],pointRadius:0,hidden:!on.includes(k),spanGaps:false}));
+ const ch4=new Chart(document.getElementById('c4'),{type:'line',data:{labels:lab,datasets:ds},options:{maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{display:false},tooltip:{filter:i=>!i.dataset.hidden}},scales:{x:{grid:{color:C.rule},ticks:{maxTicksLimit:8}},y:{grid:{color:C.rule},title:{display:true,text:'2024-10-16 = 100'}}}}});
+ const box=document.getElementById('chk');
+ ds.forEach((d,i)=>{const l=document.createElement('label');l.innerHTML=`<input type="checkbox" id="cb${i}" ${d.hidden?'':'checked'}><i style="background:${d.borderColor}"></i>${d.label}`;l.querySelector('input').onchange=e=>{ch4.setDatasetVisibility(i,e.target.checked);ch4.update()};box.appendChild(l)});
 }
 draw();
 </script>
