@@ -12,6 +12,8 @@
 - **"일하고 있다"고 말하기 전에 반드시 `get_session`으로 `connection_status`(connected)와 최근 활동을 확인한다(2026-11-07 반성: PC가 꺼져 있는데 "동시에 일하고 있다"고 말함).** send_message의 "delivered"는 받았다는 뜻이 아니다.
 - PC 세션에 일을 맡긴 뒤 답이 늦으면 석준님이 묻기 전에 `get_session`으로 상태를 본다. `REQUIRES_ACTION`(확인 대기로 멈춤)이면 바로 다른 PC 세션에게 그 세션 새 창을 켜게 하고(사전 허용), 석준님께 한 줄로 알린다. 감시처럼 오래 걸리는 일은 예약으로 상태를 확인한다. **예약 규칙(2026-11-05 확인):** 이 세션으로 바로 쏘는 예약(`send_later`, persistent_session_id=이 세션)은 매번 ACCESS_DENIED로 실패한다. 예약은 반드시 `create_trigger`의 `create_new_session_on_fire=true` + 프롬프트 "send_message로 이 세션에 [예약 알림] 문장 보내고 끝내기" 방식으로 만든다(이 방식은 성공함).
 
+- **멈춤 감시(석준님 지시, 2026-11-10):** 매시 17분 예약(trig_01UX7BsabU5VH7gUbNDyj75u)이 RC·RC2·JC 세션을 보고, 멈추면 "[예약 알림] 멈춤 감지"를 보낸다. 받으면 바로 PushNotification으로 석준님 휴대폰에 "어느 창, 무엇을 누르면 되는지" 한 줄을 보낸다. PC 세션을 다시 켜서 세션 ID가 바뀌면 이 예약의 ID도 고친다.
+
 ## 일하는 순서
 
 1. 선택지를 묻지 말고 가장 좋은 방법으로 바로 진행하고, 한 일을 보고한다.
