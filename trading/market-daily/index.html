@@ -1,0 +1,164 @@
+<title>오늘 증시 정리</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+/* 방향: 증권사 장마감 리포트 형식 + 우리만의 칸(내 종목·QLD 규칙·외국인 멈춤표). 한국식 색: 오름 빨강, 내림 파랑 */
+:root{
+  --bg:#f2f4f7;--paper:#fff;--ink:#161b22;--muted:#5b6573;--rule:#d9dee6;
+  --up:#d1293d;--up-bg:#fde8eb;--dn:#1f5fd1;--dn-bg:#e5eefc;--ok:#1f7a4d;--ok-bg:#e1f2e8;--warn:#8a6a12;--warn-bg:#f6eed4;
+  --sans:"IBM Plex Sans KR",system-ui,sans-serif;--mono:"IBM Plex Mono",ui-monospace,monospace}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0f1318;--paper:#171c23;--ink:#e6eaf0;--muted:#98a2b0;--rule:#2a313b;
+  --up:#ff7b8a;--up-bg:#3a1a20;--dn:#7fa8ff;--dn-bg:#18243d;--ok:#7fd3a0;--ok-bg:#173021;--warn:#e3c062;--warn-bg:#33290f;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f1318;--paper:#171c23;--ink:#e6eaf0;--muted:#98a2b0;--rule:#2a313b;
+  --up:#ff7b8a;--up-bg:#3a1a20;--dn:#7fa8ff;--dn-bg:#18243d;--ok:#7fd3a0;--ok-bg:#173021;--warn:#e3c062;--warn-bg:#33290f;color-scheme:dark}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.65}
+.wrap{max-width:760px;margin:0 auto;padding-block:20px 56px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:26px}
+.wrap>*{min-width:0}
+.kicker{font-size:.78rem;letter-spacing:.06em;color:var(--muted)}
+h1{font-size:1.4rem;margin:4px 0 6px;text-wrap:balance}
+h2{font-size:1.02rem;margin:0 0 10px;text-wrap:balance}
+p{margin:0}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.up{color:var(--up)}.dn{color:var(--dn)}
+.idx{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px}
+.box{background:var(--paper);border:1px solid var(--rule);border-radius:8px;padding:12px 14px;min-width:0}
+.box .t{font-size:.84rem;color:var(--muted)}
+.box .v{font-family:var(--mono);font-weight:600;font-size:1.35rem;font-variant-numeric:tabular-nums}
+.box .c{font-family:var(--mono);font-size:.9rem}
+.box .s{font-size:.8rem;color:var(--muted)}
+.flow{display:grid;gap:8px}
+.fr{display:grid;grid-template-columns:4.5em 1fr 6.5em;gap:10px;align-items:center}
+.bar{height:14px;border-radius:3px;background:var(--rule);position:relative;overflow:hidden}
+.bar i{position:absolute;top:0;bottom:0}
+.fr .num{text-align:right}
+ul.plain{margin:0;padding-left:1.1em;display:grid;gap:6px}
+.sheet{background:var(--paper);border:1px solid var(--rule);border-radius:8px}
+.row{display:grid;grid-template-columns:1fr auto;gap:2px 12px;padding:10px 14px;border-top:1px solid var(--rule);align-items:center}
+.row:first-child{border-top:0}
+.row .n{font-weight:600;min-width:0}
+.row .n span{display:block;font-weight:400;font-size:.8rem;color:var(--muted)}
+.row .r{text-align:right;font-family:var(--mono);font-variant-numeric:tabular-nums}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font-size:.84rem;padding:3px 10px;border-radius:999px;background:var(--paper);border:1px solid var(--rule)}
+.tag{font-size:.74rem;font-weight:600;padding:1px 9px;border-radius:999px;white-space:nowrap}
+.yes{background:var(--ok-bg);color:var(--ok)}.no{background:var(--up-bg);color:var(--up)}.unk{background:var(--warn-bg);color:var(--warn)}
+.two{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
+.two>*{min-width:0}
+.note{font-size:.84rem;color:var(--muted)}
+.foot{font-size:.78rem;color:var(--muted)}
+.foot a{color:inherit}
+</style>
+<div class="wrap">
+<header>
+  <div class="kicker">장마감 정리 · 2026-11-09 (월) 15:30 마감 · 매니저 비너스</div>
+  <h1>장중 5,172까지 올랐다가 외국인 매도에 밀려 5,018로 끝났어요</h1>
+  <p>기관이 7,200억 원을 샀지만 외국인이 7일째 팔았어요. 삼성전자·하이닉스는 조금 올라 끝났고, 2차전지·바이오가 약했어요.</p>
+</header>
+
+<section>
+  <h2>지수 마감</h2>
+  <div class="idx">
+    <div class="box"><div class="t">코스피</div><div class="v">5,018.85</div><div class="c dn">▼ 40.84 (−0.81%)</div><div class="s">장중 최고 5,172.94</div></div>
+    <div class="box"><div class="t">코스닥</div><div class="v">638.97</div><div class="c dn">▼ 5.30 (−0.82%)</div><div class="s">&nbsp;</div></div>
+    <div class="box"><div class="t">원·달러 환율</div><div class="v">1,360원</div><div class="c dn">▼ 약 3원</div><div class="s">오전 기준</div></div>
+  </div>
+</section>
+
+<section>
+  <h2>누가 사고 팔았나 (코스피)</h2>
+  <div class="box flow">
+    <div class="fr"><b>기관</b><div class="bar"><i style="left:50%;width:36%;background:var(--up)"></i></div><span class="num up">+7,200억</span></div>
+    <div class="fr"><b>외국인</b><div class="bar"><i style="right:50%;width:34.5%;background:var(--dn)"></i></div><span class="num dn">−6,900억</span></div>
+    <div class="fr"><b>개인</b><div class="bar"><i style="right:50%;width:24.5%;background:var(--dn)"></i></div><span class="num dn">−4,900억</span></div>
+    <p class="note">외국인 7거래일 연속 매도. 지난주(하루 2~3조 원)보다는 매도 양이 크게 줄었어요.</p>
+  </div>
+</section>
+
+<section>
+  <h2>오늘 왜 이렇게 됐나</h2>
+  <ul class="plain">
+    <li><b>외국인 매도 계속:</b> 미국 중간선거 뒤 AI 데이터센터 규제 걱정이 아직 남아 있어요.</li>
+    <li><b>미국 금리 부담:</b> 미국 10년 금리가 높고, 12월에 미국이 금리를 더 올릴 수 있다는 걱정이 있어요.</li>
+    <li><b>세금 개편 소식:</b> 정부의 상속·증여세 회피 막는 세제 개편 추진으로 저PBR(값싼 회사) 종목 심리가 약해졌어요.</li>
+    <li><b>좋은 점:</b> 지난주 급락 뒤 반도체 중심으로 싸게 사려는 돈(기관)이 들어왔고, 빚투 강제 매도 규제가 오늘부터 풀렸어요.</li>
+  </ul>
+</section>
+
+<section class="two">
+  <div>
+    <h2>대형주</h2>
+    <div class="sheet">
+      <div class="row"><div class="n">삼성전자<span>장중 상승폭 크게 줄임</span></div><div class="r">189,900 <span class="up">+0.64%</span></div></div>
+      <div class="row"><div class="n">SK하이닉스<span>장중 118만 원대까지 갔다 내려옴</span></div><div class="r">1,136,000 <span class="up">+0.35%</span></div></div>
+    </div>
+    <p class="note" style="margin-top:6px">두 종목 외국인 매도 합계 1,905억 원(외국인 전체 매도의 약 28%).</p>
+  </div>
+  <div>
+    <h2>하이닉스 외국인 멈춤 체크표</h2>
+    <div class="sheet">
+      <div class="row"><div class="n">외국인 하루 매도 1천억 아래</div><span class="tag unk">확인 중</span></div>
+      <div class="row"><div class="n">외국인 이틀 연속 하이닉스 삼</div><span class="tag no">아직</span></div>
+      <div class="row"><div class="n">지분율 48.27%에서 다시 오름</div><span class="tag unk">확인 중</span></div>
+      <div class="row"><div class="n">1,089,000원(11/6 저점) 위</div><span class="tag yes">지킴</span></div>
+      <div class="row"><div class="n">1,000,000원 지지선</div><span class="tag yes">지킴</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="two">
+  <div>
+    <h2>상한가 · 하한가</h2>
+    <div class="sheet">
+      <div class="row"><div class="n">동양2우B</div><div class="r">6,760 <span class="up">+30.00%</span></div></div>
+      <div class="row"><div class="n">대한항공우</div><div class="r">29,350 <span class="up">+29.87%</span></div></div>
+      <div class="row"><div class="n">깨끗한나라우</div><div class="r">6,790 <span class="up">+29.83%</span></div></div>
+      <div class="row"><div class="n">오가닉티코스메틱</div><div class="r">2,950 <span class="up">+29.96%</span></div></div>
+      <div class="row"><div class="n">머큐리</div><div class="r">4,400 <span class="up">+29.99%</span></div></div>
+      <div class="row"><div class="n">아시아나IDT</div><div class="r">14,130 <span class="up">+29.99%</span></div></div>
+      <div class="row"><div class="n">박셀바이오</div><div class="r">4,835 <span class="up">+29.97%</span></div></div>
+      <div class="row"><div class="n">애드바이오텍 <span>하한가</span></div><div class="r">943 <span class="dn">−29.94%</span></div></div>
+    </div>
+    <p class="note" style="margin-top:6px">우선주(이름 끝 '우') 상한가가 많아요. 거래가 적은 종목이라 급등락이 커요.</p>
+  </div>
+  <div>
+    <h2>테마</h2>
+    <p class="note">오른 테마</p>
+    <div class="chips" style="margin:4px 0 10px">
+      <span class="chip">광통신 <b class="up">+5.39%</b></span><span class="chip">딥페이크 <b class="up">+4.52%</b></span><span class="chip">국내 상장 중국기업 <b class="up">+4.19%</b></span><span class="chip">셋톱박스 <b class="up">+3.98%</b></span><span class="chip">전기자전거 <b class="up">+2.23%</b></span><span class="chip">반도체 후공정 <b class="up">+0.20%</b></span>
+    </div>
+    <p class="note">내린 테마</p>
+    <div class="chips" style="margin-top:4px">
+      <span class="chip">조선 <b class="dn">−3.58%</b></span><span class="chip">IT 대표주 <b class="dn">−2.91%</b></span><span class="chip">홈쇼핑 <b class="dn">−2.90%</b></span><span class="chip">2차전지·바이오 <b class="dn">약세</b></span>
+    </div>
+    <h2 style="margin-top:16px">공모주 청약 일정</h2>
+    <div class="sheet">
+      <div class="row"><div class="n">하나에어로다이내믹스</div><div class="r">11/10~11</div></div>
+      <div class="row"><div class="n">씨앤엠 · 제이앤티지 · 엠비디</div><div class="r">11/12~13</div></div>
+      <div class="row"><div class="n">유캐스트 · 에스에프씨</div><div class="r">11/18~19</div></div>
+      <div class="row"><div class="n">아델</div><div class="r">11/23~24</div></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>석준님 종목과 QLD 규칙</h2>
+  <div class="sheet">
+    <div class="row"><div class="n">국내 반도체 ETF<span>삼성·하이닉스 소폭 상승, 외국인 매도는 줄었지만 아직 계속</span></div><span class="tag unk">지켜봄</span></div>
+    <div class="row"><div class="n">QLD 규칙 (마지막 미국 종가 11/6)<span>QQQ 656.10 · 사기선 687.07(QLD 약 81.11) · 팔기선 673.50</span></div><span class="tag no">기다리기</span></div>
+    <div class="row"><div class="n">미국 종목 (IQQ·IREN·RKLB·PLTR·LPTH·NVTS)<span>오늘 밤 미국장 결과는 내일 아침 7시 43분 정리에 넣어요</span></div><span class="tag unk">내일 아침</span></div>
+  </div>
+</section>
+
+<section>
+  <h2>내일·이번 주 볼 것</h2>
+  <ul class="plain">
+    <li><b>11/10 아침</b> 로켓랩(RKLB) 실적 · <b>11/10 밤</b> 미국 소비자물가(CPI)</li>
+    <li><b>11/11</b> 코어위브 실적, LPTH 실적 → AI 투자 걱정이 풀리는지 첫 확인</li>
+    <li><b>11/18 아침</b> 엔비디아 실적 → 하이닉스 외국인 매도가 멈출지 정할 가장 큰 날</li>
+  </ul>
+</section>
+
+<p class="foot">출처: <a href="https://www.seoul.co.kr/news/economy/securities/2026/11/09/20261109500283">서울신문 마감시황</a> · <a href="https://www.newspim.com/news/view/20261109001082">뉴스핌 마감시황</a> · <a href="https://www.ppss.kr/news/articleView.html?idxno=319890">ㅍㅍㅅㅅ</a> · <a href="https://www.seoulfn.com/news/articleView.html?idxno=642305">서울파이낸스</a> · 상한가·테마·공모주는 키움증권 AI 시황(석준님 캡처) · 환율 <a href="https://www.job-post.co.kr/news/articleView.html?idxno=237122">잡포스트</a>. 수급 금액은 기사마다 조금씩 달라 반올림했어요.</p>
+</div>
