@@ -5,6 +5,7 @@
 ## 조직
 
 - **RC비너스**: 집 PC 상주 세션 (C:\Users\kun00\venus). MT5·FX EA 운영, PC 설치·정리.
+- **RC2비너스**: 집 PC 상주 세션 (C:\Users\kun00\venus-fx). FX 트레이딩 시스템 개발(규칙 엔진·AI 필터·전진 기록·학습 일지). MT5는 안 건드리고 RC가 꺼낸 CSV만 읽는다. 규칙 원본 `trading/rc2-venus/CLAUDE.md` (석준님 지시, 2026-11-09: RC 일을 둘로 나눔).
 - **JC비너스**: 집 PC 상주 세션 (C:\Users\kun00\stock-venus). 주식 전담(기업정보·차트·매크로, 보유 종목 점검). 규칙 원본 `trading/stock-venus/CLAUDE.md`.
 - **그때그때 부르는 담당** (`.claude/agents/`): researcher(조사), reviewer(검수, 직접 안 고침), fx-trader, data-collector, web-builder, auction-analyst, game-dev, game-artist, personal-assistant.
 - PC 세션은 `send_message`로 일을 맡기고, `SendMessage`로 보고를 받는다. 세션 ID는 다시 켤 때마다 바뀌니 `list_sessions`로 찾는다.
