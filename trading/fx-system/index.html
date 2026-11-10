@@ -1,0 +1,78 @@
+<title>FX 시스템 학습 일지</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+/* 방향: 한 장짜리 실험 노트. 맨 위 결론 → 지금 상태 → 시험 표 → 다음 할 일 */
+:root{--bg:#f3f5f4;--paper:#fff;--ink:#17201b;--muted:#5d6a63;--rule:#d6ddd8;
+--x:#b3322a;--xb:#f9e6e3;--o:#25744a;--ob:#e1f1e7;--w:#8a6a12;--wb:#f6eed4;
+--sans:"IBM Plex Sans KR",system-ui,sans-serif;--mono:"IBM Plex Mono",ui-monospace,monospace}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#111613;--paper:#19201c;--ink:#e5ebe7;--muted:#9aa69f;--rule:#2c3530;--x:#f2877d;--xb:#3a1f1c;--o:#7fd3a0;--ob:#173021;--w:#e3c062;--wb:#33290f;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#111613;--paper:#19201c;--ink:#e5ebe7;--muted:#9aa69f;--rule:#2c3530;--x:#f2877d;--xb:#3a1f1c;--o:#7fd3a0;--ob:#173021;--w:#e3c062;--wb:#33290f;color-scheme:dark}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.65}
+.wrap{max-width:740px;margin:0 auto;padding-block:20px 56px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:26px}
+.wrap>*{min-width:0}
+.k{font-size:.78rem;letter-spacing:.06em;color:var(--muted)}
+h1{font-size:1.4rem;margin:4px 0 8px;text-wrap:balance}
+h2{font-size:1.02rem;margin:0 0 10px}
+p{margin:0}
+ul{margin:0;padding-left:1.1em;display:grid;gap:6px}
+.sheet{background:var(--paper);border:1px solid var(--rule);border-radius:8px}
+.row{display:grid;grid-template-columns:3.2em 1fr auto;gap:4px 12px;padding:11px 14px;border-top:1px solid var(--rule);align-items:start}
+.row:first-child{border-top:0}
+.v{font-family:var(--mono);font-weight:600;color:var(--muted)}
+.row .n{min-width:0}
+.row .n b{display:block}
+.row .n span{font-size:.85rem;color:var(--muted)}
+.tag{font-size:.74rem;font-weight:600;padding:1px 9px;border-radius:999px;white-space:nowrap}
+.x{background:var(--xb);color:var(--x)}.o{background:var(--ob);color:var(--o)}.w{background:var(--wb);color:var(--w)}
+.box{background:var(--paper);border:1px solid var(--rule);border-radius:8px;padding:14px 16px;display:grid;gap:8px}
+.foot{font-size:.8rem;color:var(--muted)}
+</style>
+<div class="wrap">
+<header>
+  <div class="k">FX 트레이딩 시스템 · 학습 일지 · 2026-11-10 기준 · RC2비너스 시험, 매니저 정리</div>
+  <h1>10번 시험했고 아직 합격은 없어요. 대신 왜 안 되는지는 찾았어요</h1>
+  <ul>
+    <li><b>가장 큰 발견:</b> CRT 비서 EA가 고르는 방향은 동전 던지기와 구별되지 않았어요(8년 자료).</li>
+    <li><b>AI도 같은 결과:</b> 차트 정보만으로는 AI도 다음 4시간 방향을 50%밖에 못 맞혔어요.</li>
+    <li><b>다음 희망:</b> 차트에 없는 새 정보(미국 경제지표 발표)를 넣는 시험. 석준님 FRED 키가 필요해요.</li>
+  </ul>
+</header>
+
+<section class="box">
+  <h2>지금 상태</h2>
+  <p>✔ 실시간 기록(주문 없음): 후보 4개를 매시 17분에 자동 기록 중(작업 스케줄러)</p>
+  <p>✔ 자료: 4종목 1분~4시간봉을 매시 12분에 자동으로 받음</p>
+  <p>⏳ 석준님 할 일: FRED 무료 키를 받아 PC에 파일로 저장 → 경제지표 시험 시작</p>
+</section>
+
+<section>
+  <h2>시험 기록 (불합격도 모두 남김)</h2>
+  <div class="sheet">
+    <div class="row"><span class="v">v1</span><div class="n"><b>CRT 비서 EA 규칙 그대로</b><span>2년 670건, 비용 넣으면 −52R. 목표가 가까워 조금 벌고 스프레드가 다 먹음</span></div><i class="tag x">불합격</i></div>
+    <div class="row"><span class="v">v2</span><div class="n"><b>손익비 1.5~1.75만 거래</b><span>뒤 1년 +4.6R(80건). 건수가 적고 고른 효과가 섞임 → 관찰 후보</span></div><i class="tag w">약한 +</i></div>
+    <div class="row"><span class="v">v3</span><div class="n"><b>AI가 좋은 자리 고르기</b><span>손해는 70% 줄었지만 여전히 −</span></div><i class="tag x">불합격</i></div>
+    <div class="row"><span class="v">v4</span><div class="n"><b>손절에 여유 주기</b><span>손해 절반(−135R → −67R). 버는 힘 +0.02R가 비용 0.08R보다 작음</span></div><i class="tag x">불합격</i></div>
+    <div class="row"><span class="v">v5</span><div class="n"><b>큰 흐름과 같은 방향만</b><span>앞 1년부터 −</span></div><i class="tag x">불합격</i></div>
+    <div class="row"><span class="v">—</span><div class="n"><b>큰 흐름과 반대 방향(우연히 발견)</b><span>안 쓴 2019~2024년 6년 모두 −(합계 −72R) → 우연으로 확인</span></div><i class="tag x">불합격</i></div>
+    <div class="row"><span class="v">v6</span><div class="n"><b>나오는 방법 바꾸기(목표 3배, 최대 3일)</b><span>2019~2022년 −114R. 진입 자리에 방향 정보가 없음</span></div><i class="tag x">불합격</i></div>
+    <div class="row"><span class="v">비교</span><div class="n"><b>EA 방향 vs 동전 던지기 1,000번</b><span>EA는 동전 던지기 한가운데(64번째 백분위) → v1~v6이 안 된 근본 이유</span></div><i class="tag x">차이 없음</i></div>
+    <div class="row"><span class="v">v7</span><div class="n"><b>AI가 직접 방향 예측(LightGBM·딥러닝)</b><span>적중 50%, 딥러닝은 6번 중 4번 −</span></div><i class="tag x">불합격</i></div>
+    <div class="row"><span class="v">v8</span><div class="n"><b>금리 차이·큰손 포지션 추가</b><span>2022년 −29. 천천히 변하는 정보라 시장 흐름이 바뀌면 틀림</span></div><i class="tag x">불합격</i></div>
+    <div class="row"><span class="v">v9</span><div class="n"><b>2022년에 + 였던 AI 후보</b><span>새 자료(2023~2024)에서 −7.7, 4종목 중 1개만 + → 2022년 달러 강세 덕이었음</span></div><i class="tag x">불합격</i></div>
+    <div class="row"><span class="v">v10</span><div class="n"><b>미국 경제지표 발표 정보 추가</b><span>고용·실업률·물가·소매판매 등 6개. 준비 끝, FRED 키 기다림</span></div><i class="tag w">대기</i></div>
+  </div>
+  <p class="foot" style="margin-top:6px">R = 손절 한 번 금액. 비용은 Standard·Raw 계좌 가정 중 나쁜 쪽으로 판정. 자료 순서: 개발 2019~2022 → 검증 2023~2024(한 번만) → 진짜 판정은 실시간 기록.</p>
+</section>
+
+<section class="box">
+  <h2>이번 주에 배운 것</h2>
+  <ul>
+    <li>차트 모양(스윕·MSS·추세)만으로는 FX 단기 방향을 맞힐 수 없었어요. 규칙으로도, AI로도요.</li>
+    <li>비용(스프레드)이 한 건당 약 0.08R이라, 버는 힘이 그보다 확실히 커야 해요.</li>
+    <li>한 해만 좋은 결과는 그해 시장 분위기 덕일 수 있어요. 새 자료로 한 번만 확인하는 방식이 가짜를 걸러 줬어요.</li>
+  </ul>
+</section>
+
+<p class="foot">원본 기록: RC2 PC venus-fx\WORKLOG.md, results\*.json · 계획: trading/fx-system/plan.md</p>
+</div>
