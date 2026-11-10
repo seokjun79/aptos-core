@@ -1,0 +1,153 @@
+<title>미국 증시 정리</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+/* 방향: 증권사 장마감 리포트 형식 + 우리만의 칸(내 종목·QLD 규칙·외국인 멈춤표). 한국식 색 유지: 오름 빨강, 내림 파랑 */
+:root{
+  --bg:#f2f4f7;--paper:#fff;--ink:#161b22;--muted:#5b6573;--rule:#d9dee6;
+  --up:#d1293d;--up-bg:#fde8eb;--dn:#1f5fd1;--dn-bg:#e5eefc;--ok:#1f7a4d;--ok-bg:#e1f2e8;--warn:#8a6a12;--warn-bg:#f6eed4;
+  --sans:"IBM Plex Sans KR",system-ui,sans-serif;--mono:"IBM Plex Mono",ui-monospace,monospace}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0f1318;--paper:#171c23;--ink:#e6eaf0;--muted:#98a2b0;--rule:#2a313b;
+  --up:#ff7b8a;--up-bg:#3a1a20;--dn:#7fa8ff;--dn-bg:#18243d;--ok:#7fd3a0;--ok-bg:#173021;--warn:#e3c062;--warn-bg:#33290f;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f1318;--paper:#171c23;--ink:#e6eaf0;--muted:#98a2b0;--rule:#2a313b;
+  --up:#ff7b8a;--up-bg:#3a1a20;--dn:#7fa8ff;--dn-bg:#18243d;--ok:#7fd3a0;--ok-bg:#173021;--warn:#e3c062;--warn-bg:#33290f;color-scheme:dark}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.65}
+.wrap{max-width:760px;margin:0 auto;padding-block:20px 56px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:26px}
+.wrap>*{min-width:0}
+.kicker{font-size:.78rem;letter-spacing:.06em;color:var(--muted)}
+h1{font-size:1.4rem;margin:4px 0 6px;text-wrap:balance}
+h2{font-size:1.02rem;margin:0 0 10px;text-wrap:balance}
+p{margin:0}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.up{color:var(--up)}.dn{color:var(--dn)}
+.idx{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px}
+.box{background:var(--paper);border:1px solid var(--rule);border-radius:8px;padding:12px 14px;min-width:0}
+.box .t{font-size:.84rem;color:var(--muted)}
+.box .v{font-family:var(--mono);font-weight:600;font-size:1.35rem;font-variant-numeric:tabular-nums}
+.box .c{font-family:var(--mono);font-size:.9rem}
+.box .s{font-size:.8rem;color:var(--muted)}
+.flow{display:grid;gap:8px}
+.fr{display:grid;grid-template-columns:4.5em 1fr 6.5em;gap:10px;align-items:center}
+.bar{height:14px;border-radius:3px;background:var(--rule);position:relative;overflow:hidden}
+.bar i{position:absolute;top:0;bottom:0}
+.fr .num{text-align:right}
+ul.plain{margin:0;padding-left:1.1em;display:grid;gap:6px}
+.sheet{background:var(--paper);border:1px solid var(--rule);border-radius:8px}
+.row{display:grid;grid-template-columns:1fr auto;gap:2px 12px;padding:10px 14px;border-top:1px solid var(--rule);align-items:center}
+.row:first-child{border-top:0}
+.row .n{font-weight:600;min-width:0}
+.row .n span{display:block;font-weight:400;font-size:.8rem;color:var(--muted)}
+.row .r{text-align:right;font-family:var(--mono);font-variant-numeric:tabular-nums}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font-size:.84rem;padding:3px 10px;border-radius:999px;background:var(--paper);border:1px solid var(--rule)}
+.tag{font-size:.74rem;font-weight:600;padding:1px 9px;border-radius:999px;white-space:nowrap}
+.yes{background:var(--ok-bg);color:var(--ok)}.no{background:var(--up-bg);color:var(--up)}.unk{background:var(--warn-bg);color:var(--warn)}
+.two{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
+.two>*{min-width:0}
+.note{font-size:.84rem;color:var(--muted)}
+.foot{font-size:.78rem;color:var(--muted)}
+.foot a{color:inherit}
+</style>
+<div class="wrap">
+<header>
+  <div class="kicker">미국 마감 정리 · 2026-11-10 (화) 뉴욕 종가 · 한국 11/11 아침 · 매니저 비너스</div>
+  <h1>물가가 예상보다 높게 나와 세 지수 모두 내렸어요</h1>
+  <p>10월 근원 물가 +0.3%(예상 +0.2%)로 12월 금리 인상 예상이 굳어졌어요. 미국 10년 금리가 4.98%까지 올랐고, 엔비디아가 −5.5%로 기술주를 끌어내렸어요.</p>
+</header>
+
+<section>
+  <h2>지수 마감</h2>
+  <div class="idx">
+    <div class="box"><div class="t">S&amp;P500</div><div class="v">7,520.93</div><div class="c dn">▼ 0.38%</div><div class="s">전날 +2.4%</div></div>
+    <div class="box"><div class="t">나스닥</div><div class="v">25,065.88</div><div class="c dn">▼ 0.74%</div><div class="s">&nbsp;</div></div>
+    <div class="box"><div class="t">다우</div><div class="v">52,231.89</div><div class="c dn">▼ 0.30%</div><div class="s">전날 +2.2%</div></div>
+  </div>
+</section>
+
+<section>
+  <h2>금리 · 달러 · 원자재</h2>
+  <div class="idx">
+    <div class="box"><div class="t">미국 10년 금리</div><div class="v">4.98%</div><div class="c up">▲ 0.12%p</div><div class="s">5%에 바짝 다가감</div></div>
+    <div class="box"><div class="t">달러인덱스</div><div class="v">102.22</div><div class="c up">▲ 0.56%</div><div class="s">&nbsp;</div></div>
+    <div class="box"><div class="t">WTI 유가</div><div class="v">86.24$</div><div class="c dn">▼ 0.70%</div><div class="s">이란 전쟁 끝날 수 있다는 말</div></div>
+    <div class="box"><div class="t">금</div><div class="v">4,038.90$</div><div class="c dn">▼ 1.84%</div><div class="s">달러 강세</div></div>
+  </div>
+</section>
+
+<section>
+  <h2>섹터 (오른 순서)</h2>
+  <div class="box flow">
+    <div class="fr"><b>금융</b><div class="bar"><i style="left:50%;width:21.7%;background:var(--up)"></i></div><span class="num up">+0.52%</span></div>
+    <div class="fr"><b>에너지</b><div class="bar"><i style="left:50%;width:18.3%;background:var(--up)"></i></div><span class="num up">+0.44%</span></div>
+    <div class="fr"><b>통신</b><div class="bar"><i style="left:50%;width:15.4%;background:var(--up)"></i></div><span class="num up">+0.37%</span></div>
+    <div class="fr"><b>헬스케어</b><div class="bar"><i style="left:50%;width:12.1%;background:var(--up)"></i></div><span class="num up">+0.29%</span></div>
+    <div class="fr"><b>필수소비</b><div class="bar"><i style="left:50%;width:6.2%;background:var(--up)"></i></div><span class="num up">+0.15%</span></div>
+    <div class="fr"><b>임의소비</b><div class="bar"><i style="left:50%;width:1.2%;background:var(--up)"></i></div><span class="num up">+0.03%</span></div>
+    <div class="fr"><b>산업재</b><div class="bar"><i style="right:50%;width:3.8%;background:var(--dn)"></i></div><span class="num dn">-0.09%</span></div>
+    <div class="fr"><b>부동산</b><div class="bar"><i style="right:50%;width:5.4%;background:var(--dn)"></i></div><span class="num dn">-0.13%</span></div>
+    <div class="fr"><b>유틸리티</b><div class="bar"><i style="right:50%;width:5.8%;background:var(--dn)"></i></div><span class="num dn">-0.14%</span></div>
+    <div class="fr"><b>소재</b><div class="bar"><i style="right:50%;width:7.1%;background:var(--dn)"></i></div><span class="num dn">-0.17%</span></div>
+    <div class="fr"><b>기술</b><div class="bar"><i style="right:50%;width:47.9%;background:var(--dn)"></i></div><span class="num dn">-1.15%</span></div>
+    <p class="note">11개 중 6개가 올랐지만, 비중이 가장 큰 기술주가 −1.15%로 지수를 끌어내렸어요.</p>
+  </div>
+</section>
+
+<section>
+  <h2>왜 이렇게 됐나</h2>
+  <ul class="plain">
+    <li><b>물가가 예상보다 높음:</b> 전체 +0.4%(예상 +0.3%), 근원 +0.3%(예상 +0.2%), 3달 연속 +0.3%.</li>
+    <li><b>12월 금리 인상 굳어짐:</b> 월러 연준 이사가 말한 0.5%p 인상 기준에 닿았어요.</li>
+    <li><b>엔비디아 −5.5%:</b> 젠슨 황 조사 문제가 이틀째 이어졌어요.</li>
+    <li><b>AMD·브로드컴은 올라감:</b> AMD가 앤트로픽에 25억 달러 투자 계획을 냈고, 돈이 엔비디아에서 다른 AI 반도체로 옮겨 갔어요.</li>
+  </ul>
+</section>
+
+<section class="two">
+  <div>
+    <h2>AI · 반도체</h2>
+    <div class="sheet">
+      <div class="row"><div class="n">브로드컴 AVGO</div><div class="r">331.98 <span class="up">+3.91%</span></div></div>
+      <div class="row"><div class="n">TSMC TSM</div><div class="r">396.48 <span class="up">+2.02%</span></div></div>
+      <div class="row"><div class="n">AMD</div><div class="r">515.21 <span class="up">+1.30%</span></div></div>
+      <div class="row"><div class="n">반도체 ETF SOXX</div><div class="r">146.59 <span class="dn">−0.12%</span></div></div>
+      <div class="row"><div class="n">마이크론 MU<span>하이닉스와 같은 메모리</span></div><div class="r">725.11 <span class="dn">−1.10%</span></div></div>
+      <div class="row"><div class="n">엔비디아 NVDA<span>실적 11/18 아침(한국)</span></div><div class="r">168.89 <span class="dn">−5.47%</span></div></div>
+    </div>
+  </div>
+  <div>
+    <h2>석준님 종목</h2>
+    <div class="sheet">
+      <div class="row"><div class="n">RKLB<span>수주잔고 최대·NASA 계약 뒤 이틀째 상승</span></div><div class="r">62.71 <span class="up">+6.54%</span></div></div>
+      <div class="row"><div class="n">PLTR</div><div class="r">168.82 <span class="dn">−0.22%</span></div></div>
+      <div class="row"><div class="n">LPTH<span>실적 오늘(11/11)</span></div><div class="r">7.99 <span class="dn">−0.25%</span></div></div>
+      <div class="row"><div class="n">QLD</div><div class="r">78.20 <span class="dn">−1.20%</span></div></div>
+      <div class="row"><div class="n">NVTS</div><div class="r">9.38 <span class="dn">−2.09%</span></div></div>
+      <div class="row"><div class="n">IREN<span>칸토 목표가 99→47달러 여파</span></div><div class="r">19.73 <span class="dn">−7.85%</span></div></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>QLD 규칙 (QQQ 종가 기준)</h2>
+  <div class="sheet">
+    <div class="row"><div class="n">사기선<span>QQQ가 이 위로 끝나면 QLD 사기 (QLD 약 81.1)</span></div><div class="r">약 687</div></div>
+    <div class="row"><div class="n"><b>QQQ 어제 종가</b><span>QLD 78.20</span></div><div class="r"><b>674.76</b></div></div>
+    <div class="row"><div class="n">팔기선<span>이 아래로 끝나면 팔기 (QLD 약 77.9)</span></div><div class="r">약 673.5</div></div>
+  </div>
+  <p class="note" style="margin-top:6px">사기선과 팔기선 사이라 계속 <b>기다리기</b>예요. 사기선까지 약 12달러. 선 가격은 200일 평균선에 따라 매일 조금씩 움직여요.</p>
+</section>
+
+<section>
+  <h2>오늘·이번 주 볼 것</h2>
+  <ul class="plain">
+    <li><b>11/11</b> 코어위브·LPTH 실적 → AI 투자 걱정이 풀리는지</li>
+    <li><b>11/13</b> 미국 생산자물가(PPI)</li>
+    <li><b>11/18 아침</b> 엔비디아 실적 · 젠슨 황 의회 설명</li>
+    <li><b>12/9~10</b> 미국 금리 결정(FOMC)</li>
+  </ul>
+</section>
+
+<p class="foot">출처: 종목·섹터 ETF·금리·달러·원자재 종가는 JC비너스 Yahoo 일봉 조회(11/11 08:24) · 지수는 <a href="https://www.cnbc.com/2026/11/10/stock-market-today-live-updates.html">CNBC</a> · <a href="https://www.thestreet.com/stock-market-today/stock-market-today-dow-jones-sp-500-nasdaq-updates-nov-10-2026">TheStreet</a> · 물가 <a href="https://investinglive.com/news/us-october-core-cpi-vs-0-2-expected/">investinglive</a> · <a href="https://mlq.ai/news/october-cpi-runs-hotter-than-expected-as-core-inflation-hits-wallers-threshold-for-a-half-point-hike/">mlq.ai</a> · AMD <a href="https://www.fool.com/coverage/stock-market-today/2026/11/10/stock-market-today-nov-10-amd-rises-on-plan-to-invest-usd2-5-billion-in-anthropic/">Motley Fool</a>. 원자재는 선물이라 마감 시각이 주식과 달라요.</p>
+</div>
