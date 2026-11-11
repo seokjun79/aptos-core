@@ -10,9 +10,9 @@
 - **그때그때 부르는 담당** (`.claude/agents/`): researcher(조사), reviewer(검수, 직접 안 고침), fx-trader, data-collector, web-builder, auction-analyst, game-dev, game-artist, personal-assistant.
 - PC 세션은 `send_message`로 일을 맡기고, `SendMessage`로 보고를 받는다. 세션 ID는 다시 켤 때마다 바뀌니 `list_sessions`로 찾는다.
 - **"일하고 있다"고 말하기 전에 반드시 `get_session`으로 `connection_status`(connected)와 최근 활동을 확인한다(2026-11-07 반성: PC가 꺼져 있는데 "동시에 일하고 있다"고 말함).** send_message의 "delivered"는 받았다는 뜻이 아니다.
-- PC 세션에 일을 맡긴 뒤 답이 늦으면 석준님이 묻기 전에 `get_session`으로 상태를 본다. `REQUIRES_ACTION`(확인 대기로 멈춤)이면 바로 다른 PC 세션에게 그 세션 새 창을 켜게 하고(사전 허용), 석준님께 한 줄로 알린다. 감시처럼 오래 걸리는 일은 예약으로 상태를 확인한다. **예약 규칙(2026-11-05 확인):** 이 세션으로 바로 쏘는 예약(`send_later`, persistent_session_id=이 세션)은 매번 ACCESS_DENIED로 실패한다. 예약은 반드시 `create_trigger`의 `create_new_session_on_fire=true` + 프롬프트 "send_message로 이 세션에 [예약 알림] 문장 보내고 끝내기" 방식으로 만든다(이 방식은 성공함).
+- PC 세션에 일을 맡긴 뒤 답이 늦으면 석준님이 묻기 전에 `get_session`으로 상태를 본다. `REQUIRES_ACTION`(확인 대기로 멈춤)이면 바로 다른 PC 세션에게 그 세션 새 창을 켜게 하고(사전 허용), 석준님께 한 줄로 알린다. 감시처럼 오래 걸리는 일은 예약으로 상태를 확인한다. **예약 규칙(2026-11-11 다시 확인, 이전 규칙 폐기):** 이 세션으로 바로 쏘는 예약은 ACCESS_DENIED로 실패하고, 새 세션 예약에서 send_message로 이 세션을 부르는 방식도 실패한다(새 세션에는 claude-code-remote 도구가 없어 엉뚱한 SendMessage를 쓰고 "연결할 수 없음"). 그래서 예약은 **새 세션이 일을 직접 끝내게** 만든다: WebSearch로 조사 → Artifact read 후 같은 url로 publish → PushNotification으로 석준님께 한 줄. 매니저에게 메시지를 보내라는 예약은 만들지 않는다. PC 세션이 할 일은 그 PC 세션의 창 예약(CronCreate)으로 걸고, 결과는 PC 세션이 SendMessage로 보낸다(이건 된다). 예약을 만들면 반드시 한 번 fire_trigger로 시험해 결과를 확인한다.
 
-- **멈춤 감시(석준님 지시, 2026-11-10):** 매시 17분 예약(trig_01UX7BsabU5VH7gUbNDyj75u)이 RC·RC2·JC 세션을 보고, 멈추면 "[예약 알림] 멈춤 감지"를 보낸다. 받으면 바로 PushNotification으로 석준님 휴대폰에 "어느 창, 무엇을 누르면 되는지" 한 줄을 보낸다. PC 세션을 다시 켜서 세션 ID가 바뀌면 이 예약의 ID도 고친다.
+- **멈춤 감시(석준님 지시, 2026-11-10):** 예약 방식으로는 세션 상태를 볼 수 없어(2026-11-11 확인) 꺼 둠(trig_01UX7BsabU5VH7gUbNDyj75u 비활성). 대신 석준님 메시지를 받을 때마다 매니저가 get_session으로 세 창을 확인하고, 멈춘 창이 있으면 먼저 알린다.
 
 - **PC 세션 보고 전달 규칙(석준님 지시, 2026-11-10):** RC·RC2·JC의 진행 보고를 하나하나 석준님께 옮기지 않는다. 매니저가 받아 처리하고, 석준님께는 ①하루 한 번 요약 ②합격·완성 같은 결과 ③석준님이 꼭 해야 할 일만 짧게 말한다. FX 시험 결과는 `trading/fx-system/index.html` 학습 일지 페이지(https://claude.ai/artifact/EC3cKdgkjBW6kM89Rr5qYm)에 모아 갱신하고 링크를 준다.
 
