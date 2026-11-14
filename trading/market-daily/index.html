@@ -1,0 +1,150 @@
+<title>오늘 증시 정리</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+/* 방향: 증권사 장마감 리포트 형식 + 우리만의 칸(내 종목·QLD 규칙·외국인 멈춤표). 한국식 색: 오름 빨강, 내림 파랑 */
+:root{
+  --bg:#f2f4f7;--paper:#fff;--ink:#161b22;--muted:#5b6573;--rule:#d9dee6;
+  --up:#d1293d;--up-bg:#fde8eb;--dn:#1f5fd1;--dn-bg:#e5eefc;--ok:#1f7a4d;--ok-bg:#e1f2e8;--warn:#8a6a12;--warn-bg:#f6eed4;
+  --sans:"IBM Plex Sans KR",system-ui,sans-serif;--mono:"IBM Plex Mono",ui-monospace,monospace}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0f1318;--paper:#171c23;--ink:#e6eaf0;--muted:#98a2b0;--rule:#2a313b;
+  --up:#ff7b8a;--up-bg:#3a1a20;--dn:#7fa8ff;--dn-bg:#18243d;--ok:#7fd3a0;--ok-bg:#173021;--warn:#e3c062;--warn-bg:#33290f;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f1318;--paper:#171c23;--ink:#e6eaf0;--muted:#98a2b0;--rule:#2a313b;
+  --up:#ff7b8a;--up-bg:#3a1a20;--dn:#7fa8ff;--dn-bg:#18243d;--ok:#7fd3a0;--ok-bg:#173021;--warn:#e3c062;--warn-bg:#33290f;color-scheme:dark}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.65}
+.wrap{max-width:760px;margin:0 auto;padding-block:20px 56px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:26px}
+.wrap>*{min-width:0}
+.kicker{font-size:.78rem;letter-spacing:.06em;color:var(--muted)}
+h1{font-size:1.4rem;margin:4px 0 6px;text-wrap:balance}
+h2{font-size:1.02rem;margin:0 0 10px;text-wrap:balance}
+p{margin:0}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.up{color:var(--up)}.dn{color:var(--dn)}
+.idx{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px}
+.box{background:var(--paper);border:1px solid var(--rule);border-radius:8px;padding:12px 14px;min-width:0}
+.box .t{font-size:.84rem;color:var(--muted)}
+.box .v{font-family:var(--mono);font-weight:600;font-size:1.35rem;font-variant-numeric:tabular-nums}
+.box .c{font-family:var(--mono);font-size:.9rem}
+.box .s{font-size:.8rem;color:var(--muted)}
+.flow{display:grid;gap:8px}
+.fr{display:grid;grid-template-columns:4.5em 1fr 6.5em;gap:10px;align-items:center}
+.bar{height:14px;border-radius:3px;background:var(--rule);position:relative;overflow:hidden}
+.bar i{position:absolute;top:0;bottom:0}
+.fr .num{text-align:right}
+ul.plain{margin:0;padding-left:1.1em;display:grid;gap:6px}
+.sheet{background:var(--paper);border:1px solid var(--rule);border-radius:8px}
+.row{display:grid;grid-template-columns:1fr auto;gap:2px 12px;padding:10px 14px;border-top:1px solid var(--rule);align-items:center}
+.row:first-child{border-top:0}
+.row .n{font-weight:600;min-width:0}
+.row .n span{display:block;font-weight:400;font-size:.8rem;color:var(--muted)}
+.row .r{text-align:right;font-family:var(--mono);font-variant-numeric:tabular-nums}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font-size:.84rem;padding:3px 10px;border-radius:999px;background:var(--paper);border:1px solid var(--rule)}
+.tag{font-size:.74rem;font-weight:600;padding:1px 9px;border-radius:999px;white-space:nowrap}
+.yes{background:var(--ok-bg);color:var(--ok)}.no{background:var(--up-bg);color:var(--up)}.unk{background:var(--warn-bg);color:var(--warn)}
+.two{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
+.two>*{min-width:0}
+.note{font-size:.84rem;color:var(--muted)}
+.foot{font-size:.78rem;color:var(--muted)}
+.foot a{color:inherit}
+</style>
+<div class="wrap">
+<header>
+  <div class="kicker">장마감 정리 · 2026-11-10 (화) 15:30 마감 · 매니저 비너스</div>
+  <h1>코스피 4% 넘게 급반등, 5,239로 끝났어요</h1>
+  <p>외국인과 기관이 같이 샀고 개인이 1조 3천억 원을 팔았어요. 반도체 대형주와 항공주가 시장을 끌어올렸어요.</p>
+</header>
+
+<section>
+  <h2>지수 마감</h2>
+  <div class="idx">
+    <div class="box"><div class="t">코스피</div><div class="v">5,239.13</div><div class="c up">▲ 220.28 (+4.39%)</div><div class="s">어제 5,018.85</div></div>
+    <div class="box"><div class="t">코스닥</div><div class="v">4%대 ▲</div><div class="c up">마감 지수 확인 중</div><div class="s">기관 +2,149억</div></div>
+  </div>
+</section>
+
+<section>
+  <h2>누가 사고 팔았나 (코스피)</h2>
+  <div class="box flow">
+    <div class="fr"><b>기관</b><div class="bar"><i style="left:50%;width:18.6%;background:var(--up)"></i></div><span class="num up">+4,980억</span></div>
+    <div class="fr"><b>외국인</b><div class="bar"><i style="left:50%;width:13.2%;background:var(--up)"></i></div><span class="num up">+3,532억</span></div>
+    <div class="fr"><b>개인</b><div class="bar"><i style="right:50%;width:50%;background:var(--dn)"></i></div><span class="num dn">−1조 3,396억</span></div>
+    <p class="note">외국인이 코스피 전체에서 사는 쪽으로 돌아섰어요.</p>
+  </div>
+</section>
+
+<section class="two">
+  <div>
+    <h2>대형주</h2>
+    <div class="sheet">
+      <div class="row"><div class="n">SK하이닉스<span>종가 1,212,000원 · 거래대금 1위</span></div><div class="r up">+6.69%</div></div>
+      <div class="row"><div class="n">삼성전자<span>종가 198,900원 · 거래대금 2위</span></div><div class="r up">+4.74%</div></div>
+      <div class="row"><div class="n">삼성SDI</div><div class="r up">+9.9%</div></div>
+      <div class="row"><div class="n">한진칼 · 대한항공</div><div class="r up">+15.2% · +11.5%</div></div>
+    </div>
+  </div>
+  <div>
+    <h2>하이닉스 외국인 멈춤 체크표</h2>
+    <div class="sheet">
+      <div class="row"><div class="n">코스피 전체 외국인 순매수 전환<span>+3,532억 (어제 −6,900억)</span></div><span class="tag yes">달성</span></div>
+      <div class="row"><div class="n">하이닉스 종목 외국인 순매수<span>11/9 +20억 → 11/10 +1,290억 (KRX 확정치) · 삼성전자 +95억</span></div><span class="tag yes">달성</span></div>
+      <div class="row"><div class="n">이틀 연속 외국인 매수<span>11/9·11/10 이틀 연속 (직전 4일간 −5조 1,602억)</span></div><span class="tag yes">달성</span></div>
+      <div class="row"><div class="n">지분율<span>KIS 48.01% (어제 48.02%)</span></div><span class="tag unk">거의 그대로</span></div>
+      <div class="row"><div class="n">1,089,000원(11/6 저점) 위</div><span class="tag yes">지킴</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="two">
+  <div>
+    <h2>상한가 · 하한가</h2>
+    <div class="sheet">
+      <div class="row"><div class="n">코스피 상한가 7개<span>대한항공우 · 코아스 · 메타랩스 · 진에어 · 깨끗한나라우 · 동양2우B · NHN</span></div><div class="r up">+30%</div></div>
+      <div class="row"><div class="n">코스닥 상한가 6개<span>예선테크 · 티앤이코리아 · 삼익제약 · 바이오인프라 · 핑거스토리 · 썸에이지</span></div><div class="r up">+30%</div></div>
+      <div class="row"><div class="n">하한가</div><div class="r">없음</div></div>
+    </div>
+    <h2 style="margin-top:16px">코스닥 돈 몰린 종목</h2>
+    <div class="sheet">
+      <div class="row"><div class="n">동원파츠</div><div class="r">5,586억 <span class="up">+10.9%</span></div></div>
+      <div class="row"><div class="n">주성엔지니어링</div><div class="r">1,852억 <span class="up">+7.5%</span></div></div>
+      <div class="row"><div class="n">알테오젠</div><div class="r">1,153억 <span class="up">+4.7%</span></div></div>
+    </div>
+  </div>
+  <div>
+    <h2>테마</h2>
+    <p class="note">오른 테마</p>
+    <div class="chips" style="margin:4px 0 10px">
+      <span class="chip">LCC <b class="up">+12.94%</b></span><span class="chip">SOFC <b class="up">+9.74%</b></span><span class="chip">건설 대표주 <b class="up">+7.67%</b></span><span class="chip">전선 <b class="up">+7.63%</b></span><span class="chip">나트륨이온 2차전지 <b class="up">+7.61%</b></span>
+    </div>
+    <p class="note">내린 테마</p>
+    <div class="chips" style="margin-top:4px">
+      <span class="chip">홈쇼핑 <b class="dn">−2.45%</b></span><span class="chip">편의점 <b class="dn">−1.57%</b></span><span class="chip">주류 <b class="dn">−0.61%</b></span><span class="chip">중국기업 <b class="dn">−0.60%</b></span><span class="chip">엔터 <b class="dn">−0.51%</b></span>
+    </div>
+    <h2 style="margin-top:16px">업종</h2>
+    <div class="chips">
+      <span class="chip">항공사 <b class="up">+13.62%</b></span><span class="chip">전기장비 <b class="up">+9.98%</b></span><span class="chip">통신장비 <b class="up">+7.73%</b></span><span class="chip">복합유틸리티 <b class="dn">−5.97%</b></span><span class="chip">담배 <b class="dn">−3.67%</b></span>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>석준님 종목과 QLD 규칙</h2>
+  <div class="sheet">
+    <div class="row"><div class="n">국내 반도체 ETF<span>하이닉스 +6.7%, 삼성전자 +4.7%로 크게 반등</span></div><span class="tag yes">반등</span></div>
+    <div class="row"><div class="n">QLD 규칙<span>사기선 QQQ 687.07 · 팔기선 673.50 (JC 확인: 계속 기다리기)</span></div><span class="tag no">기다리기</span></div>
+  </div>
+</section>
+
+<section>
+  <h2>내일·이번 주 볼 것</h2>
+  <ul class="plain">
+    <li><b>오늘 밤</b> 미국 소비자물가(CPI)</li>
+    <li><b>11/11</b> 코어위브·LPTH 실적 · <b>11/13</b> 미국 생산자물가(PPI)</li>
+    <li><b>11/18 아침</b> 엔비디아 실적</li>
+  </ul>
+</section>
+
+<p class="foot">출처: <a href="https://www.wikitree.co.kr/articles/1173455">위키트리 마감</a> · <a href="https://www.fnnews.com/news/202611101403298373">파이낸셜뉴스 오후시황</a> · <a href="https://www.job-post.co.kr/news/articleView.html?idxno=237431">잡포스트</a> · 종목별 상한가·거래대금·지분율은 JC비너스 KIS 조회(15:40), 테마·업종은 네이버 증권. 지수·수급은 한 매체 마감 기사 기준이라 거래소 확정치와 조금 다를 수 있어요.</p>
+</div>

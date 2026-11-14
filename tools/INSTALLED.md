@@ -1,0 +1,17 @@
+# 외부에서 가져온 도구 목록 (매니저 비너스 관리)
+
+새로 설치하거나 가져올 때마다 여기에 한 줄 추가한다. 출처·버전(커밋)·위치·안전 확인 결과를 같이 적는다.
+
+| 이름 | 무엇 | 출처 · 버전 | 어디에 있나 | 안전 확인 | 날짜 |
+|---|---|---|---|---|---|
+| qlib (pyqlib) | 마이크로소프트 AI 퀀트 연구 도구 | github.com/microsoft/qlib · pyqlib 0.9.7, lightgbm 4.7.0 | RC PC `C:\Users\kun00\venus\qlib_env` (가상환경 안에만) | 코드 검사 후 설치, 석준님 승인 | 2026-11-03 |
+| xgboost, torch (CPU) | qlib 딥러닝 모델용 | pip · xgboost 3.4.1, torch 2.15.0+cpu | RC PC `qlib_env` 안 | 석준님이 RC 창에서 직접 승인 | 2026-11-04 |
+| oil-ui | 화면 디자인 스킬(설명서+보조 스크립트) | github.com/oil-oil/oil-ui · 커밋 5b03da0 · MIT | 이 저장소 `.claude/skills/oil-ui/` (SOURCE.txt) | 코드 검사: 악성 없음. 자동 업데이트·버전 확인 끔(settings.json env) | 2026-11-04 |
+| Codex CLI | OpenAI 코딩 AI(명령어 버전) — RC가 코드 검사·보조 코딩에 씀 | npm @openai/codex · codex-cli 0.166.0 | RC PC `C:\Users\kun00\AppData\Roaming\npm\codex` · 석준님 ChatGPT 계정 로그인 | 석준님이 RC 창에서 직접 승인. 키·비밀 파일·개인정보는 보내지 않음, 기본 읽기 전용 | 2026-11-04 |
+| public-apis-4Kr | 한국 공개 API 300+·글로벌 780+ 목록(문서) | github.com/yybmion/public-apis-4Kr · 커밋 e17cf09 · MIT | 이 저장소 `tools/vendor/public-apis-4Kr/` (SOURCE.txt), 골라 쓸 목록 `tools/public-apis-shortlist.md` | 문서만 복사, 실행 코드 없음. 원본의 링크점검 스크립트는 가져오지 않음 | 2026-11-07 |
+
+규칙
+- 출처를 모르는 pickle·모델 파일은 열지 않는다.
+- 자동 업데이트는 끈다. 업데이트는 다시 검사한 뒤에만 한다.
+- PC에 설치(pip 등)는 석준님이 그 PC 창에서 직접 허락할 때만 한다.
+| day-trader-skill (설명서만) | tools/vendor/day-trader-skill | 2026-11-09 | FX 시스템 타임머신·위험점검 방법 참고, 코드 미설치 |

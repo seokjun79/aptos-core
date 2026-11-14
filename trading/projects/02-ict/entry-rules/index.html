@@ -1,0 +1,288 @@
+<title>ICT 진입 기준 v5</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: chart-desk notebook — one rule per section, chart left, steps right; stacks on phones */
+:root{
+  --bg:#f4f5f7; --panel:#ffffff; --line:#d8dde4; --fg:#151b24; --mute:#5c6878;
+  --up:#16865a; --down:#c8443a; --entry:#2563eb; --sl:#c8443a; --tp:#16865a; --lvl:#8a6a1f;
+  --zone:rgba(37,99,235,.10); --zone2:rgba(138,106,31,.12); --gap:rgba(22,134,90,.16);
+  --f-body:"IBM Plex Sans KR",system-ui,sans-serif; --f-num:"JetBrains Mono",ui-monospace,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0e1218; --panel:#161c25; --line:#283140; --fg:#e5eaf1; --mute:#8d99aa;
+  --up:#3dbb85; --down:#ef6b61; --entry:#60a5fa; --sl:#ef6b61; --tp:#3dbb85; --lvl:#d4a94a;
+  --zone:rgba(96,165,250,.13); --zone2:rgba(212,169,74,.14); --gap:rgba(61,187,133,.18); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0e1218; --panel:#161c25; --line:#283140; --fg:#e5eaf1; --mute:#8d99aa;
+  --up:#3dbb85; --down:#ef6b61; --entry:#60a5fa; --sl:#ef6b61; --tp:#3dbb85; --lvl:#d4a94a;
+  --zone:rgba(96,165,250,.13); --zone2:rgba(212,169,74,.14); --gap:rgba(61,187,133,.18); color-scheme:dark}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:14.5px;line-height:1.6}
+.wrap{max-width:1080px;margin:0 auto;padding-block:20px 40px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:18px}
+h1{font-size:24px;margin:0;text-wrap:balance}
+h2{font-size:17px;margin:0 0 4px;text-wrap:balance}
+.lead{color:var(--mute);margin:4px 0 0;max-width:68ch}
+.note{font-size:12.5px;color:var(--mute)}
+.flow{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}
+@media (max-width:760px){.flow{grid-template-columns:minmax(0,1fr)}}
+.step{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.step b{display:block;font-family:var(--f-num);font-size:12px;color:var(--entry)}
+.step span{font-size:13.5px}
+section.rule{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;display:grid;grid-template-columns:minmax(0,1.55fr) minmax(0,1fr);gap:16px}
+@media (max-width:860px){section.rule{grid-template-columns:minmax(0,1fr)}}
+.chartbox{min-width:0;overflow-x:auto}
+svg.c{width:100%;min-width:520px;height:auto;display:block}
+ol.how{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px}
+ol.how li{padding-left:2px}
+.tag{display:inline-block;font-size:11.5px;padding:1px 8px;border-radius:99px;font-weight:500;margin-right:4px}
+.t-ok{background:var(--gap);color:var(--up)} .t-no{background:rgba(200,68,58,.13);color:var(--down)} .t-lv{background:var(--zone2);color:var(--lvl)}
+.res{margin-top:10px;font-size:12.5px;border-top:1px solid var(--line);padding-top:8px;color:var(--mute)}
+.res b{font-family:var(--f-num);color:var(--fg)}
+.legend{display:flex;flex-wrap:wrap;gap:12px;font-size:12.5px;color:var(--mute)}
+.legend i{display:inline-block;width:18px;height:3px;vertical-align:middle;margin-right:5px;border-radius:2px}
+table.m{border-collapse:collapse;width:100%;font-size:13.5px}
+table.m th,table.m td{border:1px solid var(--line);padding:8px 10px;text-align:center}
+table.m th{background:var(--bg);font-weight:500;color:var(--mute)}
+.buy{color:var(--up);font-weight:700} .sell{color:var(--down);font-weight:700} .skip{color:var(--mute)}
+.warn{background:var(--zone2);border:1px solid var(--line);border-radius:10px;padding:12px 14px;font-size:13.5px}
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>ICT 진입 기준 v5 — 주봉·4H 추세 필터 + 진입 모델</h1>
+    <p class="lead">RC비너스가 백테스트할 규칙을 그림으로 옮긴 페이지예요. 모든 그림은 <b>매수 기준 예시 그림</b>이고 실제 가격이 아니에요. 매도는 위아래를 뒤집은 똑같은 규칙이에요.</p>
+  </header>
+
+  <div class="flow" aria-label="전체 순서">
+    <div class="step"><b>1단계</b><span>주봉 추세 판정 (상승/하락)</span></div>
+    <div class="step"><b>2단계</b><span>4H 추세 판정 (상승/하락)</span></div>
+    <div class="step"><b>3단계</b><span>둘이 같은 방향이면 그 방향만 거래, 다르면 쉼</span></div>
+    <div class="step"><b>4단계</b><span>아래 5개 진입 모델 중 신호가 나면 진입</span></div>
+    <div class="step"><b>5단계</b><span>손절·목표는 모델 규칙대로, 비용 1핍 빼고 계산</span></div>
+  </div>
+
+  <div class="legend">
+    <span><i style="background:var(--entry)"></i>진입가</span>
+    <span><i style="background:var(--sl)"></i>손절</span>
+    <span><i style="background:var(--tp)"></i>목표</span>
+    <span><i style="background:var(--lvl)"></i>기준 레벨</span>
+  </div>
+
+  <section class="rule">
+    <div class="chartbox"><svg class="c" id="ch-trend"></svg></div>
+    <div>
+      <h2>1·2단계. 추세 판정 (주봉과 4H 똑같이)</h2>
+      <ol class="how">
+        <li><b>스윙 고점</b> = 앞 5봉, 뒤 5봉보다 높은 봉. 스윙 저점은 반대.</li>
+        <li>가격이 직전 스윙 고점을 <b>몸통 마감</b>으로 넘으면 <span class="tag t-ok">상승추세</span></li>
+        <li>꼬리만 넘고 몸통이 아래에서 끝나면 <span class="tag t-no">인정 안 함</span></li>
+        <li>직전 스윙 저점을 몸통 마감으로 깨면 하락추세로 바뀜.</li>
+        <li>미래 정보 금지: 주봉은 <b>지난주까지</b>, 4H는 <b>직전에 마감한 봉까지</b>만 봐요.</li>
+      </ol>
+      <p class="note">석준님 SMC 규칙(MSS = 몸통 마감 확정, 스윙 5봉)과 같은 정의예요.</p>
+    </div>
+  </section>
+
+  <section class="rule" style="grid-template-columns:minmax(0,1fr)">
+    <div>
+      <h2>3단계. 필터 표 — 언제 거래하나</h2>
+      <div style="overflow-x:auto">
+      <table class="m">
+        <tr><th></th><th>4H 상승</th><th>4H 하락</th></tr>
+        <tr><th>주봉 상승</th><td class="buy">매수 신호만 거래</td><td class="skip">쉼 (방향 다름)</td></tr>
+        <tr><th>주봉 하락</th><td class="skip">쉼 (방향 다름)</td><td class="sell">매도 신호만 거래</td></tr>
+      </table>
+      </div>
+      <p class="note" style="margin-top:8px">비교용으로 같이 시험해요: ① 4H 추세만 맞으면 거래 ② 주봉 추세만 맞으면 거래. 세 가지 중 어느 쪽이 나은지 봐요.</p>
+    </div>
+  </section>
+
+  <section class="rule">
+    <div class="chartbox"><svg class="c" id="ch-sb"></svg></div>
+    <div>
+      <h2>모델 ① 실버불릿 (SB)</h2>
+      <ol class="how">
+        <li>정해진 1시간 창에서만: NY 03~04시, <b>10~11시</b>, 14~15시.</li>
+        <li><b>draw</b> = 창 시작가에서 가장 가까운 안 깨진 유동성(전일·전주·아시아·런던 고저 등). 위가 가까우면 매수만.</li>
+        <li>창 안에서 처음 생긴 <b>상승 FVG</b>(봉 i 저가 &gt; 봉 i−2 고가)의 위 끝에 지정가.</li>
+        <li>손절 = 직전 12봉 최저가 − 1핍. 목표 = draw (1R 미만이면 안 함).</li>
+        <li>창이 끝날 때까지 체결 안 되면 취소.</li>
+      </ol>
+      <div class="res">v3 결과(필터 없음, 2024~): 평균 <b>−0.097R</b> · PF <b>0.89</b> · 5,572건 · 비용 빼기 전 +0.073R</div>
+    </div>
+  </section>
+
+  <section class="rule">
+    <div class="chartbox"><svg class="c" id="ch-mm"></svg></div>
+    <div>
+      <h2>모델 ② 마켓메이커 (MM)</h2>
+      <ol class="how">
+        <li>H1에서 <b>거의 같은 높이 저점 2개</b>(REL, 차이 ≤ 0.2u, 3~48봉 간격).</li>
+        <li>그 아래 2u 안에 예전 상승 FVG(<b>BISI</b>)가 있어야 해요.</li>
+        <li>가격이 REL을 깨고 BISI 안으로 들어간 뒤, 12봉 안에 H1 종가가 REL 위로 복귀.</li>
+        <li>BISI 가운데(CE)에 매수 지정가. 손절 = BISI 아래 끝 − 1핍.</li>
+        <li>목표 = 두 저점 사이 최고가(CONS) 또는 2R.</li>
+      </ol>
+      <div class="res">v3 결과: 평균 <b>−0.055R</b> · PF <b>0.91</b> · 705건 · 비용 빼기 전 +0.046R</div>
+    </div>
+  </section>
+
+  <section class="rule">
+    <div class="chartbox"><svg class="c" id="ch-js"></svg></div>
+    <div>
+      <h2>모델 ③ 주다스 스윙 (JS)</h2>
+      <ol class="how">
+        <li>아시아 범위(NY 19~24시)가 좁아야 해요(하루 평균 폭의 40% 이하).</li>
+        <li>NY 00~05시에 이 순서대로: 아시아 고점 위로 <b>가짜 상승</b> → 자정 시가(MO) 아래로 → 아시아 저점 − 1u까지 하락.</li>
+        <li>아시아 저점 − 1u에 매수 지정가.</li>
+        <li>손절 = 아시아 저점 − 2u − 1핍. 목표 = 아시아 고점(OPP) 또는 2R.</li>
+      </ol>
+      <p class="note">u = 하루 평균 폭(ADR20) ÷ 7. ICT가 말한 "10핍"을 종목마다 맞춘 단위예요.</p>
+      <div class="res">v3 결과: 평균 <b>−0.109R</b> · PF <b>0.82</b> · 169건</div>
+    </div>
+  </section>
+
+  <section class="rule">
+    <div class="chartbox"><svg class="c" id="ch-amd"></svg></div>
+    <div>
+      <h2>모델 ④ AMD (Power of 3)</h2>
+      <ol class="how">
+        <li><b>A 모으기</b>: 자정 시가(MO) 근처에서 옆으로.</li>
+        <li><b>M 속이기</b>: MO 아래로 한 번 눌림 → MO − 1u에 매수 지정가 (자정~11시).</li>
+        <li><b>D 뻗기</b>: 원래 방향으로 달림.</li>
+        <li>손절 = 진입 − 2u. 목표 = 2R.</li>
+      </ol>
+      <div class="res">v3 결과: 평균 <b>−0.054R</b> · PF <b>0.91</b> · 2,228건 · 비용 빼기 전 −0.004R</div>
+    </div>
+  </section>
+
+  <section class="rule">
+    <div class="chartbox"><svg class="c" id="ch-ar"></svg></div>
+    <div>
+      <h2>모델 ⑤ 아시아 레인지 돌파 (AR)</h2>
+      <ol class="how">
+        <li>아시아 범위가 좁은 날만.</li>
+        <li>자정 뒤 아시아 <b>저점이 먼저</b> 깨져요(위쪽보다 먼저). 이게 가짜 하락이에요.</li>
+        <li>그 뒤 아시아 고점에 매수 스톱(돌파하면 체결).</li>
+        <li>손절 = 그때까지 최저가 − 1핍. 목표 = 2R.</li>
+      </ol>
+      <div class="res">v3 결과: 평균 <b>+0.011R</b> · PF <b>1.03</b> · 865건 · 비용 빼기 전 +0.057R</div>
+    </div>
+  </section>
+
+  <section class="rule" style="grid-template-columns:minmax(0,1fr)">
+    <div>
+      <h2>공통 규칙과 합격 기준</h2>
+      <ol class="how">
+        <li>비용: 외환 1핍, 금 2핍, 나스닥 1pt를 거래마다 빼요. 실제 MT5 스프레드(주요 통화 0.8~1.0핍)와 맞춘 값이에요.</li>
+        <li>같은 봉에서 손절과 목표가 둘 다 닿으면 <b>손절로</b> 쳐요(불리하게).</li>
+        <li>2019~2023년은 규칙 확인용, <b>2024년 이후</b>가 진짜 시험이에요.</li>
+        <li>합격: 2024년 이후 PF 1.2 이상, 통계 t값 기준 이상, 60건 이상. 필터 때문에 100건 밑이면 "표본 부족"이에요.</li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="rule" style="grid-template-columns:minmax(0,1fr)">
+    <div>
+      <h2>v5 결과 (2026-10-31) — 29개 중 합격 0개</h2>
+      <p class="note">2024년 이후 처음 보는 자료, 비용 포함. 숫자 = 거래당 평균 R / PF. 합격 기준: PF 1.2 이상, t 2.925 이상, 100건 이상.</p>
+      <div style="overflow-x:auto">
+      <table class="m">
+        <tr><th>모델</th><th>필터 없음</th><th>주봉+4H</th><th>4H만</th><th>주봉만</th></tr>
+        <tr><th>실버불릿</th><td>−0.097 / 0.89</td><td>−0.113 / 0.87</td><td>−0.166 / 0.82</td><td>−0.075 / 0.92</td></tr>
+        <tr><th>마켓메이커 H1</th><td>−0.055 / 0.91</td><td class="buy">+0.074 / 1.13</td><td>+0.047 / 1.08</td><td>+0.010 / 1.02</td></tr>
+        <tr><th>주다스</th><td>−0.109 / 0.82</td><td class="skip">−0.143 (55건)</td><td>−0.158 / 0.75</td><td class="skip">−0.147 (88건)</td></tr>
+        <tr><th>AMD</th><td>−0.054 / 0.91</td><td>−0.071 / 0.88</td><td>−0.063 / 0.89</td><td>−0.067 / 0.89</td></tr>
+        <tr><th>아시아 돌파</th><td>+0.011 / 1.03</td><td>−0.029 / 0.93</td><td>+0.013 / 1.03</td><td>−0.037 / 0.92</td></tr>
+        <tr><th>MM H4 (석준님식)</th><td>+0.037 / 1.05 (105건)</td><td class="skip">−0.103 (35건)</td><td class="skip">+0.114 / 1.16 (60건)</td><td>—</td></tr>
+      </table>
+      </div>
+      <ol class="how" style="margin-top:10px">
+        <li>추세 필터는 <b>마켓메이커에만</b> 효과가 보였어요(−0.055 → +0.074). 하지만 2019~23년 구간은 −0.090이고 t 0.64라 우연과 구분이 안 돼요.</li>
+        <li>석준님 방식에 가까운 <b>MM H4</b>는 7.8년에 거래가 35~105번뿐이라 판단할 수 없어요.</li>
+        <li>마켓메이커 규칙 시험은 100점 만점. 규칙 이해는 완성, 수익은 미확인이에요.</li>
+      </ol>
+    </div>
+  </section>
+</div>
+
+<script>
+const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+function chart(id,cfg){
+  const svg=document.getElementById(id), C=cfg.candles, n=C.length;
+  const W=660,H=320,L=10,R=150,T=22,B=26, cw=(W-L-R)/n;
+  const ys=[]; C.forEach(c=>ys.push(c[1],c[2])); (cfg.lines||[]).forEach(l=>ys.push(l.y)); (cfg.boxes||[]).forEach(b=>ys.push(b.y0,b.y1));
+  let lo=Math.min(...ys),hi=Math.max(...ys); const m=(hi-lo)*.08; lo-=m; hi+=m;
+  const Y=v=>T+(hi-v)/(hi-lo)*(H-T-B), X=i=>L+i*cw+cw/2;
+  let g=`<rect x="0" y="0" width="${W}" height="${H}" fill="var(--panel)"/>`;
+  (cfg.shades||[]).forEach(s=>{const x0=L+s.x0*cw,x1=L+(s.x1+1)*cw;
+    g+=`<rect x="${x0}" y="${T-8}" width="${x1-x0}" height="${H-T-B+8}" fill="var(${s.c||'--zone'})"/>`;
+    g+=`<text x="${(x0+x1)/2}" y="${H-8}" text-anchor="middle" font-size="11" fill="var(--mute)">${s.label}</text>`;});
+  (cfg.boxes||[]).forEach(b=>{const x0=L+b.x0*cw,x1=L+(b.x1+1)*cw;
+    g+=`<rect x="${x0}" y="${Y(b.y1)}" width="${x1-x0}" height="${Y(b.y0)-Y(b.y1)}" fill="var(${b.c||'--gap'})" stroke="var(--up)" stroke-dasharray="3 3"/>`;
+    if(b.label)g+=`<text x="${x0+4}" y="${Y(b.y1)-4}" font-size="11" fill="var(--up)">${b.label}</text>`;});
+  C.forEach((c,i)=>{const [o,h,l,cl]=c,up=cl>=o,col=up?"var(--up)":"var(--down)",x=X(i),bw=cw*.6;
+    g+=`<line x1="${x}" x2="${x}" y1="${Y(h)}" y2="${Y(l)}" stroke="${col}" stroke-width="1.3"/>`;
+    g+=`<rect x="${x-bw/2}" y="${Y(Math.max(o,cl))}" width="${bw}" height="${Math.max(1.5,Math.abs(Y(o)-Y(cl)))}" fill="${col}" rx="1"/>`;});
+  const labs=[];
+  (cfg.lines||[]).forEach(l=>{const col=`var(--${l.k})`,x0=l.x0!=null?L+l.x0*cw:L,x1=W-R+4;
+    g+=`<line x1="${x0}" x2="${x1}" y1="${Y(l.y)}" y2="${Y(l.y)}" stroke="${col}" stroke-width="${l.k==='lvl'?1.2:1.8}" ${l.k==='lvl'?'stroke-dasharray="5 4"':''}/>`;
+    labs.push({y:Y(l.y),t:l.label,col});});
+  labs.sort((a,b)=>a.y-b.y); for(let i=1;i<labs.length;i++) if(labs[i].y-labs[i-1].y<14) labs[i].y=labs[i-1].y+14;
+  labs.forEach(a=>g+=`<text x="${W-R+8}" y="${a.y+4}" font-size="11.5" fill="${a.col}" font-weight="600">${a.t}</text>`);
+  (cfg.marks||[]).forEach(mk=>{const x=X(mk.i),y=Y(mk.y),dy=mk.up?-16:18;
+    g+=`<circle cx="${x}" cy="${y+dy*.45}" r="8" fill="var(${mk.c||'--entry'})"/>`;
+    g+=`<text x="${x}" y="${y+dy*.45+4}" text-anchor="middle" font-size="10.5" fill="var(--panel)" font-weight="700">${mk.n}</text>`;
+    if(mk.t)g+=`<text x="${x+(mk.right?12:0)}" y="${y+dy*1.25+(mk.up?0:4)}" text-anchor="${mk.right?'start':'middle'}" font-size="11" fill="var(--fg)">${mk.t}</text>`;});
+  g+=`<text x="${L}" y="13" font-size="11" fill="var(--mute)">${cfg.title||""}</text>`;
+  svg.setAttribute("viewBox",`0 0 ${W} ${H}`); svg.setAttribute("role","img"); svg.setAttribute("aria-label",cfg.title||id); svg.innerHTML=g;
+}
+
+chart("ch-trend",{title:"예시: 주봉 또는 4H (같은 방법)",candles:[
+ [100,102,99,101],[101,104,100,103.5],[103.5,106,103,105.5],[105.5,108,105,107],[107,109,106.5,108.5],
+ [108.5,110,107.5,108],[108,108.5,105.5,106],[106,106.5,103.5,104],[104,104.5,101.5,102],[102,103,100,101],
+ [101,104,100.5,103.5],[103.5,106.5,103,106],[106,111,105.5,108.5],[108.5,109.5,107,108],[108,112.5,107.5,112],[112,114,111.5,113.5]],
+ lines:[{y:110,k:"lvl",label:"직전 스윙 고점",x0:5}],
+ marks:[{i:5,y:110,n:"S",c:"--lvl",up:true,t:"앞뒤 5봉보다 높음"},{i:12,y:111,n:"✕",c:"--down",up:true,t:"꼬리만 넘음"},{i:14,y:112.5,n:"✓",c:"--up",up:true,t:"몸통 마감 돌파"}]});
+
+chart("ch-sb",{title:"예시: M5, 실버불릿 NY 10~11시 창",candles:[
+ [110,111,109,110.5],[110.5,111.5,110,111],[111,111.8,110.2,110.6],[110.6,111,109.5,109.8],[109.8,110.2,108.8,109.2],
+ [109.2,109.5,107.6,107.9],[107.9,108.2,106.8,107.2],[107.2,108.6,107,108.4],[108.4,111.2,108.2,111],[111,112.4,110.2,112],
+ [112,112.3,110.1,110.9],[110.9,113,110.7,112.8],[112.8,115,112.5,114.7],[114.7,117,114.3,116.8],[116.8,120.3,116.5,119.8]],
+ shades:[{x0:5,x1:11,label:"NY 10~11시 창"}],
+ boxes:[{x0:7,x1:9,y0:108.6,y1:110.2,label:"상승 FVG"}],
+ lines:[{y:120,k:"tp",label:"목표 draw (전일 고가)"},{y:110.2,k:"entry",label:"진입 FVG 위 끝",x0:9},{y:106.3,k:"sl",label:"손절 최저가−1핍",x0:6}],
+ marks:[{i:6,y:106.8,n:"1",t:"아래로 쓸고"},{i:9,y:112.4,n:"2",up:true,t:"FVG 생김"},{i:10,y:110.1,n:"3",t:"되돌림 체결"}]});
+
+chart("ch-mm",{title:"예시: H1, 마켓메이커 매수 모델",candles:[
+ [95,96,94.5,95.8],[95.8,97.5,95.5,97.2],[97.2,100,97,99.8],[99.8,101.5,99,101.2],[101.2,104,101,103.6],
+ [103.6,106,103.2,105.4],[105.4,105.8,103,103.3],[103.3,103.6,101,101.4],[101.4,101.8,100,100.6],[100.6,103,100.4,102.7],
+ [102.7,104,102.2,103.6],[103.6,103.8,101.5,101.8],[101.8,102.1,100.05,100.5],[100.5,102.4,100.3,102],[102,102.3,100.6,100.9],
+ [100.9,101.1,98,98.6],[98.6,100.9,98.4,100.6],[100.6,100.8,98.2,98.6],[98.6,101.5,98.4,101.2],[101.2,103.5,101,103.3],[103.3,104.3,103,104.1]],
+ boxes:[{x0:1,x1:20,y0:97.5,y1:99,label:"BISI (예전 상승 FVG)"}],
+ lines:[{y:104,k:"tp",label:"목표 CONS",x0:10},{y:100,k:"lvl",label:"REL 같은 저점",x0:8},{y:98.25,k:"entry",label:"진입 BISI 가운데",x0:15},{y:97.3,k:"sl",label:"손절 BISI−1핍",x0:15}],
+ marks:[{i:8,y:100,n:"1",t:"저점1"},{i:12,y:100.05,n:"2",t:"저점2"},{i:15,y:98,n:"3",t:"REL 깨고 BISI로"},{i:16,y:100.9,n:"4",up:true,t:"REL 위 종가 복귀"}]});
+
+chart("ch-js",{title:"예시: M5, 주다스 스윙 (u = 0.5)",candles:[
+ [101,101.8,100.6,101.5],[101.5,102,101,101.2],[101.2,101.4,100,100.4],[100.4,101.3,100.2,101],[101,101.6,100.7,101.1],
+ [101.1,101.5,100.8,101.3],[101.3,102.6,101.2,102.3],[102.3,102.4,101.2,101.4],[101.4,101.5,100.5,100.7],[100.7,100.9,99.2,99.6],
+ [99.6,100.6,99.4,100.4],[100.4,101.4,100.2,101.2],[101.2,102.2,101,102.1]],
+ shades:[{x0:0,x1:4,label:"아시아 NY 19~24시",c:"--zone2"},{x0:5,x1:12,label:"NY 00~05시"}],
+ lines:[{y:102,k:"tp",label:"아시아 고점 = 목표"},{y:101.1,k:"lvl",label:"자정 시가 MO",x0:5},{y:100,k:"lvl",label:"아시아 저점"},{y:99.5,k:"entry",label:"진입 저점−1u",x0:5},{y:98.9,k:"sl",label:"손절 저점−2u−1핍",x0:5}],
+ marks:[{i:6,y:102.6,n:"1",up:true,t:"가짜 상승"},{i:8,y:100.5,n:"2",t:"MO 아래"},{i:9,y:99.2,n:"3",t:"저점−1u 체결"}]});
+
+chart("ch-amd",{title:"예시: M5, AMD (u = 0.5)",candles:[
+ [101,101.3,100.8,101.1],[101.1,101.4,100.9,101],[101,101.2,100.6,100.7],[100.7,100.8,100.2,100.4],[100.4,101,100.3,100.9],
+ [100.9,101.6,100.8,101.5],[101.5,102.2,101.4,102],[102,102.7,101.9,102.6],[102.6,103.1,102.4,103]],
+ shades:[{x0:0,x1:1,label:"A 모으기",c:"--zone2"},{x0:2,x1:4,label:"M 속이기"},{x0:5,x1:8,label:"D 뻗기",c:"--gap"}],
+ lines:[{y:102.5,k:"tp",label:"목표 2R"},{y:101,k:"lvl",label:"자정 시가 MO"},{y:100.5,k:"entry",label:"진입 MO−1u"},{y:99.5,k:"sl",label:"손절 진입−2u"}],
+ marks:[{i:3,y:100.2,n:"1",t:"MO−1u 체결"},{i:7,y:102.7,n:"2",up:true,t:"2R 도달"}]});
+
+chart("ch-ar",{title:"예시: M5, 아시아 레인지 돌파",candles:[
+ [100.6,101.1,100.3,100.9],[100.9,101.2,100.5,100.6],[100.6,100.9,100.1,100.3],[100.3,100.9,100,100.8],[100.8,101.1,100.5,101],
+ [101,101.1,100.3,100.5],[100.5,100.6,99.6,99.9],[99.9,100.8,99.7,100.6],[100.6,101.5,100.5,101.3],[101.3,102.2,101.1,102],
+ [102,103.2,101.9,103],[103,104.2,102.8,104],[104,104.8,103.8,104.6]],
+ shades:[{x0:0,x1:4,label:"아시아 범위",c:"--zone2"},{x0:5,x1:12,label:"자정 이후"}],
+ lines:[{y:104.6,k:"tp",label:"목표 2R"},{y:101.2,k:"entry",label:"매수 스톱 아시아 고점"},{y:100,k:"lvl",label:"아시아 저점"},{y:99.5,k:"sl",label:"손절 최저가−1핍",x0:5}],
+ marks:[{i:6,y:99.6,n:"1",t:"저점 먼저 깸"},{i:8,y:101.5,n:"2",up:true,t:"고점 돌파 체결"}]});
+</script>

@@ -1,0 +1,101 @@
+<title>비너스 페이지 모음</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<style>
+/* 방향: 휴대폰 홈 화면 같은 바로가기 목록. 매일 보는 것 맨 위, 큰 터치 칸 */
+:root{--bg:#f2f4f7;--paper:#fff;--ink:#161b22;--muted:#5b6573;--rule:#d9dee6;--accent:#2457c5;--hot:#d1293d;--sans:"IBM Plex Sans KR",system-ui,sans-serif}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f1318;--paper:#171c23;--ink:#e6eaf0;--muted:#98a2b0;--rule:#2a313b;--accent:#8fb0ff;--hot:#ff7b8a;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0f1318;--paper:#171c23;--ink:#e6eaf0;--muted:#98a2b0;--rule:#2a313b;--accent:#8fb0ff;--hot:#ff7b8a;color-scheme:dark}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.55}
+.wrap{max-width:760px;margin:0 auto;padding-block:20px 56px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:24px}
+h1{font-size:1.35rem;margin:0}
+.sub{color:var(--muted);font-size:.86rem;margin:4px 0 0}
+h2{font-size:.82rem;letter-spacing:.06em;color:var(--muted);margin:0 0 8px;font-weight:700}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px}
+a.card{display:grid;gap:2px;padding:12px 14px;background:var(--paper);border:1px solid var(--rule);border-radius:10px;text-decoration:none;color:var(--ink);min-width:0}
+a.card:focus-visible,a.card:hover{border-color:var(--accent)}
+a.card b{font-size:.98rem}
+a.card span{font-size:.8rem;color:var(--muted)}
+a.card.hot{border-left:4px solid var(--hot)}
+.foot{font-size:.78rem;color:var(--muted)}
+</style>
+<div class="wrap">
+<header>
+  <h1>비너스 페이지 모음</h1>
+  <p class="sub">누르면 바로 열려요. 맨 위가 매일 보는 페이지예요. (2026-11-11 정리)</p>
+</header>
+
+<section>
+  <h2>매일 보는 것</h2>
+  <div class="grid">
+    <a class="card hot" href="https://claude.ai/artifact/AKpn2iT94pSpR3SgSKVqY7"><b>오늘 증시 정리 (한국)</b><span>평일 장마감 · 수급 · 하이닉스 외국인 체크표</span></a>
+    <a class="card hot" href="https://claude.ai/artifact/Lzdr29FtxTCdrAXbAwZFDU"><b>미국 증시 정리</b><span>매일 아침 · 지수 · 섹터 · 내 종목 · QLD 선</span></a>
+    <a class="card hot" href="https://claude.ai/artifact/8vSCXbgLTkLnjKzTMPbEEf"><b>TIME 나스닥100액티브 구성종목</b><span>미국장 등락 · ETF 예상</span></a>
+    <a class="card" href="https://claude.ai/artifact/DFYXsyTtVffBvVwG1wwsML"><b>미국 장전 이슈</b><span>선물 · 오늘 밤 볼 것</span></a>
+    <a class="card hot" href="https://claude.ai/artifact/EC3cKdgkjBW6kM89Rr5qYm"><b>FX 시스템 학습 일지</b><span>딥러닝 · 연습 · 시험 기록</span></a>
+    <a class="card hot" href="https://claude.ai/artifact/6gu5SBiG11YTwcGdVbQLd1"><b>H4 구조 확인판</b><span>스윙·BOS·MSS 맞음/틀림 눌러 주기</span></a>
+    <a class="card hot" href="https://claude.ai/artifact/MjzAHW1nzwMPqzagUX2D7C"><b>H4 질문 4개</b><span>엔진이 궁금한 것만 · 차트 보고 버튼 누르기</span></a>
+    <a class="card hot" href="https://claude.ai/artifact/GqndCzimWdVWZ448FbQvTJ"><b>다음 주 H4 작도 계획</b><span>4종목 세 답 · 핵심선 · 시나리오</span></a>
+    <a class="card" href="https://claude.ai/artifact/KzGA9AJjAiit6zwkEfk5QS"><b>차트 작도 노트</b><span>RC2가 만든 작도 기록</span></a>
+    <a class="card hot" href="https://claude.ai/artifact/A2uqPgfZTVb9TYPRqceHbj"><b>QLD 매수 판정</b><span>사기선 · 팔기선 · 차트</span></a>
+    <a class="card" href="https://claude.ai/artifact/8gHYgfmGCUFGEHRZmHJ3vq"><b>비너스 작업 현황판</b><span>맡긴 일 · 승인 버튼</span></a>
+    <a class="card" href="https://claude.ai/artifact/Ab2Vf3Drr8nghChmJrB2m8"><b>석준님 HTS</b><span>JC가 1분마다 올리는 실시간 화면</span></a>
+    <a class="card" href="https://claude.ai/artifact/ArJ8iCed7STpDpUVbzjZec"><b>RC 실시간 차트</b><span>QLD · TQQQ · IQQ · QQQ</span></a>
+  </div>
+</section>
+
+<section>
+  <h2>주식 · 매크로</h2>
+  <div class="grid">
+    <a class="card" href="https://claude.ai/artifact/1D1VR8DQCaDoKxj5ivRgXc"><b>국내 매크로 점검 11/9</b><span>금리 · 환율 · 수출 · 성장</span></a>
+    <a class="card" href="https://claude.ai/artifact/XZdqq8AsLNUQ63qiLTHsrz"><b>보유 종목 분석실</b><span>10/30</span></a>
+    <a class="card" href="https://claude.ai/artifact/Q8ZyHkCDiCW9oVRhM6reXB"><b>해외 6종목 점검 노트</b><span>10/26</span></a>
+    <a class="card" href="https://claude.ai/artifact/BgEijjKkA5aNJJC2kt27Kq"><b>석준님 한투 계좌 지도</b><span>10/24</span></a>
+    <a class="card" href="https://claude.ai/artifact/KK7D1cUg1qaEc4MQ2D8Gqe"><b>한국 증시 브리핑 11/2</b><span>지난 브리핑</span></a>
+    <a class="card" href="https://claude.ai/artifact/6qWSnk5bFuksjRC5iudD2M"><b>장전 브리핑 11/5</b><span>지난 브리핑</span></a>
+    <a class="card" href="https://claude.ai/artifact/5pj5S6rqSZt66AobGejknn"><b>퇴근길 증시 3분 11/5</b><span>원고</span></a>
+    <a class="card" href="https://claude.ai/artifact/8H43Yt6w1oZaaXkL4LpA9M"><b>퇴근길 증시 3분 샘플</b><span>원고 시안</span></a>
+    <a class="card" href="https://claude.ai/artifact/7rbtzTK32s2u9xXGvKyajf"><b>석준님 HTS (예전판)</b><span>10/29</span></a>
+  </div>
+</section>
+
+<section>
+  <h2>FX · 트레이딩 연구</h2>
+  <div class="grid">
+    <a class="card" href="https://claude.ai/artifact/MbjMwfXxmV7BxL4PscbSae"><b>전략 다시 짜기 성적표</b><span>11/6 · 7개 시험</span></a>
+    <a class="card" href="https://claude.ai/artifact/8Knr7YvKY5uoJAakDmkGgH"><b>qlib 전략 판정표</b><span>11/4</span></a>
+    <a class="card" href="https://claude.ai/artifact/PadHEZkCxcLaeVN53qGkYj"><b>석준 × ICT 통합 모델</b><span>11/2</span></a>
+    <a class="card" href="https://claude.ai/artifact/MLjqPM5CPNcA3B5Bmk1vhV"><b>ICT 진입 기준 v5</b><span>10/31</span></a>
+    <a class="card" href="https://claude.ai/artifact/EDrjZyhUhcFz5XkV7BnvpP"><b>MM 실전 기록장</b><span>10/31</span></a>
+    <a class="card" href="https://claude.ai/artifact/EzQM18zv8hnVNWd5EuMi6a"><b>ICT 모델 백테스트 결과</b><span>10/30</span></a>
+    <a class="card" href="https://claude.ai/artifact/8FG5d7o5hPHCCzuSh6Ak1C"><b>RC비너스 학습 점검</b><span>10/30</span></a>
+    <a class="card" href="https://claude.ai/artifact/QfYSrRW78K1QZssD2UbAM1"><b>ICT 프로젝트 2 결과</b><span>10/28</span></a>
+    <a class="card" href="https://claude.ai/artifact/FG6czk3mTn7y12T6aUquGM"><b>Venus 트레이딩 관제실</b><span>10/18</span></a>
+    <a class="card" href="https://claude.ai/artifact/GY2JdmAvfWNh88C7ThgV3A"><b>FTMO 2차 매매 복기</b><span>10/16</span></a>
+  </div>
+</section>
+
+<section>
+  <h2>부업 · 부동산</h2>
+  <div class="grid">
+    <a class="card" href="https://claude.ai/artifact/Uufpiz85eN4c6y9SBvhhut"><b>석준님 부업 실행 계획</b><span>10/26</span></a>
+    <a class="card" href="https://claude.ai/artifact/LoVKZsSt19fSLDTH9oRNu2"><b>당근카페 시작 키트</b><span>10/26</span></a>
+    <a class="card" href="https://claude.ai/artifact/Ruk7KvZ3SDZGE215LxXShi"><b>통영 아파트 공부 노트</b><span>10/26</span></a>
+    <a class="card" href="https://claude.ai/artifact/XD9fYUxz7QoZu5HMbZBpYT"><b>동남경매</b><span>10/15</span></a>
+  </div>
+</section>
+
+<section>
+  <h2>게임 · 기타</h2>
+  <div class="grid">
+    <a class="card" href="https://claude.ai/artifact/3e1pV5HJut4NviXRwmXCYB"><b>이슬지기</b><span>게임</span></a>
+    <a class="card" href="https://claude.ai/artifact/CYq5vTH3zX8cRscMMsfcZM"><b>고원 방어선 3D 시안</b><span>게임</span></a>
+    <a class="card" href="https://claude.ai/artifact/JR9Fm1JZET9J6XvpvaFgzi"><b>이슬지기 좀비 리부트 시안</b><span>게임</span></a>
+    <a class="card" href="https://claude.ai/artifact/ACAMSw7xzvxy48zeuL7DnA"><b>이슬지기 포탑 캐릭터 시안</b><span>게임</span></a>
+    <a class="card" href="https://claude.ai/artifact/VrbbDwxiwU6GygRGLnNfNA"><b>이슬지기 그래픽 시안</b><span>게임</span></a>
+    <a class="card" href="https://claude.ai/artifact/VJNFFyGbPSC778aUA4cyLS"><b>Aptos Core 해부도</b><span>코드 설명</span></a>
+  </div>
+</section>
+
+<p class="foot">새 페이지가 생기면 매니저가 여기에 추가해요.</p>
+</div>
