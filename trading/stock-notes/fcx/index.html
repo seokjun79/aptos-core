@@ -1,0 +1,139 @@
+<title>FCX 기업 분석</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+:root{--bg:#f2f4f7;--paper:#fff;--ink:#161b22;--muted:#5b6573;--rule:#d9dee6;--up:#d1293d;--dn:#1f5fd1;--warn:#8a6a12;--warn-bg:#f6eed4;--ok:#17703a;--ok-bg:#e3f3e8;--cu:#b4552a;--sans:"IBM Plex Sans KR",system-ui,sans-serif;--mono:"IBM Plex Mono",ui-monospace,monospace}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f1318;--paper:#171c23;--ink:#e6eaf0;--muted:#98a2b0;--rule:#2a313b;--up:#ff7b8a;--dn:#7fa8ff;--warn:#e3c062;--warn-bg:#33290f;--ok:#7ad69a;--ok-bg:#12301d;--cu:#e08a5c;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0f1318;--paper:#171c23;--ink:#e6eaf0;--muted:#98a2b0;--rule:#2a313b;--up:#ff7b8a;--dn:#7fa8ff;--warn:#e3c062;--warn-bg:#33290f;--ok:#7ad69a;--ok-bg:#12301d;--cu:#e08a5c;color-scheme:dark}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.65}
+.wrap{max-width:760px;margin:0 auto;padding-block:20px 56px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:24px}
+.wrap>*{min-width:0}
+.kicker{font-size:.78rem;color:var(--muted)}
+h1{font-size:1.4rem;margin:4px 0 6px;text-wrap:balance}
+h2{font-size:1.05rem;margin:0 0 10px;border-left:4px solid var(--cu);padding-left:8px}
+p{margin:0}
+.up{color:var(--up)}.dn{color:var(--dn)}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.idx{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.box{background:var(--paper);border:1px solid var(--rule);border-radius:8px;padding:12px 14px;min-width:0}
+.box .t{font-size:.82rem;color:var(--muted)}
+.box .v{font-family:var(--mono);font-weight:600;font-size:1.25rem}
+.box .s{font-size:.8rem;color:var(--muted)}
+ul.plain{margin:0;padding-left:1.1em;display:grid;gap:8px}
+.sheet{background:var(--paper);border:1px solid var(--rule);border-radius:8px;overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:.9rem}
+th,td{padding:8px 12px;border-top:1px solid var(--rule);text-align:left;vertical-align:top}
+tr:first-child th{border-top:0;color:var(--muted);font-weight:600;font-size:.8rem}
+td.r,th.r{text-align:right;font-family:var(--mono);white-space:nowrap}
+.ladder{display:grid;gap:0;background:var(--paper);border:1px solid var(--rule);border-radius:8px}
+.lr{display:grid;grid-template-columns:1fr auto;gap:10px;padding:9px 14px;border-top:1px solid var(--rule)}
+.lr:first-child{border-top:0}
+.lr.now{background:var(--ok-bg);font-weight:700}
+.lr span{font-size:.8rem;color:var(--muted);display:block;font-weight:400}
+.warn{background:var(--warn-bg);color:var(--warn);border-radius:8px;padding:10px 14px;font-size:.88rem}
+.sum{background:var(--paper);border:2px solid var(--cu);border-radius:10px;padding:14px 16px}
+.foot{font-size:.78rem;color:var(--muted)}
+.foot a{color:inherit}
+</style>
+<div class="wrap">
+<header>
+  <div class="kicker">기업 분석 · Freeport-McMoRan (뉴욕증시 FCX) · 2026-11-13 종가 기준 · 매니저 비너스 · 11-16 작성</div>
+  <h1>프리포트 맥모란: 세계에서 가장 큰 상장 구리 회사</h1>
+  <p>구리를 캐서 파는 회사예요. 금도 함께 나와요. 주가는 구리 가격과 인도네시아 큰 광산(그래스버그)의 회복 속도에 달려 있어요.</p>
+</header>
+
+<section class="sum">
+  <h2>다섯 줄 요약</h2>
+  <ul class="plain">
+    <li><b>무엇으로 버나:</b> 미국·남미·인도네시아 광산에서 구리(올해 약 30억 파운드), 금, 몰리브덴을 팔아요.</li>
+    <li><b>지금 상황:</b> 2025년 9월 인도네시아 그래스버그 광산 사고(토사 유입)로 생산이 줄었고, 지금 사고 전의 약 67%까지 회복했어요. 2027년 말 거의 정상이 목표예요.</li>
+    <li><b>실적:</b> 3분기 매출 75.5억 달러(1년 전 69.7억), 순이익 12억 달러. 구리를 덜 팔았는데 값이 올라(파운드당 6.5달러 이상) 이익이 늘었어요.</li>
+    <li><b>주가:</b> 59.24달러. 1년 최고 80.24에서 약 26% 내려와 있어요. 구리값이 9월 최고(약 6.9달러)에서 6.2~6.3달러로 내린 영향이에요.</li>
+    <li><b>핵심 변수 3개:</b> 구리 가격, 그래스버그 회복이 계획대로 가는지, 인도네시아 광산 허가 연장(2041년 이후).</li>
+  </ul>
+</section>
+
+<section>
+  <h2>지금 가격 자리</h2>
+  <div class="ladder">
+    <div class="lr"><div>1년 최고가<span>구리값 최고였던 무렵</span></div><div class="num">80.24</div></div>
+    <div class="lr"><div>UBS 목표가<span>10-08, 증권사 한 곳 의견</span></div><div class="num">78</div></div>
+    <div class="lr now"><div>11-13 종가<span>하루 −2.00% · 시가총액 약 850억 달러</span></div><div class="num">59.24</div></div>
+    <div class="lr"><div>GuruFocus 계산 적정가<span>자체 모델, 참고용</span></div><div class="num">51.17</div></div>
+    <div class="lr"><div>1년 최저가</div><div class="num">38.85</div></div>
+  </div>
+</section>
+
+<section>
+  <h2>사업: 어디서 무엇을 캐나</h2>
+  <ul class="plain">
+    <li><b>인도네시아(그래스버그):</b> 세계 최대급 구리·금 광산. 금이 많이 나와 이익이 가장 좋은 곳인데, 사고로 2026년 내내 덜 캐고 있어요. 제련소는 2026년 8월 말 다시 돌기 시작했어요.</li>
+    <li><b>미국(애리조나 등):</b> 구리 광산 여러 곳. 미국 안 구리값이 더 비싸 유리해요. 버려진 돌에서 구리를 더 뽑는 기술(침출)로 생산을 늘리는 중이에요.</li>
+    <li><b>남미(페루·칠레):</b> 세로 베르데, 엘 아브라.</li>
+    <li><b>AI와의 관계 — 간접:</b> 데이터센터·전력망·전기차에 구리가 많이 들어가요. AI 투자가 늘면 구리 수요가 늘고, 반대로 최근엔 "데이터센터 규제·반대" 걱정으로 구리값이 4개월 최저까지 내렸어요.</li>
+  </ul>
+</section>
+
+<section>
+  <h2>실적 숫자</h2>
+  <div class="sheet"><table>
+    <tr><th>항목</th><th class="r">2025년 전체</th><th class="r">2026년 3분기</th><th>메모</th></tr>
+    <tr><td>매출</td><td class="r">259.2억$</td><td class="r">75.5억$</td><td>3분기는 1년 전 69.7억$보다 +8%</td></tr>
+    <tr><td>순이익(주주 몫)</td><td class="r">22.0억$</td><td class="r">12억$</td><td>3분기 주당 0.81$, 조정 0.88$(예상보다 좋음)</td></tr>
+    <tr><td>영업으로 번 현금</td><td class="r">56.1억$</td><td class="r">확인 못 함</td><td>2025년 값은 2차 자료</td></tr>
+    <tr><td>설비 투자</td><td class="r">—</td><td class="r">12억$</td><td>그중 큰 광산 사업 7억$</td></tr>
+    <tr><td>구리 판매량</td><td class="r">36억 파운드</td><td class="r">7.49억 파운드</td><td>2025년은 사고로 −12%</td></tr>
+    <tr><td>금 판매량</td><td class="r">—</td><td class="r">10.5만 온스</td><td>생산 23.4만 온스 중 약 6만 온스는 4분기로 넘어감</td></tr>
+    <tr><td>구리 판매 가격</td><td class="r">—</td><td class="r">6.5$ 이상</td><td>파운드당, 회사 추정</td></tr>
+    <tr><td>빚 − 현금(순부채)</td><td class="r">23억$</td><td class="r">24억~34억$</td><td>2025년 말: 빚 94억, 현금 38억(제련소 빚 32억 제외 기준). 2026년 값은 출처마다 다름</td></tr>
+    <tr><td>배당</td><td class="r">—</td><td class="r">분기 0.15$</td><td>1년 0.60$ → 지금 주가의 약 1.0%</td></tr>
+  </table></div>
+  <p style="margin-top:8px">빚은 회사가 정한 목표(순부채 30억~40억 달러) 안에 있어 재무는 튼튼한 편이에요. 사고로 2025년에 7.4억 달러 손실을 반영했고, 보험으로 얼마나 돌려받을지는 아직 몰라요.</p>
+</section>
+
+<section>
+  <h2>앞으로 계획 (회사 전망)</h2>
+  <div class="idx">
+    <div class="box"><div class="t">구리 생산 2026</div><div class="v">약 30억</div><div class="s">파운드</div></div>
+    <div class="box"><div class="t">2027</div><div class="v">약 37억</div><div class="s">+23%</div></div>
+    <div class="box"><div class="t">2028</div><div class="v">40억 이상</div><div class="s">사고 전 수준</div></div>
+    <div class="box"><div class="t">구리 1파운드 캐는 비용</div><div class="v">1.90$</div><div class="s">금 판 돈을 뺀 2026년 목표</div></div>
+  </div>
+  <p style="margin-top:8px"><b>구리값이 이익을 얼마나 움직이나(직접 계산):</b> 구리가 파운드당 0.10달러 오르내리면 1년 매출이 2026년 약 3억 달러, 2027년 약 3.7억 달러 달라져요. 파는 값(6달러대)과 캐는 비용(1.9달러) 차이가 커서, 구리값이 이익을 크게 좌우해요.</p>
+  <p style="margin-top:8px"><b>그래스버그 회복 일정:</b> 지금 67% → 2027년 중반 80% → 2027년 말 거의 정상. 운반 설비 보강은 2027년 초, 사고 구역(PB1S) 재가동은 2027년 중반 목표.</p>
+</section>
+
+<section>
+  <h2>값이 싼가 비싼가</h2>
+  <div class="idx">
+    <div class="box"><div class="t">주가 ÷ 1년 이익 (PER)</div><div class="v">22~25배</div><div class="s">Morningstar 22.2 · Robinhood 25.0</div></div>
+    <div class="box"><div class="t">시가총액</div><div class="v">850억$</div></div>
+    <div class="box"><div class="t">배당 수익률</div><div class="v">약 1.0%</div></div>
+  </div>
+  <p style="margin-top:8px">지금 이익은 사고로 눌린 상태라 PER이 높게 보여요. 생산이 2028년 40억 파운드로 돌아오고 구리값이 지금 수준이면 이익이 늘어 PER은 내려가요. 반대로 구리값이 5달러 아래로 가면 비싸 보이게 돼요. 다른 구리 회사(서던코퍼 등)와의 비교 숫자는 이번에 확인하지 못했어요.</p>
+</section>
+
+<section>
+  <h2>위험 4가지</h2>
+  <ul class="plain">
+    <li><b>구리 가격:</b> 9월 22일 최고(약 6.85~6.93달러) → 11월 6.2~6.3달러(4개월 최저). 경기·AI 투자 걱정이 커지면 더 내릴 수 있어요.</li>
+    <li><b>그래스버그 회복 지연:</b> 이미 처음 계획보다 늦었어요. 2026년 판매 전망도 약 2% 낮췄어요(미국·칠레 부족분).</li>
+    <li><b>인도네시아 정부:</b> 광산 허가가 2041년에 끝나요. 2026년 6월 연장을 신청했고, 조건으로 지분 12%를 정부에 넘기는 협의가 진행 중이에요. 수출 허가·세금도 정부 결정에 달려 있어요.</li>
+    <li><b>비용 상승:</b> 3분기에 단위 비용이 올랐어요. 금 판매가 분기마다 들쭉날쭉해 이익이 흔들려요.</li>
+  </ul>
+</section>
+
+<section>
+  <h2>앞으로 볼 것</h2>
+  <ul class="plain">
+    <li><b>구리값 6달러:</b> 이 위를 지키는지. FCX 주가는 구리값과 거의 같이 움직여요.</li>
+    <li><b>2027년 1월 하순 4분기 실적:</b> 그래스버그 가동률(67%에서 올라가는지), 2027년 생산 전망 37억 파운드 유지 여부.</li>
+    <li><b>인도네시아 허가 연장 발표:</b> 나오면 큰 불확실성이 하나 사라져요.</li>
+    <li><b>가격 자리:</b> 지금 59.24 · 1년 최저 38.85 · 1년 최고 80.24.</li>
+  </ul>
+</section>
+
+<p class="warn"><b>확인 못 한 것:</b> 미국 증권거래위원회(SEC) 원문과 회사 발표 원문은 이 환경에서 열리지 않아, 숫자는 원문을 인용한 기사·요약으로 확인했어요. 3분기 영업현금흐름과 9월 말 순부채, 동종 회사 비교, 2025년 설비 투자는 비어 있어요. 전망 숫자(30억·37억·40억 파운드, 비용 1.90달러)는 실적 발표 요약 기사 기준이에요. 퀀트 후보 목록에 든 이유(어떤 점수가 높았는지)는 퀀트 페이지를 보세요.</p>
+
+<p class="foot">출처: 3분기 실적 <a href="https://www.sec.gov/Archives/edgar/data/0000831259/000083125926000045/a3q2026exhibit991.htm">SEC 8-K(10-27)</a> · <a href="https://www.marketscreener.com/news/freeport-mcmoran-q3-2026-earnings-release-ce785cddda8ff320">MarketScreener</a> · <a href="https://www.gurufocus.com/news/9145343/freeportmcmoran-inc-fcx-q3-2026-earnings-call-highlights-strong-copper-growth-and-grasberg-rampup-offset-cost-pressures">실적 발표 요약(GuruFocus)</a> · <a href="https://www.stocktitan.net/sec-filings/FCX/8-k-freeport-mcmoran-inc-reports-material-event-4346382b6e99.html">StockTitan</a> · 생산 <a href="https://news.metal.com/newscontent/104143740-freeport-reports-q3-copper-production-of-830-million-lb-as-grasberg-recovery-advances">SMM</a> · <a href="https://s22.q4cdn.com/529358580/files/doc_news/2026/FCX_261002.pdf">회사 10-02 운영 발표</a> · 2025년 <a href="https://s22.q4cdn.com/529358580/files/doc_news/2026/FCX_260122.pdf">4분기·연간 실적 발표</a> · <a href="https://s22.q4cdn.com/529358580/files/doc_financials/10-K/10_k2025.pdf">2025 10-K</a> · 사고 <a href="https://www.mining.com/web/freeport-says-its-on-track-to-restart-grasberg-copper-mine-after-deadly-mudslide">Mining.com</a> · 주가·PER <a href="https://www.morningstar.com/stocks/xnys/fcx/quote">Morningstar</a> · <a href="https://robinhood.com/us/en/stocks/FCX/">Robinhood</a> · <a href="https://www.gurufocus.com/news/9193483/freeportmcmoran-inc-fcx-stock-up-30-but-gf-value-says-overvalued-gf-score-88100">GuruFocus</a> · 구리값 <a href="https://tradingeconomics.com/commodity/copper/news/598748">Trading Economics</a> · <a href="https://www.barchart.com/story/news/36191652/is-copper-setting-a-base-for-a-new-high">Barchart</a> · 배당 <a href="https://simplywall.st/stocks/us/materials/nyse-fcx/freeport-mcmoran/news/what-freeport-mcmoran-fcxs-dividend-declaration-and-grasberg/amp">Simply Wall St</a> · 인도네시아 허가 <a href="https://en.tempo.co/read/2109085/freeport-submits-12-stake-divestment-draft-to-indonesian-govt">Tempo</a> · <a href="https://indonesiabusinesspost.com/6731/corporate-affairs/freeport-submits-12-divestment-draft-for-iupk-extension">Indonesia Business Post</a></p>
+</div>
