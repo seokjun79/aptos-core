@@ -1,0 +1,132 @@
+<title>엔비디아 실적 점검판</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;600;800&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* 한 줄 기둥: 결론 → 검수표 → 판정 기준 → 종목 기대 이익 → 산업 성장성 → 출처 */
+:root{--bg:#f6f8f4;--card:#ffffff;--fg:#17201a;--mute:#5d6b62;--line:#d9e1da;--acc:#4a8f1f;--up:#c0392b;--down:#1f5fbf;--warn:#b7791f;
+--f-body:"Noto Sans KR",system-ui,sans-serif;--f-num:"IBM Plex Mono",ui-monospace,monospace}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#111612;--card:#19201b;--fg:#e6ede7;--mute:#9aa89e;--line:#2c372f;--acc:#7cc24a;--up:#ff6b5b;--down:#6aa5ff;--warn:#e0a84a;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#111612;--card:#19201b;--fg:#e6ede7;--mute:#9aa89e;--line:#2c372f;--acc:#7cc24a;--up:#ff6b5b;--down:#6aa5ff;--warn:#e0a84a;color-scheme:dark}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);line-height:1.6;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 40px}
+main{max-width:860px;margin:0 auto;display:grid;gap:22px}
+h1{font-size:1.6rem;margin:0;font-weight:800;text-wrap:balance}
+h2{font-size:1.15rem;margin:0 0 10px;text-wrap:balance}
+.sub{color:var(--mute);margin:4px 0 0}
+section{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px}
+.lead{border-left:5px solid var(--acc)}
+.wait{border:2px dashed var(--warn)}
+.tbl{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:.92rem;min-width:520px}
+th,td{border-bottom:1px solid var(--line);padding:7px 6px;text-align:left;vertical-align:top}
+th{color:var(--mute);font-weight:600;font-size:.85rem}
+.n{font-family:var(--f-num);font-variant-numeric:tabular-nums;white-space:nowrap}
+.pill{display:inline-block;padding:1px 8px;border-radius:99px;font-size:.8rem;font-weight:600;border:1px solid currentColor}
+.good{color:var(--up)}.bad{color:var(--down)}.mid{color:var(--warn)}
+ul{margin:6px 0;padding-left:20px}
+.note{color:var(--mute);font-size:.85rem}
+.bar{height:22px;background:var(--line);border-radius:4px;position:relative;overflow:hidden}
+.bar>i{position:absolute;inset:0 auto 0 0;background:var(--acc)}
+.barrow{display:grid;grid-template-columns:130px 1fr 90px;gap:8px;align-items:center;margin:6px 0;font-size:.9rem}
+@media (max-width:480px){.barrow{grid-template-columns:96px 1fr 70px}}
+a{color:var(--acc)}
+</style>
+<main>
+<header>
+<h1>엔비디아 실적 점검판</h1>
+<p class="sub">FY27 3분기(2026년 8~10월) · 발표 한국시간 11/18(수) 06:20 무렵 · 준비 11/17 밤, 결과는 11/18 07:05에 위 칸부터 채움</p>
+</header>
+
+<section class="wait" id="result">
+<h2>실적 결과 (11/18 아침)</h2>
+<p>아직 발표 전입니다. 11/18 07:05에 실제 숫자를 아래 검수표와 비교해 여기에 적습니다.</p>
+</section>
+
+<section class="lead">
+<h2>지금 상황 한눈에</h2>
+<ul>
+<li><b>젠슨 황이 11/12 CEO에서 물러났습니다.</b> 콜레트 크레스(재무 책임자)가 임시 CEO입니다. 황 없이 하는 첫 실적 발표라, 숫자보다 경영진이 하는 말에 주가가 더 크게 움직일 수 있습니다.</li>
+<li><b>11/16 미국이 새 수출 규칙을 냈습니다.</b> 동남아 4개국·브라질 데이터센터로 가는 첨단 칩은 허가가 필요합니다. 그날 엔비디아 156.14달러(−4.1%), 마이크론 719.02달러(−7.6%)로 마감했습니다.</li>
+<li><b>옵션 시장은 발표 뒤 위아래 약 8~8.5% 움직임을 예상합니다.</b> 최근 평균의 약 2배입니다. 156달러 기준이면 약 143~169달러입니다.</li>
+<li>한국 11/17: 코스피 4,968.48(−2.59%), 삼성전자 190,300원, SK하이닉스 1,098,000원.</li>
+</ul>
+</section>
+
+<section>
+<h2>검수표: 예상과 비교할 숫자</h2>
+<div class="tbl"><table>
+<tr><th>항목</th><th>시장 예상</th><th>회사가 말한 값</th><th>실제</th><th>판정</th></tr>
+<tr><td>매출</td><td class="n">1,088~1,093억$</td><td class="n">1,080억$ ±2%<br>(1,058~1,102)</td><td class="n">발표 전</td><td>-</td></tr>
+<tr><td>조정 주당순이익(EPS)</td><td class="n">2.47~2.49$<br><span class="note">비공식 2.60$</span></td><td>안 냄</td><td class="n">발표 전</td><td>-</td></tr>
+<tr><td>데이터센터 매출</td><td class="n">약 1,018억$</td><td>-</td><td class="n">발표 전</td><td>-</td></tr>
+<tr><td>총이익률(남는 비율)</td><td class="n">약 74%</td><td class="n">74.0% ±0.5%p</td><td class="n">발표 전</td><td>-</td></tr>
+<tr><td><b>다음 분기 매출 가이던스</b></td><td class="n">공식 집계 못 찾음<br><span class="note">한 애널리스트 1,260억$</span></td><td>-</td><td class="n">발표 전</td><td>-</td></tr>
+<tr><td><b>다음 분기 총이익률 가이던스</b></td><td class="n">72.3%</td><td class="n">71~72%가 바닥이라고 말함</td><td class="n">발표 전</td><td>-</td></tr>
+<tr><td>공급 약정(미리 사 둔 부품)</td><td>-</td><td class="n">지난 분기 2,790억$<br>(그 전 1,190억)</td><td class="n">발표 전</td><td>-</td></tr>
+</table></div>
+<p class="note">지난 분기 실제: 매출 962억$(1년 전보다 +106%), 데이터센터 890억$, 총이익률 75.0%, 조정 EPS 2.22$.</p>
+</section>
+
+<section>
+<h2>판정 기준 (매니저가 미리 정함)</h2>
+<div class="tbl"><table>
+<tr><th>결과</th><th>조건</th><th>AI 반도체 기대 이익에 주는 뜻</th></tr>
+<tr><td><span class="pill good">좋음</span></td><td>매출 1,102억$ 넘음 + 다음 분기 가이던스 1,260억$ 이상 + 총이익률 가이던스 72% 이상</td><td>내년 이익 예상이 올라감. HBM(하이닉스·마이크론)·TSMC도 같이 올라감</td></tr>
+<tr><td><span class="pill mid">보통</span></td><td>매출 1,088~1,102억$, 가이던스 1,200~1,260억$</td><td>지금 예상 유지. 주가는 CEO·규제 이야기에 좌우</td></tr>
+<tr><td><span class="pill bad">나쁨</span></td><td>매출 1,088억$ 아래, 또는 가이던스 1,200억$ 아래, 또는 총이익률 가이던스 71% 아래</td><td>내년 이익 예상이 내려감. 공급망 전체 기대도 내려감</td></tr>
+</table></div>
+<p class="note">1,200억$·1,260억$ 선은 공식 컨센서스가 없어 매니저가 정한 기준입니다(지난 분기 가이던스 증가폭과 애널리스트 의견 참고).</p>
+</section>
+
+<section>
+<h2>AI 반도체 종목 기대 이익 (발표 전 기준)</h2>
+<div class="tbl"><table>
+<tr><th>종목</th><th>최근 종가</th><th>올해 이익</th><th>내년 이익</th><th>성장</th><th>주가 ÷ 내년 이익</th><th>엔비디아와 연결</th></tr>
+<tr><td>엔비디아</td><td class="n">156.14$ (11/16)</td><td class="n">EPS 9.3~9.5$</td><td class="n">EPS 15.7~15.9$</td><td class="n">+69%</td><td class="n">약 10배</td><td>본인</td></tr>
+<tr><td>AMD</td><td class="n">534.06$ (11/13)</td><td class="n">8.08$</td><td class="n">17.6$</td><td class="n">+119%</td><td class="n">약 30배</td><td>경쟁 GPU</td></tr>
+<tr><td>브로드컴</td><td class="n">331.98$ (11/10)</td><td>확인 못 함</td><td class="n">19.4$</td><td class="n">약 +67%</td><td class="n">약 17배</td><td>맞춤칩(구글 TPU 등)</td></tr>
+<tr><td>마이크론</td><td class="n">719.02$ (11/16)</td><td>확인 못 함</td><td class="n">약 176.5$</td><td>확인 못 함</td><td class="n">약 4배</td><td>HBM 공급</td></tr>
+<tr><td>TSMC(미국 주식)</td><td class="n">약 375$ (11/16)</td><td class="n">17.5$</td><td class="n">23.4$</td><td class="n">약 +34%</td><td class="n">약 16배</td><td>엔비디아 칩 생산</td></tr>
+<tr><td>마벨</td><td>확인 못 함</td><td class="n">약 4.05$</td><td class="n">6.1~6.2$</td><td class="n">+60%</td><td class="n">약 40배</td><td>맞춤칩·광 연결</td></tr>
+<tr><td>SK하이닉스</td><td class="n">1,098,000원 (11/17)</td><td class="n">영업이익 262.7조</td><td class="n">403.8조</td><td class="n">+54%</td><td class="n">시총÷영업이익 1.9배</td><td>HBM 최대 공급</td></tr>
+<tr><td>삼성전자</td><td class="n">190,300원 (11/17)</td><td class="n">영업이익 371.7조</td><td class="n">약 560조</td><td class="n">약 +51%</td><td class="n">시총÷영업이익 2.0배</td><td>HBM4 공급</td></tr>
+</table></div>
+<p class="note">주가 ÷ 내년 이익은 매니저 계산(날짜가 달라 대략 값). 하이닉스·삼성은 주당순이익 예상을 못 찾아 영업이익으로 계산했고 PER과 다릅니다. 마이크론 4배는 메모리 경기가 꼭대기라고 시장이 의심한다는 뜻입니다(과거 메모리는 이익이 가장 클 때 주가가 꼭대기였음).</p>
+</section>
+
+<section>
+<h2>산업 성장성: 돈을 쓰는 쪽과 받는 쪽</h2>
+<p>엔비디아 내년 이익 예상(EPS 15.8$)을 거꾸로 풀면 <b>내년 매출 약 6,900억$</b>가 필요합니다(주식 약 243억 주 × 15.8$ = 순이익 약 3,840억$, 순이익률 약 56%로 나눔. 매니저 계산). 그 돈은 큰 클라우드 회사의 설비투자에서 나옵니다.</p>
+<div class="barrow"><span>4대 클라우드 2026 계획</span><div class="bar"><i style="width:56%"></i></div><span class="n">약 7,300억$</span></div>
+<div class="barrow"><span>2027 (S&amp;P 예상)</span><div class="bar"><i style="width:79%"></i></div><span class="n">약 1.03조$</span></div>
+<div class="barrow"><span>2027 (엔비디아 시각, 상위 5곳)</span><div class="bar"><i style="width:100%"></i></div><span class="n">약 1.3조$</span></div>
+<div class="barrow"><span>엔비디아 내년 매출 필요</span><div class="bar"><i style="width:53%;background:var(--warn)"></i></div><span class="n">약 6,900억$</span></div>
+<ul>
+<li><b>읽는 법:</b> 2027년 클라우드 투자 1.03~1.3조$ 중 53~67%가 엔비디아로 가야 지금 예상이 맞습니다. 정부·신생 클라우드 매출도 있어 불가능하진 않지만, <b>투자가 조금만 줄어도 예상이 크게 흔들리는 구조</b>입니다.</li>
+<li><b>더 크게 보는 쪽:</b> 젠슨 황은 2030년 AI 인프라 투자를 연 3~4조$로 봤습니다.</li>
+<li><b>낮게 보는 쪽:</b> BofA는 2030년 약 1.7조$로 봅니다. SemiAnalysis는 2030년 AI 가속기 투자 예상을 9,230억$로 40% 낮췄습니다.</li>
+<li><b>HBM:</b> TrendForce는 2027년 HBM 가격 +121%, 2027년까지 공급 부족으로 봅니다. 엔비디아 공급 약정이 1,190억 → 2,790억$로 늘어난 것도 주로 메모리 몫입니다. 하이닉스·마이크론에는 좋은 신호입니다.</li>
+<li><b>위험:</b> 수출 규제 강화(황 사임이 중국 관련 의혹과 얽힘), 클라우드 회사 자체 칩(브로드컴 AI 매출 2027년 2배 목표), 전력 부족, 금리 인상 가능성, HBM 원가 상승에 따른 엔비디아 이익률 하락.</li>
+</ul>
+</section>
+
+<section>
+<h2>이번 주 함께 볼 일</h2>
+<ul>
+<li>11/18 밤(미국 11/18 장 마감 뒤): 앤트로픽 공모가 결정(희망 70~78$, 보도 기준). 11/19 나스닥 상장(티커 ANT) 예정, 상장일은 보도로만 확인.</li>
+<li>11/19 새벽: 연준 회의록. 이번 주 월마트·타깃·홈디포 실적, 미국 소매판매.</li>
+<li>11/30 마벨 실적, 12/9 브로드컴 실적.</li>
+</ul>
+</section>
+
+<section>
+<h2>출처</h2>
+<ul class="note">
+<li><a href="https://www.marketbeat.com/earnings/reports/2026-11-17-nvidia-co-stock/">MarketBeat 예상</a> · <a href="https://www.tradingview.com/news/zacks:58c899221094b:0-nvidia-gears-up-for-q3-earnings-should-investors-buy-the-stock/">Zacks</a> · <a href="https://nvidianews.nvidia.com/news/nvidia-announces-financial-results-for-second-quarter-fiscal-2027">엔비디아 2분기 발표</a></li>
+<li><a href="https://www.investingcube.com/deep-analysis/nvidia-q3-fy2027-earnings-preview-can-ai-infrastructure-demand-shield-nvda-stock-from-jensen-huangs-departure/">InvestingCube 미리보기</a> · <a href="https://invezz.com/news/2026/11/17/nvidia-stock-faces-a-300-billion-earnings-gamble-as-options-signal-8-swing/">Invezz 옵션 변동폭</a></li>
+<li><a href="https://www.cbsnews.com/news/nvidia-ceo-jensen-huang-resigns/">CBS 황 사임</a> · <a href="https://fortune.com/2026/11/16/new-commerce-rule-nvidia-chip-singapore-malaysia-china/">Fortune 수출 규칙</a> · <a href="https://www.heygotrade.com/en/news/nvidia-nvda-stock-news-november-17-2026/">NVDA 11/16 종가</a></li>
+<li><a href="https://newsway.co.kr/news/view?ud=2026111716073646134">뉴스웨이 11/17 한국</a> · <a href="https://biz.heraldcorp.com/article/10917534">헤럴드 하이닉스 전망</a> · <a href="https://www.businesspost.co.kr/BP?command=article_view&amp;num=450648">비즈니스포스트 삼성 전망</a></li>
+<li><a href="https://walnutinvest.com/stats/ai-capex-statistics">설비투자 집계</a> · <a href="https://www.thestreet.com/investing/nvidia-huang-4-trillion-data-center-forecast">TheStreet 3~4조$ 전망</a> · <a href="https://www.trendforce.com/presscenter/news/20260929-13255.html">TrendForce HBM</a> · <a href="https://www.fool.com/investing/2026/11/16/this-is-a-huge-week-for-the-stock-market-nvidia-earnings-fed-minutes-and-anthropic-s-ipo/">이번 주 일정</a></li>
+<li>참고한 글: 로켓슬라 X 글(구독자 전용이라 첫 부분만 읽음: 11/18 06:20 실적, 앤트로픽 공모가·상장 일정)</li>
+</ul>
+</section>
+</main>
