@@ -2,110 +2,144 @@
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
 <style>
-/* 방향: 휴대폰 홈 화면 같은 바로가기 목록. 매일 보는 것 맨 위, 큰 터치 칸 */
-:root{--bg:#f2f4f7;--paper:#fff;--ink:#161b22;--muted:#5b6573;--rule:#d9dee6;--accent:#2457c5;--hot:#d1293d;--sans:"IBM Plex Sans KR",system-ui,sans-serif}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f1318;--paper:#171c23;--ink:#e6eaf0;--muted:#98a2b0;--rule:#2a313b;--accent:#8fb0ff;--hot:#ff7b8a;color-scheme:dark}}
-:root[data-theme="dark"]{--bg:#0f1318;--paper:#171c23;--ink:#e6eaf0;--muted:#98a2b0;--rule:#2a313b;--accent:#8fb0ff;--hot:#ff7b8a;color-scheme:dark}
+/* 방향: 휴대폰 홈 화면 같은 바로가기 목록 + 위쪽 검색·보기 바꾸기. 카드마다 '지시 날짜' */
+:root{--bg:#f2f4f7;--paper:#fff;--ink:#161b22;--muted:#5b6573;--rule:#d9dee6;--accent:#2457c5;--hot:#d1293d;--chip:#e8edf6;--sans:"IBM Plex Sans KR",system-ui,sans-serif}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f1318;--paper:#171c23;--ink:#e6eaf0;--muted:#98a2b0;--rule:#2a313b;--accent:#8fb0ff;--hot:#ff7b8a;--chip:#222a35;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0f1318;--paper:#171c23;--ink:#e6eaf0;--muted:#98a2b0;--rule:#2a313b;--accent:#8fb0ff;--hot:#ff7b8a;--chip:#222a35;color-scheme:dark}
 body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.55}
-.wrap{max-width:760px;margin:0 auto;padding-block:20px 56px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:24px}
+.wrap{max-width:780px;margin:0 auto;padding-block:20px 56px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:20px}
 h1{font-size:1.35rem;margin:0}
 .sub{color:var(--muted);font-size:.86rem;margin:4px 0 0}
+.tools{display:grid;gap:10px;position:sticky;top:env(safe-area-inset-top,0px);background:var(--bg);padding-block:8px;z-index:5}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+.search{display:flex;gap:8px}
+.search input{flex:1;min-width:0;font:inherit;padding:10px 12px;border:1px solid var(--rule);border-radius:10px;background:var(--paper);color:var(--ink)}
+.search input:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.search button{font:inherit;padding:0 14px;border:1px solid var(--rule);border-radius:10px;background:var(--paper);color:var(--ink);cursor:pointer}
+.tabs{display:flex;gap:6px;flex-wrap:wrap}
+.tabs button{font:inherit;font-size:.86rem;padding:6px 12px;border-radius:99px;border:1px solid var(--rule);background:var(--paper);color:var(--ink);cursor:pointer}
+.tabs button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--paper);font-weight:600}
+.count{font-size:.8rem;color:var(--muted)}
+#out{display:grid;gap:22px}
 h2{font-size:.82rem;letter-spacing:.06em;color:var(--muted);margin:0 0 8px;font-weight:700}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px}
-a.card{display:grid;gap:2px;padding:12px 14px;background:var(--paper);border:1px solid var(--rule);border-radius:10px;text-decoration:none;color:var(--ink);min-width:0}
+a.card{display:grid;gap:3px;padding:12px 14px;background:var(--paper);border:1px solid var(--rule);border-radius:10px;text-decoration:none;color:var(--ink);min-width:0}
 a.card:focus-visible,a.card:hover{border-color:var(--accent)}
 a.card b{font-size:.98rem}
 a.card span{font-size:.8rem;color:var(--muted)}
+a.card .meta{display:flex;gap:6px;flex-wrap:wrap;margin-top:2px}
+a.card .meta em{font-style:normal;font-size:.74rem;padding:1px 7px;border-radius:99px;background:var(--chip);color:var(--muted);font-variant-numeric:tabular-nums}
+a.card .meta em.d{color:var(--accent);font-weight:600}
 a.card.hot{border-left:4px solid var(--hot)}
+.empty{color:var(--muted);padding:20px 0}
 .foot{font-size:.78rem;color:var(--muted)}
 </style>
 <div class="wrap">
 <header>
   <h1>비너스 페이지 모음</h1>
-  <p class="sub">누르면 바로 열려요. 맨 위가 매일 보는 페이지예요. (2026-11-11 정리)</p>
+  <p class="sub">누르면 바로 열려요. 카드의 파란 날짜 = 석준님이 지시한 날. (2026-11-17 갱신)</p>
 </header>
 
-<section>
-  <h2>매일 보는 것</h2>
-  <div class="grid">
-    <a class="card hot" href="https://claude.ai/artifact/AKpn2iT94pSpR3SgSKVqY7"><b>오늘 증시 정리 (한국)</b><span>평일 장마감 · 수급 · 하이닉스 외국인 체크표</span></a>
-    <a class="card hot" href="https://claude.ai/artifact/Lzdr29FtxTCdrAXbAwZFDU"><b>미국 증시 정리</b><span>매일 아침 · 지수 · 섹터 · 내 종목 · QLD 선</span></a>
-    <a class="card hot" href="https://claude.ai/artifact/R3ETGbNWrtW9DM9W8RsKwS"><b>퀀트 40종목 요약</b><span>종목마다 한 줄 · 11/16 종가</span></a>
-    <a class="card hot" href="https://claude.ai/artifact/6A1QKNUmrnNgyUXnHb925e"><b>미국 퀀트 종목 찾기</b><span>상위 20종목 · 두 방법 · QQQ와 비교</span></a>
-    <a class="card hot" href="https://claude.ai/artifact/Dczf7Y7mj4ewRSDiLBvsSw"><b>성장+배당 ETF 고르기</b><span>국내 상장 · 추천 순위 · 커버드콜 함정 · 계좌·세금</span></a>
-    <a class="card hot" href="https://claude.ai/artifact/8T4LojW5VAJRmxKowyUiWM"><b>엔비디아 실적 점검판</b><span>11/18 07시 결과 채움 · 예상 비교 · AI 반도체 기대 이익 · 산업 성장성</span></a>
-    <a class="card hot" href="https://claude.ai/artifact/ECAQrioTYsXGAiqzYwNbvf"><b>엔비디아 실적 미리보기</b><span>11/18 06:20 · 예상치 · QLD 팔기선 영향</span></a>
-    <a class="card hot" href="https://claude.ai/artifact/2DcGjxLG3qocH7XZtvqKf9"><b>주간 증시 정리 11/9~13</b><span>한국·미국 · 내 종목 주간표 · 다음 주 일정</span></a>
-    <a class="card hot" href="https://claude.ai/artifact/8vSCXbgLTkLnjKzTMPbEEf"><b>TIME 나스닥100액티브 구성종목</b><span>미국장 등락 · ETF 예상</span></a>
-    <a class="card" href="https://claude.ai/artifact/DFYXsyTtVffBvVwG1wwsML"><b>미국 장전 이슈</b><span>선물 · 오늘 밤 볼 것</span></a>
-    <a class="card hot" href="https://claude.ai/artifact/EC3cKdgkjBW6kM89Rr5qYm"><b>FX 시스템 학습 일지</b><span>딥러닝 · 연습 · 시험 기록</span></a>
-    <a class="card hot" href="https://claude.ai/artifact/6gu5SBiG11YTwcGdVbQLd1"><b>H4 구조 확인판</b><span>스윙·BOS·MSS 맞음/틀림 눌러 주기</span></a>
-    <a class="card hot" href="https://claude.ai/artifact/MjzAHW1nzwMPqzagUX2D7C"><b>H4 질문 4개</b><span>엔진이 궁금한 것만 · 차트 보고 버튼 누르기</span></a>
-    <a class="card hot" href="https://claude.ai/artifact/WiUF65HGidrXFTuSHNG1sv"><b>EURUSD 추세 A·B 비교</b><span>5곳 · A/B 중 맞는 쪽 누르기</span></a>
-    <a class="card hot" href="https://claude.ai/artifact/EDxQmt6NpxvdLBTfATCs5G"><b>EURUSD 추세 전환 10곳 확인</b><span>맞음/틀림만 누르기</span></a>
-    <a class="card hot" href="https://claude.ai/artifact/GqndCzimWdVWZ448FbQvTJ"><b>다음 주 H4 작도 계획</b><span>4종목 세 답 · 핵심선 · 시나리오</span></a>
-    <a class="card" href="https://claude.ai/artifact/KzGA9AJjAiit6zwkEfk5QS"><b>차트 작도 노트</b><span>RC2가 만든 작도 기록</span></a>
-    <a class="card hot" href="https://claude.ai/artifact/WTRWc8b7J5RuYX8e1VEtuj"><b>QLD 규칙 판</b><span>지금 신호 · 사기선·팔기선 · 41년 성적</span></a>
-    <a class="card hot" href="https://claude.ai/artifact/A2uqPgfZTVb9TYPRqceHbj"><b>QLD 매수 판정</b><span>사기선 · 팔기선 · 차트</span></a>
-    <a class="card" href="https://claude.ai/artifact/8gHYgfmGCUFGEHRZmHJ3vq"><b>비너스 작업 현황판</b><span>맡긴 일 · 승인 버튼</span></a>
-    <a class="card" href="https://claude.ai/artifact/Ab2Vf3Drr8nghChmJrB2m8"><b>석준님 HTS</b><span>JC가 1분마다 올리는 실시간 화면</span></a>
-    <a class="card" href="https://claude.ai/artifact/ArJ8iCed7STpDpUVbzjZec"><b>RC 실시간 차트</b><span>QLD · TQQQ · IQQ · QQQ</span></a>
+<div class="tools">
+  <div class="search">
+    <input id="q" type="search" placeholder="찾기: 엔비디아, EURUSD, 11/17, ETF …" aria-label="페이지 찾기">
+    <button id="clear" type="button">지우기</button>
   </div>
-</section>
-
-<section>
-  <h2>주식 · 매크로</h2>
-  <div class="grid">
-    <a class="card" href="https://claude.ai/artifact/BcSej8Jaoh2XfKqScH2ngn"><b>FCX 기업 분석</b><span>구리 회사 · 11/13 기준</span></a>
-    <a class="card" href="https://claude.ai/artifact/1D1VR8DQCaDoKxj5ivRgXc"><b>국내 매크로 점검 11/9</b><span>금리 · 환율 · 수출 · 성장</span></a>
-    <a class="card" href="https://claude.ai/artifact/XZdqq8AsLNUQ63qiLTHsrz"><b>보유 종목 분석실</b><span>10/30</span></a>
-    <a class="card" href="https://claude.ai/artifact/Q8ZyHkCDiCW9oVRhM6reXB"><b>해외 6종목 점검 노트</b><span>10/26</span></a>
-    <a class="card" href="https://claude.ai/artifact/BgEijjKkA5aNJJC2kt27Kq"><b>석준님 한투 계좌 지도</b><span>10/24</span></a>
-    <a class="card" href="https://claude.ai/artifact/KK7D1cUg1qaEc4MQ2D8Gqe"><b>한국 증시 브리핑 11/2</b><span>지난 브리핑</span></a>
-    <a class="card" href="https://claude.ai/artifact/6qWSnk5bFuksjRC5iudD2M"><b>장전 브리핑 11/5</b><span>지난 브리핑</span></a>
-    <a class="card" href="https://claude.ai/artifact/5pj5S6rqSZt66AobGejknn"><b>퇴근길 증시 3분 11/5</b><span>원고</span></a>
-    <a class="card" href="https://claude.ai/artifact/8H43Yt6w1oZaaXkL4LpA9M"><b>퇴근길 증시 3분 샘플</b><span>원고 시안</span></a>
-    <a class="card" href="https://claude.ai/artifact/7rbtzTK32s2u9xXGvKyajf"><b>석준님 HTS (예전판)</b><span>10/29</span></a>
+  <div class="tabs" role="group" aria-label="보기 방식">
+    <button type="button" data-v="menu" aria-pressed="true">메뉴</button>
+    <button type="button" data-v="new" aria-pressed="false">최신 지시순</button>
+    <button type="button" data-v="date" aria-pressed="false">일자별</button>
+    <button type="button" data-v="theme" aria-pressed="false">테마별</button>
   </div>
-</section>
-
-<section>
-  <h2>FX · 트레이딩 연구</h2>
-  <div class="grid">
-    <a class="card" href="https://claude.ai/artifact/MbjMwfXxmV7BxL4PscbSae"><b>전략 다시 짜기 성적표</b><span>11/6 · 7개 시험</span></a>
-    <a class="card" href="https://claude.ai/artifact/8Knr7YvKY5uoJAakDmkGgH"><b>qlib 전략 판정표</b><span>11/4</span></a>
-    <a class="card" href="https://claude.ai/artifact/PadHEZkCxcLaeVN53qGkYj"><b>석준 × ICT 통합 모델</b><span>11/2</span></a>
-    <a class="card" href="https://claude.ai/artifact/MLjqPM5CPNcA3B5Bmk1vhV"><b>ICT 진입 기준 v5</b><span>10/31</span></a>
-    <a class="card" href="https://claude.ai/artifact/EDrjZyhUhcFz5XkV7BnvpP"><b>MM 실전 기록장</b><span>10/31</span></a>
-    <a class="card" href="https://claude.ai/artifact/EzQM18zv8hnVNWd5EuMi6a"><b>ICT 모델 백테스트 결과</b><span>10/30</span></a>
-    <a class="card" href="https://claude.ai/artifact/8FG5d7o5hPHCCzuSh6Ak1C"><b>RC비너스 학습 점검</b><span>10/30</span></a>
-    <a class="card" href="https://claude.ai/artifact/QfYSrRW78K1QZssD2UbAM1"><b>ICT 프로젝트 2 결과</b><span>10/28</span></a>
-    <a class="card" href="https://claude.ai/artifact/FG6czk3mTn7y12T6aUquGM"><b>Venus 트레이딩 관제실</b><span>10/18</span></a>
-    <a class="card" href="https://claude.ai/artifact/GY2JdmAvfWNh88C7ThgV3A"><b>FTMO 2차 매매 복기</b><span>10/16</span></a>
-  </div>
-</section>
-
-<section>
-  <h2>부업 · 부동산</h2>
-  <div class="grid">
-    <a class="card" href="https://claude.ai/artifact/Uufpiz85eN4c6y9SBvhhut"><b>석준님 부업 실행 계획</b><span>10/26</span></a>
-    <a class="card" href="https://claude.ai/artifact/LoVKZsSt19fSLDTH9oRNu2"><b>당근카페 시작 키트</b><span>10/26</span></a>
-    <a class="card" href="https://claude.ai/artifact/Ruk7KvZ3SDZGE215LxXShi"><b>통영 아파트 공부 노트</b><span>10/26</span></a>
-    <a class="card" href="https://claude.ai/artifact/XD9fYUxz7QoZu5HMbZBpYT"><b>동남경매</b><span>10/15</span></a>
-  </div>
-</section>
-
-<section>
-  <h2>게임 · 기타</h2>
-  <div class="grid">
-    <a class="card" href="https://claude.ai/artifact/3e1pV5HJut4NviXRwmXCYB"><b>이슬지기</b><span>게임</span></a>
-    <a class="card" href="https://claude.ai/artifact/CYq5vTH3zX8cRscMMsfcZM"><b>고원 방어선 3D 시안</b><span>게임</span></a>
-    <a class="card" href="https://claude.ai/artifact/JR9Fm1JZET9J6XvpvaFgzi"><b>이슬지기 좀비 리부트 시안</b><span>게임</span></a>
-    <a class="card" href="https://claude.ai/artifact/ACAMSw7xzvxy48zeuL7DnA"><b>이슬지기 포탑 캐릭터 시안</b><span>게임</span></a>
-    <a class="card" href="https://claude.ai/artifact/VrbbDwxiwU6GygRGLnNfNA"><b>이슬지기 그래픽 시안</b><span>게임</span></a>
-    <a class="card" href="https://claude.ai/artifact/VJNFFyGbPSC778aUA4cyLS"><b>Aptos Core 해부도</b><span>코드 설명</span></a>
-  </div>
-</section>
-
-<p class="foot">새 페이지가 생기면 매니저가 여기에 추가해요.</p>
+  <div class="count" id="count"></div>
 </div>
+
+<div id="out"></div>
+<p class="foot">새 페이지가 생기면 매니저가 여기에 추가해요. 날짜는 매니저 기록 기준(10월 이전 일부는 만든 날).</p>
+</div>
+
+<script>
+// [제목, 주소 id, 설명, 지시 날짜, 메뉴 칸, 테마, 자주 봄]
+const P=[
+["오늘 증시 정리 (한국)","AKpn2iT94pSpR3SgSKVqY7","평일 장마감 · 수급 · 하이닉스 외국인 체크표","2026-11-09","daily","한국 증시",1],
+["미국 증시 정리","Lzdr29FtxTCdrAXbAwZFDU","매일 아침 · 지수 · 섹터 · 내 종목 · QLD 선","2026-11-09","daily","미국 증시",1],
+["퀀트 40종목 요약","R3ETGbNWrtW9DM9W8RsKwS","종목마다 한 줄 · 11/16 종가","2026-11-17","daily","퀀트",1],
+["미국 퀀트 종목 찾기","6A1QKNUmrnNgyUXnHb925e","상위 20종목 · 두 방법 · QQQ와 비교","2026-11-16","daily","퀀트",1],
+["성장+배당 ETF 고르기","Dczf7Y7mj4ewRSDiLBvsSw","국내 상장 · 추천 순위 · 커버드콜 · 계좌·세금 · 11/17 종가","2026-11-17","daily","ETF·배당",1],
+["엔비디아 실적 점검판","8T4LojW5VAJRmxKowyUiWM","11/18 07시 결과 채움 · 예상 비교 · AI 반도체 기대 이익 · 산업 성장성","2026-11-17","daily","미국 증시",1],
+["엔비디아 실적 미리보기","ECAQrioTYsXGAiqzYwNbvf","11/18 06:20 · 예상치 · QLD 팔기선 영향","2026-11-14","daily","미국 증시",1],
+["주간 증시 정리 11/9~13","2DcGjxLG3qocH7XZtvqKf9","한국·미국 · 내 종목 주간표 · 다음 주 일정","2026-11-14","daily","한국 증시",1],
+["TIME 나스닥100액티브 구성종목","8vSCXbgLTkLnjKzTMPbEEf","미국장 등락 · ETF 예상","2026-11-13","daily","ETF·배당",1],
+["미국 장전 이슈","DFYXsyTtVffBvVwG1wwsML","선물 · 오늘 밤 볼 것 · PPI","2026-11-13","daily","미국 증시",0],
+["FX 시스템 학습 일지","EC3cKdgkjBW6kM89Rr5qYm","딥러닝 · 연습 · 시험 기록","2026-11-10","daily","FX·EURUSD",1],
+["H4 구조 확인판","6gu5SBiG11YTwcGdVbQLd1","스윙·BOS·MSS 맞음/틀림 눌러 주기","2026-11-11","daily","FX·EURUSD",1],
+["H4 질문 4개","MjzAHW1nzwMPqzagUX2D7C","엔진이 궁금한 것만 · 차트 보고 버튼 누르기","2026-11-13","daily","FX·EURUSD",1],
+["EURUSD 추세 A·B 비교","WiUF65HGidrXFTuSHNG1sv","5곳 · A/B 중 맞는 쪽 누르기","2026-11-17","daily","FX·EURUSD",1],
+["EURUSD 추세 전환 10곳 확인","EDxQmt6NpxvdLBTfATCs5G","맞음/틀림만 누르기","2026-11-17","daily","FX·EURUSD",1],
+["다음 주 H4 작도 계획","GqndCzimWdVWZ448FbQvTJ","EURUSD 판단 · 핵심선 · 평일 08:23 갱신","2026-11-14","daily","FX·EURUSD",1],
+["차트 작도 노트","KzGA9AJjAiit6zwkEfk5QS","RC2가 만든 작도 기록","2026-11-12","daily","FX·EURUSD",0],
+["QLD 규칙 판","WTRWc8b7J5RuYX8e1VEtuj","지금 신호 · 사기선·팔기선 · 41년 성적","2026-11-11","daily","QLD",1],
+["QLD 매수 판정","A2uqPgfZTVb9TYPRqceHbj","사기선 · 팔기선 · 차트","2026-11-07","daily","QLD",1],
+["비너스 작업 현황판","8gHYgfmGCUFGEHRZmHJ3vq","맡긴 일 · 승인 버튼","2026-11-04","daily","도구",0],
+["석준님 HTS","Ab2Vf3Drr8nghChmJrB2m8","JC가 1분마다 올리는 실시간 화면","2026-11-13","daily","도구",0],
+["RC 실시간 차트","ArJ8iCed7STpDpUVbzjZec","QLD · TQQQ · IQQ · QQQ","2026-11-03","daily","QLD",0],
+["FCX 기업 분석","BcSej8Jaoh2XfKqScH2ngn","구리 회사 · 11/13 기준","2026-11-16","stock","종목 분석",0],
+["국내 매크로 점검 11/9","1D1VR8DQCaDoKxj5ivRgXc","금리 · 환율 · 수출 · 성장","2026-11-09","stock","한국 증시",0],
+["보유 종목 분석실","XZdqq8AsLNUQ63qiLTHsrz","내 종목 점검","2026-10-30","stock","종목 분석",0],
+["해외 6종목 점검 노트","Q8ZyHkCDiCW9oVRhM6reXB","해외 종목","2026-10-26","stock","종목 분석",0],
+["석준님 한투 계좌 지도","BgEijjKkA5aNJJC2kt27Kq","계좌 정리","2026-10-24","stock","도구",0],
+["한국 증시 브리핑 11/2","KK7D1cUg1qaEc4MQ2D8Gqe","지난 브리핑","2026-11-02","stock","한국 증시",0],
+["장전 브리핑 11/5","6qWSnk5bFuksjRC5iudD2M","지난 브리핑","2026-11-05","stock","한국 증시",0],
+["퇴근길 증시 3분 11/5","5pj5S6rqSZt66AobGejknn","원고","2026-11-05","stock","한국 증시",0],
+["퇴근길 증시 3분 샘플","8H43Yt6w1oZaaXkL4LpA9M","원고 시안","2026-11-04","stock","한국 증시",0],
+["석준님 HTS (예전판)","7rbtzTK32s2u9xXGvKyajf","예전 화면","2026-10-29","stock","도구",0],
+["전략 다시 짜기 성적표","MbjMwfXxmV7BxL4PscbSae","7개 시험","2026-11-06","fx","FX·EURUSD",0],
+["qlib 전략 판정표","8Knr7YvKY5uoJAakDmkGgH","qlib 시험","2026-11-04","fx","퀀트",0],
+["석준 × ICT 통합 모델","PadHEZkCxcLaeVN53qGkYj","ICT 모델","2026-11-02","fx","FX·EURUSD",0],
+["ICT 진입 기준 v5","MLjqPM5CPNcA3B5Bmk1vhV","진입 기준","2026-10-31","fx","FX·EURUSD",0],
+["MM 실전 기록장","EDrjZyhUhcFz5XkV7BnvpP","실전 기록","2026-10-31","fx","FX·EURUSD",0],
+["ICT 모델 백테스트 결과","EzQM18zv8hnVNWd5EuMi6a","백테스트","2026-10-30","fx","FX·EURUSD",0],
+["RC비너스 학습 점검","8FG5d7o5hPHCCzuSh6Ak1C","학습 점검","2026-10-30","fx","FX·EURUSD",0],
+["ICT 프로젝트 2 결과","QfYSrRW78K1QZssD2UbAM1","프로젝트 결과","2026-10-28","fx","FX·EURUSD",0],
+["Venus 트레이딩 관제실","FG6czk3mTn7y12T6aUquGM","관제실","2026-10-18","fx","FX·EURUSD",0],
+["FTMO 2차 매매 복기","GY2JdmAvfWNh88C7ThgV3A","매매 복기","2026-10-16","fx","FX·EURUSD",0],
+["석준님 부업 실행 계획","Uufpiz85eN4c6y9SBvhhut","부업","2026-10-26","side","부업·부동산",0],
+["당근카페 시작 키트","LoVKZsSt19fSLDTH9oRNu2","부업","2026-10-26","side","부업·부동산",0],
+["통영 아파트 공부 노트","Ruk7KvZ3SDZGE215LxXShi","부동산","2026-10-26","side","부업·부동산",0],
+["동남경매","XD9fYUxz7QoZu5HMbZBpYT","경매 사이트","2026-10-15","side","부업·부동산",0],
+["이슬지기","3e1pV5HJut4NviXRwmXCYB","게임","","etc","게임·기타",0],
+["고원 방어선 3D 시안","CYq5vTH3zX8cRscMMsfcZM","게임","","etc","게임·기타",0],
+["이슬지기 좀비 리부트 시안","JR9Fm1JZET9J6XvpvaFgzi","게임","","etc","게임·기타",0],
+["이슬지기 포탑 캐릭터 시안","ACAMSw7xzvxy48zeuL7DnA","게임","","etc","게임·기타",0],
+["이슬지기 그래픽 시안","VrbbDwxiwU6GygRGLnNfNA","게임","","etc","게임·기타",0],
+["Aptos Core 해부도","VJNFFyGbPSC778aUA4cyLS","코드 설명","","etc","게임·기타",0]
+].map(a=>({t:a[0],u:"https://claude.ai/artifact/"+a[1],s:a[2],d:a[3],m:a[4],th:a[5],hot:!!a[6]}));
+const MENU=[["daily","매일 보는 것"],["stock","주식 · 매크로"],["fx","FX · 트레이딩 연구"],["side","부업 · 부동산"],["etc","게임 · 기타"]];
+const THEMES=["한국 증시","미국 증시","ETF·배당","종목 분석","퀀트","QLD","FX·EURUSD","도구","부업·부동산","게임·기타"];
+const W="일월화수목금토";
+const md=d=>d?(+d.slice(5,7))+"/"+(+d.slice(8,10)):"날짜 없음";
+const dayLabel=d=>{if(!d)return "날짜 기록 없음";const x=new Date(d+"T00:00:00");return md(d)+" ("+W[x.getDay()]+")";};
+const esc=s=>s.replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const card=p=>`<a class="card${p.hot?" hot":""}" href="${p.u}" target="_blank" rel="noopener"><b>${esc(p.t)}</b><span>${esc(p.s)}</span><span class="meta"><em class="d">지시 ${md(p.d)}</em><em>${esc(p.th)}</em></span></a>`;
+const block=(h,list)=>list.length?`<section><h2>${esc(h)}</h2><div class="grid">${list.map(card).join("")}</div></section>`:"";
+const byNew=(a,b)=>(b.d||"").localeCompare(a.d||"");
+let view="menu";
+try{view=localStorage.getItem("hubView")||"menu";}catch(e){}
+const q=document.getElementById("q"),out=document.getElementById("out"),cnt=document.getElementById("count");
+function match(p,k){if(!k)return true;const hay=(p.t+" "+p.s+" "+p.th+" "+md(p.d)+" "+p.d).toLowerCase();return k.toLowerCase().split(/\s+/).every(w=>hay.includes(w));}
+function render(){
+  const k=q.value.trim();const L=P.filter(p=>match(p,k));
+  document.querySelectorAll(".tabs button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.v===view?"true":"false"));
+  let h="";
+  if(view==="menu"){h=MENU.map(([m,n])=>block(n,L.filter(p=>p.m===m))).join("");}
+  else if(view==="new"){h=block("최신 지시순",[...L].sort(byNew));}
+  else if(view==="date"){const ds=[...new Set(L.map(p=>p.d))].sort((a,b)=>(b||"").localeCompare(a||""));h=ds.map(d=>block(dayLabel(d),L.filter(p=>p.d===d))).join("");}
+  else {h=THEMES.map(t=>block(t,L.filter(p=>p.th===t).sort(byNew))).join("");}
+  out.innerHTML=h||`<p class="empty">"${esc(k)}"(으)로 찾은 페이지가 없어요. 다른 말로 찾아보세요.</p>`;
+  cnt.textContent=(k?`찾은 페이지 ${L.length}개`:`전체 ${P.length}개`)+" · 보기: "+({menu:"메뉴",new:"최신 지시순",date:"일자별",theme:"테마별"}[view]);
+}
+document.querySelectorAll(".tabs button").forEach(b=>b.addEventListener("click",()=>{view=b.dataset.v;try{localStorage.setItem("hubView",view);}catch(e){}render();}));
+q.addEventListener("input",render);
+document.getElementById("clear").addEventListener("click",()=>{q.value="";render();q.focus();});
+render();
+</script>
