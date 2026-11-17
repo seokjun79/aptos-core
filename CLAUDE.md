@@ -50,6 +50,8 @@
 
 - **퀀트로 뽑은 종목은 석준님이 검토 후 실제로 매수한다(석준님 말씀, 2026-11-16).** 그러니 과거 성적은 그 시점 구성종목·떼어 놓은 최종 구간·무작위 비교로 검증하고, 못 이기거나 운과 구별이 안 되면 "쓰지 않는 것이 맞다"고 분명히 말한다. 후보는 종목마다 가격·실적·빚·위험·실적일을 두 출처로 확인해 준다. 경고 문구만 붙이고 넘기지 않는다.
 
+- **공식 플러그인(석준님 지시, 2026-11-17):** Anthropic 공식 저장소 github.com/anthropics/knowledge-work-plugins 의 플러그인을 쓴다. 지금 쓰는 것: **data(데이터 분석)** — explore-data·statistical-analysis·validate-data·create-viz·build-dashboard. 결과를 석준님께 내기 전에 validate-data 점검표로 검사하고, 숫자 판단은 statistical-analysis 방법(단순 기준과 비교·신뢰구간)으로 한다. 설치: `claude plugin marketplace add anthropics/knowledge-work-plugins` → `claude plugin install data@knowledge-work-plugins`(PC는 RC가 설치).
+
 ## 퀀트·AI 매매 도구: Microsoft qlib (석준님 지시, 2026-11-03)
 
 - https://github.com/microsoft/qlib — 마이크로소프트가 만든 AI 알고리즘 트레이딩 프레임워크. 보조지표를 넘어 머신러닝·딥러닝 모델로 매매 신호를 예측하고 퀀트 전략을 고도화할 때 **항상 qlib를 쓴다.**
