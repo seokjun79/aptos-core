@@ -61,7 +61,7 @@ a.card.hot{border-left:4px solid var(--hot)}
 <script>
 // [제목, 주소 id, 설명, 지시 날짜, 메뉴 칸, 테마, 자주 봄]
 const P=[
-["통화 평면판","UPrgkWm9HqFMryWif75gwj","EUR·USD 대 5개 통화 평면 · 지금 EURUSD를 움직이는 쪽","2026-11-18","daily","FX·EURUSD",1],
+["맥스외환 · 통화 평면판","UPrgkWm9HqFMryWif75gwj","맥스외환 프로젝트 · EUR·USD 대 통화 평면 · 노트식 사분면 · 강약 지도","2026-11-18","daily","맥스외환",1],
 ["지금 증시판","JTaqpMZ7tjRpv1RM9VYMdj","신호등 · 지수 · 내 종목 타일+뉴스 · 매크로 온도계 · 가격 사다리","2026-11-18","daily","한국 증시",1],
 ["오늘 증시 정리 (한국)","AKpn2iT94pSpR3SgSKVqY7","평일 장마감 · 수급 · 하이닉스 외국인 체크표","2026-11-09","daily","한국 증시",1],
 ["미국 증시 정리","Lzdr29FtxTCdrAXbAwZFDU","매일 아침 · 지수 · 섹터 · 내 종목 · QLD 선","2026-11-09","daily","미국 증시",1],
@@ -117,7 +117,7 @@ const P=[
 ["Aptos Core 해부도","VJNFFyGbPSC778aUA4cyLS","코드 설명","","etc","게임·기타",0]
 ].map(a=>({t:a[0],u:"https://claude.ai/artifact/"+a[1],s:a[2],d:a[3],m:a[4],th:a[5],hot:!!a[6]}));
 const MENU=[["daily","매일 보는 것"],["stock","주식 · 매크로"],["fx","FX · 트레이딩 연구"],["side","부업 · 부동산"],["etc","게임 · 기타"]];
-const THEMES=["한국 증시","미국 증시","ETF·배당","종목 분석","퀀트","QLD","FX·EURUSD","도구","부업·부동산","게임·기타"];
+const THEMES=["한국 증시","미국 증시","ETF·배당","종목 분석","퀀트","QLD","FX·EURUSD","맥스외환","도구","부업·부동산","게임·기타"];
 const W="일월화수목금토";
 const md=d=>d?(+d.slice(5,7))+"/"+(+d.slice(8,10)):"날짜 없음";
 const dayLabel=d=>{if(!d)return "날짜 기록 없음";const x=new Date(d+"T00:00:00");return md(d)+" ("+W[x.getDay()]+")";};
