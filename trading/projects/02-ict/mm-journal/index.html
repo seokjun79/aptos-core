@@ -1,0 +1,175 @@
+<title>MM 실전 기록장</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: trading logbook — scorecard on top, entry form, then the ledger; single column on phones */
+:root{
+  --bg:#f3f5f7; --panel:#fff; --line:#d7dde4; --fg:#151b24; --mute:#5c6878;
+  --accent:#2563eb; --accent-soft:#e4ecfd; --good:#16865a; --bad:#c8443a; --warn:#a86300;
+  --good-soft:#e1f3ea; --bad-soft:#fbe5e3; --warn-soft:#faefdb;
+  --f-body:"IBM Plex Sans KR",system-ui,sans-serif; --f-num:"JetBrains Mono",ui-monospace,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0e1218; --panel:#161c25; --line:#283140; --fg:#e5eaf1; --mute:#8d99aa;
+  --accent:#60a5fa; --accent-soft:#16263d; --good:#3dbb85; --bad:#ef6b61; --warn:#e0a446;
+  --good-soft:#12291d; --bad-soft:#2d1615; --warn-soft:#2b2010; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0e1218; --panel:#161c25; --line:#283140; --fg:#e5eaf1; --mute:#8d99aa;
+  --accent:#60a5fa; --accent-soft:#16263d; --good:#3dbb85; --bad:#ef6b61; --warn:#e0a446;
+  --good-soft:#12291d; --bad-soft:#2d1615; --warn-soft:#2b2010; color-scheme:dark}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:14.5px;line-height:1.55}
+.wrap{max-width:980px;margin:0 auto;padding-block:20px 40px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:16px}
+h1{font-size:23px;margin:0;text-wrap:balance} h2{font-size:16px;margin:0 0 10px}
+.lead{color:var(--mute);margin:4px 0 0;max-width:68ch}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;min-width:0}
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+@media (max-width:640px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px}
+.kpi .l{font-size:12px;color:var(--mute)} .kpi .v{font-family:var(--f-num);font-size:22px;font-weight:600;font-variant-numeric:tabular-nums}
+.verdict{border-radius:10px;padding:12px 14px;font-size:14px}
+.v-wait{background:var(--warn-soft);color:var(--warn)} .v-ok{background:var(--good-soft);color:var(--good)} .v-no{background:var(--bad-soft);color:var(--bad)}
+form{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+@media (max-width:720px){form{grid-template-columns:repeat(2,minmax(0,1fr))}}
+label{display:flex;flex-direction:column;gap:3px;font-size:12.5px;color:var(--mute)}
+input,select,textarea{font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:7px;padding:7px 9px;min-width:0}
+textarea{resize:vertical;min-height:38px}
+.full{grid-column:1/-1}
+button{font:inherit;cursor:pointer;border-radius:8px;border:1px solid var(--line);background:var(--panel);color:var(--fg);padding:7px 12px}
+button.primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:700}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.rr{font-family:var(--f-num);font-size:13px;color:var(--mute);align-self:end;padding-bottom:8px}
+.rr.badrr{color:var(--bad)}
+.scroll{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th,td{padding:8px 6px;border-top:1px solid var(--line);text-align:left;white-space:nowrap;vertical-align:top}
+th{color:var(--mute);font-weight:500;border-top:0}
+td.n{font-family:var(--f-num);font-variant-numeric:tabular-nums;text-align:right}
+.pill{display:inline-block;font-size:11.5px;padding:1px 8px;border-radius:99px;font-weight:500}
+.s-open{background:var(--accent-soft);color:var(--accent)} .s-win{background:var(--good-soft);color:var(--good)}
+.s-loss{background:var(--bad-soft);color:var(--bad)} .s-other{background:var(--warn-soft);color:var(--warn)}
+.acts{display:flex;gap:4px;flex-wrap:wrap} .acts button{padding:3px 8px;font-size:12px}
+.note{font-size:12.5px;color:var(--mute)}
+.empty{padding:22px;text-align:center;color:var(--mute);border:1px dashed var(--line);border-radius:10px}
+ol.plain{margin:0;padding-left:20px} ol.plain li{margin:3px 0}
+.memo{white-space:normal;min-width:160px;max-width:280px;color:var(--mute)}
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>MM 실전 기록장</h1>
+    <p class="lead">석준님이 직접 고른 4H 마켓메이커 자리를 적는 곳이에요. 결과가 쌓이면 "사람의 판단이 기계 규칙보다 나은지"를 숫자로 확인해요.</p>
+  </header>
+
+  <div class="kpis">
+    <div class="kpi"><div class="l">끝난 거래</div><div class="v" id="k-n">0</div></div>
+    <div class="kpi"><div class="l">이긴 비율</div><div class="v" id="k-wr">—</div></div>
+    <div class="kpi"><div class="l">거래당 평균</div><div class="v" id="k-avg">—</div></div>
+    <div class="kpi"><div class="l">합계</div><div class="v" id="k-sum">—</div></div>
+  </div>
+  <div class="verdict v-wait" id="verdict">아직 기록이 없어요. 첫 자리를 아래에 적어 주세요.</div>
+
+  <section class="card">
+    <h2>새 자리 적기</h2>
+    <form id="f">
+      <label>종목<input id="f-sym" list="syms" placeholder="GBPUSD" required></label>
+      <datalist id="syms"><option>GBPUSD</option><option>EURUSD</option><option>USDJPY</option><option>XAUUSD</option><option>USDCAD</option><option>AUDUSD</option><option>USDCHF</option><option>NZDUSD</option><option>USTEC</option></datalist>
+      <label>방향<select id="f-dir"><option value="buy">매수</option><option value="sell">매도</option></select></label>
+      <label>날짜·시각<input id="f-at" type="datetime-local" required></label>
+      <label>쓸린 같은 높이 가격 (REL/REH)<input id="f-lvl" type="number" step="any"></label>
+      <label>진입가<input id="f-entry" type="number" step="any" required></label>
+      <label>손절<input id="f-sl" type="number" step="any" required></label>
+      <label>목표<input id="f-tp" type="number" step="any" required></label>
+      <span class="rr" id="f-rr">손익비 —</span>
+      <label class="full">메모 (왜 이 자리인지: 4H 범위, 쓸기, 복귀 봉, 진입 근거)<textarea id="f-memo" rows="2"></textarea></label>
+      <label>실제 주문<select id="f-real"><option value="paper">가상 (주문 안 함)</option><option value="real">실제 주문함</option></select></label>
+      <div class="full" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <button class="primary" type="submit" id="f-save">기록 저장</button>
+        <span class="note" id="f-msg"></span>
+      </div>
+    </form>
+  </section>
+
+  <section class="card">
+    <h2>기록 목록</h2>
+    <div id="list"><div class="empty">기록을 불러오는 중이에요.</div></div>
+    <p class="note" style="margin-top:8px">결과 버튼: <b>목표</b> = 목표가 도달, <b>손절</b> = −1R, <b>직접</b> = 청산가를 적으면 R을 계산해요. 결과를 잘못 눌렀으면 <b>되돌림</b>을 누르세요.</p>
+  </section>
+
+  <section class="card">
+    <h2>판정 기준 (기록 시작 전에 정함)</h2>
+    <ol class="plain">
+      <li>끝난 거래 <b>50건 이상</b>이 모여야 판단해요. 그 전에는 "모으는 중"이에요.</li>
+      <li>50건 이상에서 <b>거래당 평균 +0.2R 이상</b>이면 "실전 후보", 0 이하면 "우위 없음", 그 사이는 "더 모으기"예요.</li>
+      <li>비교 대상: 기계 규칙 MM-H4는 2024년 이후 평균 +0.037R(105건)이었어요. 석준님 판단이 이보다 확실히 높아야 의미가 있어요.</li>
+      <li>"모으는 중"일 때 실제 돈은 최소 금액으로만 권해요. 매매 결정은 석준님이 직접 해요.</li>
+    </ol>
+  </section>
+</div>
+
+<script>
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+let db=null, rows=[];
+const risk=r=>Math.abs(r.entry-r.sl);
+function rOf(r){
+  if(r.status==="win") return Math.abs(r.tp-r.entry)/risk(r);
+  if(r.status==="loss") return -1;
+  if(r.status==="manual"&&r.exit!=null){const d=r.dir==="buy"?r.exit-r.entry:r.entry-r.exit;return d/risk(r);}
+  return null;
+}
+function rrText(){const e=+$("#f-entry").value,s=+$("#f-sl").value,t=+$("#f-tp").value,d=$("#f-dir").value;
+  const el=$("#f-rr"); if(!e||!s||!t){el.textContent="손익비 —";el.className="rr";return}
+  const bad=d==="buy"?(s>=e||t<=e):(s<=e||t>=e);
+  if(bad){el.textContent=d==="buy"?"매수는 손절 < 진입 < 목표":"매도는 목표 < 진입 < 손절";el.className="rr badrr";return}
+  const rr=Math.abs(t-e)/Math.abs(e-s); el.textContent=`손익비 1 : ${rr.toFixed(2)}${rr<2?" (2 미만)":""}`; el.className="rr"+(rr<2?" badrr":"");}
+["#f-entry","#f-sl","#f-tp","#f-dir"].forEach(s=>$(s).addEventListener("input",rrText));
+
+function render(){
+  const closed=rows.filter(r=>rOf(r)!=null), rs=closed.map(rOf);
+  const n=closed.length, wins=rs.filter(x=>x>0).length, sum=rs.reduce((a,b)=>a+b,0), avg=n?sum/n:null;
+  $("#k-n").textContent=n; $("#k-wr").textContent=n?Math.round(wins/n*100)+"%":"—";
+  $("#k-avg").textContent=avg==null?"—":(avg>=0?"+":"")+avg.toFixed(2)+"R"; $("#k-sum").textContent=n?(sum>=0?"+":"")+sum.toFixed(1)+"R":"—";
+  const v=$("#verdict");
+  if(!rows.length){v.className="verdict v-wait";v.textContent="아직 기록이 없어요. 첫 자리를 아래에 적어 주세요.";}
+  else if(n<50){v.className="verdict v-wait";v.textContent=`모으는 중: 끝난 거래 ${n}건 / 50건. 판단은 50건부터예요.`;}
+  else if(avg>=0.2){v.className="verdict v-ok";v.textContent=`실전 후보: ${n}건, 평균 +${avg.toFixed(2)}R. 기계 규칙(+0.037R)보다 높아요.`;}
+  else if(avg<=0){v.className="verdict v-no";v.textContent=`우위 없음: ${n}건, 평균 ${avg.toFixed(2)}R.`;}
+  else{v.className="verdict v-wait";v.textContent=`더 모으기: ${n}건, 평균 +${avg.toFixed(2)}R (기준 +0.2R).`;}
+  if(!rows.length){$("#list").innerHTML='<div class="empty">아직 기록이 없어요. 위 칸에 첫 자리를 적으면 여기에 쌓여요.</div>';return}
+  const st={open:["진행","s-open"],win:["목표","s-win"],loss:["손절","s-loss"],manual:["직접 청산","s-other"],cancel:["취소","s-other"]};
+  $("#list").innerHTML=`<div class="scroll"><table><tr><th>날짜</th><th>종목</th><th>방향</th><th>진입</th><th>손절</th><th>목표</th><th>손익비</th><th>결과</th><th>R</th><th>메모</th><th></th></tr>${
+    rows.map(r=>{const R=rOf(r),[lb,cl]=st[r.status]||st.open,rr=Math.abs(r.tp-r.entry)/risk(r);
+    return `<tr><td>${esc((r.at||"").replace("T"," "))}</td><td><b>${esc(r.sym)}</b>${r.real==="real"?' <span class="pill s-other">실주문</span>':""}</td><td>${r.dir==="buy"?"매수":"매도"}</td>
+    <td class="n">${r.entry}</td><td class="n">${r.sl}</td><td class="n">${r.tp}</td><td class="n">${rr.toFixed(2)}</td>
+    <td><span class="pill ${cl}">${lb}</span></td><td class="n">${R==null?"—":(R>=0?"+":"")+R.toFixed(2)}</td><td class="memo">${esc(r.memo)}</td>
+    <td><div class="acts">${r.status==="open"?`<button data-a="win" data-id="${r.id}">목표</button><button data-a="loss" data-id="${r.id}">손절</button><button data-a="manual" data-id="${r.id}">직접</button><button data-a="cancel" data-id="${r.id}">취소</button>`:`<button data-a="open" data-id="${r.id}">되돌림</button>`}</div>
+    <div class="acts" data-exit="${r.id}" hidden style="margin-top:4px"><input type="number" step="any" placeholder="청산가" id="exit-${r.id}" style="width:100px"><button data-a="save-exit" data-id="${r.id}">저장</button></div></td></tr>`}).join("")}</table></div>`;
+  $("#list").querySelectorAll("button[data-a]").forEach(b=>b.onclick=()=>act(b.dataset.a,b.dataset.id));
+}
+async function act(a,id){
+  if(!db)return; const ref=db.doc("mm_journal/"+id);
+  if(a==="manual"){const box=document.querySelector(`[data-exit="${id}"]`);box.hidden=false;document.getElementById("exit-"+id).focus();return}
+  try{
+    if(a==="save-exit"){const x=parseFloat(document.getElementById("exit-"+id).value);if(isNaN(x))return;await ref.update({status:"manual",exit:x,closedAt:new Date().toISOString()});}
+    else await ref.update({status:a,closedAt:a==="open"?null:new Date().toISOString()});
+  }catch(e){$("#f-msg").textContent="저장하지 못했어요. 이 기록장은 석준님 계정에서만 고칠 수 있어요."}
+}
+$("#f").addEventListener("submit",async e=>{
+  e.preventDefault(); if(!db){$("#f-msg").textContent="로그인해야 저장돼요.";return}
+  const r={sym:$("#f-sym").value.trim().toUpperCase(),dir:$("#f-dir").value,at:$("#f-at").value,lvl:parseFloat($("#f-lvl").value)||null,
+    entry:parseFloat($("#f-entry").value),sl:parseFloat($("#f-sl").value),tp:parseFloat($("#f-tp").value),memo:$("#f-memo").value.trim(),
+    real:$("#f-real").value,status:"open",createdAt:new Date().toISOString()};
+  const bad=r.dir==="buy"?(r.sl>=r.entry||r.tp<=r.entry):(r.sl<=r.entry||r.tp>=r.entry);
+  if(bad){$("#f-msg").textContent="진입·손절·목표 순서를 확인해 주세요.";return}
+  const id=Date.now().toString(36);
+  try{await db.doc("mm_journal/"+id).set({...r,id});$("#f-msg").textContent="저장했어요.";
+    ["#f-lvl","#f-entry","#f-sl","#f-tp","#f-memo"].forEach(s=>$(s).value="");rrText();}
+  catch(err){$("#f-msg").textContent="저장하지 못했어요. 이 기록장은 석준님 계정에서만 쓸 수 있어요."}
+});
+(()=>{const d=new Date(Date.now()-new Date().getTimezoneOffset()*60000);$("#f-at").value=d.toISOString().slice(0,16)})();
+(async()=>{
+  db=await window.claude?.use?.("db");
+  if(!db){$("#list").innerHTML='<div class="empty">로그인해야 기록이 보여요.</div>';return}
+  db.collection("mm_journal").onSnapshot(snap=>{rows=snap.docs.map(d=>d.data()).filter(Boolean).sort((a,b)=>(b.at||"").localeCompare(a.at||""));render();});
+})();
+</script>

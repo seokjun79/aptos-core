@@ -1,0 +1,167 @@
+<title>미국 증시 정리</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+:root{
+  --bg:#f2f4f7;--paper:#fff;--ink:#161b22;--muted:#5b6573;--rule:#d9dee6;
+  --up:#d1293d;--up-bg:#fde8eb;--dn:#1f5fd1;--dn-bg:#e5eefc;--ok:#1f7a4d;--ok-bg:#e1f2e8;--warn:#8a6a12;--warn-bg:#f6eed4;
+  --sans:"IBM Plex Sans KR",system-ui,sans-serif;--mono:"IBM Plex Mono",ui-monospace,monospace}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0f1318;--paper:#171c23;--ink:#e6eaf0;--muted:#98a2b0;--rule:#2a313b;
+  --up:#ff7b8a;--up-bg:#3a1a20;--dn:#7fa8ff;--dn-bg:#18243d;--ok:#7fd3a0;--ok-bg:#173021;--warn:#e3c062;--warn-bg:#33290f;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f1318;--paper:#171c23;--ink:#e6eaf0;--muted:#98a2b0;--rule:#2a313b;
+  --up:#ff7b8a;--up-bg:#3a1a20;--dn:#7fa8ff;--dn-bg:#18243d;--ok:#7fd3a0;--ok-bg:#173021;--warn:#e3c062;--warn-bg:#33290f;color-scheme:dark}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.65}
+.wrap{max-width:760px;margin:0 auto;padding-block:20px 56px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:26px}
+.wrap>*{min-width:0}
+.kicker{font-size:.78rem;letter-spacing:.06em;color:var(--muted)}
+h1{font-size:1.4rem;margin:4px 0 6px;text-wrap:balance}
+h2{font-size:1.02rem;margin:0 0 10px;text-wrap:balance}
+p{margin:0}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.up{color:var(--up)}.dn{color:var(--dn)}
+.idx{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px}
+.box{background:var(--paper);border:1px solid var(--rule);border-radius:8px;padding:12px 14px;min-width:0}
+.box .t{font-size:.84rem;color:var(--muted)}
+.box .v{font-family:var(--mono);font-weight:600;font-size:1.35rem;font-variant-numeric:tabular-nums}
+.box .c{font-family:var(--mono);font-size:.9rem}
+.box .s{font-size:.8rem;color:var(--muted)}
+.hero{background:var(--paper);border:1px solid var(--rule);border-left:4px solid var(--up);border-radius:8px;padding:14px 16px;display:grid;gap:8px}
+.hero .big{font-family:var(--mono);font-weight:600;font-size:1.6rem}
+.flow{display:grid;gap:8px}
+.fr{display:grid;grid-template-columns:4.5em 1fr 6.5em;gap:10px;align-items:center}
+.bar{height:14px;border-radius:3px;background:var(--rule);position:relative;overflow:hidden}
+.bar i{position:absolute;top:0;bottom:0}
+.fr .num{text-align:right}
+ul.plain{margin:0;padding-left:1.1em;display:grid;gap:6px}
+.sheet{background:var(--paper);border:1px solid var(--rule);border-radius:8px}
+.row{display:grid;grid-template-columns:1fr auto;gap:2px 12px;padding:10px 14px;border-top:1px solid var(--rule);align-items:center}
+.row:first-child{border-top:0}
+.row .n{font-weight:600;min-width:0}
+.row .n span{display:block;font-weight:400;font-size:.8rem;color:var(--muted)}
+.row .r{text-align:right;font-family:var(--mono);font-variant-numeric:tabular-nums}
+.tag{font-size:.74rem;font-weight:600;padding:1px 9px;border-radius:999px;white-space:nowrap}
+.yes{background:var(--ok-bg);color:var(--ok)}.no{background:var(--up-bg);color:var(--up)}.unk{background:var(--warn-bg);color:var(--warn)}
+.two{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
+.two>*{min-width:0}
+.ladder{display:grid;gap:0}
+.note{font-size:.84rem;color:var(--muted)}
+.foot{font-size:.78rem;color:var(--muted)}
+.foot a{color:inherit}
+.na{font-size:.84rem;color:var(--warn)}
+</style>
+<div class="wrap">
+<header>
+  <div class="kicker">미국 마감 정리 · 2026-11-11 (수) 뉴욕 종가 · 한국 11/12 · 매니저 비너스 · 종가 다시 확인해 채움</div>
+  <h1>코어위브 실적에 AI주가 살아나 세 지수 모두 올랐어요</h1>
+  <p>코어위브가 실적을 발표했고 예상보다 좋았어요. 주가 +24.7%. 그 덕에 반도체·AI 주식이 한꺼번에 올랐어요. 나스닥 +1.6%, S&amp;P500 +1.3%. <b>QQQ가 사기선 위로 끝나 QLD 사기 신호가 나왔어요.</b></p>
+</header>
+
+<section>
+  <h2>코어위브 실적 (발표 끝남)</h2>
+  <div class="hero">
+    <div><span class="big">60.77$</span> <span class="num up">▲ 24.71%</span> <span class="note">전날 48.73$</span></div>
+    <ul class="plain">
+      <li><b>3분기 실적:</b> 시장 예상보다 좋았어요.</li>
+      <li><b>올해 매출 전망:</b> 더 높여 잡았어요. "AI 데이터센터 수요가 여전히 크다"는 뜻이에요.</li>
+      <li><b>대표 주식 매도 계획 취소:</b> 회사 대표가 팔려던 주식을 안 팔기로 해서 믿음이 커졌어요.</li>
+      <li><b>번진 효과:</b> IREN·마이크론·AMD 같은 AI 인프라 주식이 같이 올랐어요.</li>
+    </ul>
+  </div>
+</section>
+
+<section>
+  <h2>지수 마감</h2>
+  <div class="idx">
+    <div class="box"><div class="t">S&amp;P500</div><div class="v">7,619.38</div><div class="c up">▲ 1.31%</div><div class="s">전날 −0.38%</div></div>
+    <div class="box"><div class="t">나스닥</div><div class="v">25,466.19</div><div class="c up">▲ 1.60%</div><div class="s">약 400포인트 상승</div></div>
+    <div class="box"><div class="t">다우</div><div class="v">52,486.49</div><div class="c up">▲ 0.49%</div><div class="s">전날 −0.30%</div></div>
+    <div class="box"><div class="t">QQQ (나스닥100)</div><div class="v">690.38</div><div class="c up">▲ 2.31%</div><div class="s">QLD 규칙 기준 가격</div></div>
+  </div>
+</section>
+
+<section>
+  <h2>QLD 규칙 (QQQ 종가 기준) — 사기 신호</h2>
+  <div class="sheet ladder">
+    <div class="row"><div class="n">사기선<span>QQQ가 이 위로 끝나면 QLD 사기</span></div><div class="r">687.47</div></div>
+    <div class="row"><div class="n"><b>QQQ 어제 종가</b><span>사기선보다 2.91달러 위 · 11/5 팔기 뒤 처음 사기</span></div><div class="r"><b>690.38</b> <span class="tag yes">사기</span></div></div>
+    <div class="row"><div class="n">200일 평균선</div><div class="r">680.67</div></div>
+    <div class="row"><div class="n">팔기선<span>이 아래로 끝나면 팔기</span></div><div class="r">673.86</div></div>
+  </div>
+  <div class="idx" style="margin-top:10px">
+    <div class="box"><div class="t">QLD 종가</div><div class="v">81.82$</div><div class="c up">▲ 4.63%</div></div>
+    <div class="box"><div class="t">살 양</div><div class="v">절반</div><div class="c">500만원 ≈ 45주</div><div class="s">나스닥 출렁임이 커서(20일 변동성 30% 이상) 1,000만원 중 절반 · 환율 1,333.6원</div></div>
+  </div>
+  <p class="note" style="margin-top:6px">사기선을 넘은 폭이 3달러가 안 돼요. 오늘 밤 QQQ가 687.47 아래로 다시 내려와도 팔기선(673.86)까지는 기다리는 규칙이에요. 선은 200일 평균에 따라 매일 조금씩 움직여요.</p>
+</section>
+
+<section class="two">
+  <div>
+    <h2>석준님 종목</h2>
+    <div class="sheet">
+      <div class="row"><div class="n">QLD<span>나스닥100 2배</span></div><div class="r">81.82 <span class="up">+4.63%</span></div></div>
+      <div class="row"><div class="n">IREN<span>코어위브 효과 · 전날 −8% 뒤 반등 (기사 시점 가격)</span></div><div class="r">21.42 <span class="up">약 +9%</span></div></div>
+      <div class="row"><div class="n">NVTS</div><div class="r">10.07 <span class="up">+7.36%</span></div></div>
+      <div class="row"><div class="n">RKLB</div><div class="r">66.15 <span class="up">+5.49%</span></div></div>
+      <div class="row"><div class="n">PLTR</div><div class="r">172.40 <span class="up">+2.12%</span></div></div>
+      <div class="row"><div class="n">LPTH<span>실적 발표: 매출은 예상에 못 미침, 받아 둔 주문(수주잔고)은 +54%</span></div><div class="r">7.52 <span class="dn">−5.88%</span></div></div>
+    </div>
+  </div>
+  <div>
+    <h2>AI · 반도체</h2>
+    <div class="sheet">
+      <div class="row"><div class="n">코어위브 CRWV<span>실적 서프라이즈</span></div><div class="r">60.77 <span class="up">+24.71%</span></div></div>
+      <div class="row"><div class="n">마이크론 MU<span>하이닉스와 같은 메모리 · 가격은 등락률로 계산</span></div><div class="r">약 811 <span class="up">+11.89%</span></div></div>
+      <div class="row"><div class="n">AMD</div><div class="r">552.90 <span class="up">+7.32%</span></div></div>
+      <div class="row"><div class="n">TSMC TSM</div><div class="r">412.91 <span class="up">+4.14%</span></div></div>
+      <div class="row"><div class="n">브로드컴 AVGO</div><div class="r">345.22 <span class="up">+3.99%</span></div></div>
+      <div class="row"><div class="n">엔비디아 NVDA<span>사흘 만에 반등 · 실적 11/18 아침(한국)</span></div><div class="r">173.73 <span class="up">+2.87%</span></div></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>금리 · 달러 · 원자재</h2>
+  <div class="idx">
+    <div class="box"><div class="t">미국 10년 금리</div><div class="v">4.98%</div><div class="c">채권 시장 휴장</div><div class="s">재향군인의 날 · 전날 값 그대로</div></div>
+    <div class="box"><div class="t">달러인덱스</div><div class="v na">확인 못 함</div><div class="c">&nbsp;</div><div class="s">장중 2025년 4월 이후 최고라는 보도</div></div>
+    <div class="box"><div class="t">WTI 유가</div><div class="v">86.53$</div><div class="c up">▲ 0.57%</div><div class="s">이란 위협 발언에 조금 반등</div></div>
+    <div class="box"><div class="t">금</div><div class="v">4,000.50$</div><div class="c dn">▼ 0.74%</div><div class="s">돈이 다시 주식으로 이동</div></div>
+  </div>
+</section>
+
+<section>
+  <h2>섹터 (장중 숫자)</h2>
+  <div class="box flow">
+    <div class="fr"><b>기술</b><div class="bar"><i style="left:50%;width:44%;background:var(--up)"></i></div><span class="num up">+2.20%</span></div>
+    <div class="fr"><b>에너지</b><div class="bar"><i style="left:50%;width:18%;background:var(--up)"></i></div><span class="num up">+0.9%</span></div>
+    <div class="fr"><b>유틸리티</b><div class="bar"><i style="left:50%;width:0.4%;background:var(--up)"></i></div><span class="num up">+0.01%</span></div>
+    <div class="fr"><b>금융</b><div class="bar"><i style="right:50%;width:0.8%;background:var(--dn)"></i></div><span class="num dn">−0.04%</span></div>
+    <div class="fr"><b>헬스케어</b><div class="bar"><i style="right:50%;width:16.8%;background:var(--dn)"></i></div><span class="num dn">−0.84%</span></div>
+    <p class="note">나머지 6개 섹터 종가는 못 찾았어요. 기술주가 시장을 끌어올렸고 헬스케어는 쉬어 갔어요.</p>
+  </div>
+</section>
+
+<section>
+  <h2>왜 이렇게 됐나</h2>
+  <ul class="plain">
+    <li><b>코어위브 실적 서프라이즈:</b> 실적·전망 모두 좋아 "AI 투자가 꺾인다"는 걱정이 풀렸어요.</li>
+    <li><b>메모리 강세:</b> 마이크론 +11.9% — 한국 하이닉스·삼성전자에도 좋은 신호예요.</li>
+    <li><b>엔비디아 반등:</b> 증권사 의견 하향에도 +2.9%.</li>
+    <li><b>채권 시장 휴장:</b> 금리는 그대로, 금은 돈이 주식으로 옮겨 가며 조금 내렸어요.</li>
+  </ul>
+</section>
+
+<section>
+  <h2>오늘·이번 주 볼 것</h2>
+  <ul class="plain">
+    <li><b>오늘 밤</b> QQQ가 사기선 687.47 위를 지키는지</li>
+    <li><b>11/13</b> 미국 생산자물가(PPI)</li>
+    <li><b>11/18 아침</b> 엔비디아 실적 · 젠슨 황 의회 설명</li>
+    <li><b>12/9~10</b> 미국 금리 결정(FOMC)</li>
+  </ul>
+</section>
+
+<p class="foot">출처: 종목 종가(QQQ·QLD·CRWV·RKLB·PLTR·LPTH·NVTS·TSM)·200일 평균 Alpha Vantage 일봉 · 지수·원인 <a href="https://finance.yahoo.com/markets/live/stock-market-today-wednesday-november-11-dow-sp-500-nasdaq-nvidia-treasurys-veterans-day-140638547.html">Yahoo Finance</a> · <a href="https://kiplinger.com/investing/stocks/nasdaq-adds-400-points-after-coreweave-earnings-stock-market-today">Kiplinger</a> · 반도체 <a href="https://www.fool.com/coverage/stock-market-today/2026/11/11/stock-market-today-nov-11-advanced-micro-devices-jumps-and-not-only-because-of-coreweave-s-results/">Motley Fool</a> · <a href="https://cappnotes.substack.com/p/closing-look-wednesday-november-11">Closing Look</a> · 유가·달러 <a href="https://investrade.com/market-review-november-11-2026/">Investrade</a> · 섹터(장중) <a href="https://www.quantisnow.com/sector-performance">Quantisnow</a> · IREN <a href="https://247wallst.com/investing/2026/11/11/applied-digital-rallies-8-as-coreweaves-results-revive-the-ai-data-center-trade-cipher-digital-jumps-10-iren-surges-9/">24/7 Wall St.</a>. IREN 종가 조회는 전날 값만 나와 기사 시점 가격을 썼어요. 금·유가는 선물이라 마감 시각이 주식과 달라요.</p>
+</div>

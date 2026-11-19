@@ -1,0 +1,4 @@
+__pycache__/
+*.pyc
+backtest/results/_synthetic.csv
+backtest/results/*SYNTHETIC*

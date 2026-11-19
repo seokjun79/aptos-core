@@ -1,0 +1,221 @@
+<title>보유 종목 분석실</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: analyst console — left company rail, right dashboard grid; collapses to chips on phones */
+:root{
+  --bg:#f3f5f8; --panel:#ffffff; --line:#d9dfe7; --fg:#18202b; --mute:#5d6b7c;
+  --accent:#1f6feb; --accent-soft:#e3edfd; --good:#14804a; --bad:#c2352b; --warn:#a86300;
+  --good-soft:#e2f4ea; --bad-soft:#fbe6e4; --warn-soft:#fbf0dc;
+  --f-body:"IBM Plex Sans KR",system-ui,sans-serif; --f-num:"JetBrains Mono",ui-monospace,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0d1117; --panel:#151b23; --line:#262f3b; --fg:#e4e9f0; --mute:#8b98a8;
+  --accent:#58a6ff; --accent-soft:#16263d; --good:#3fb97a; --bad:#f0716a; --warn:#e0a446;
+  --good-soft:#12291d; --bad-soft:#2d1615; --warn-soft:#2b2010; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0d1117; --panel:#151b23; --line:#262f3b; --fg:#e4e9f0; --mute:#8b98a8;
+  --accent:#58a6ff; --accent-soft:#16263d; --good:#3fb97a; --bad:#f0716a; --warn:#e0a446;
+  --good-soft:#12291d; --bad-soft:#2d1615; --warn-soft:#2b2010; color-scheme:dark}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:14px;line-height:1.55}
+a{color:var(--accent)}
+.wrap{display:grid;grid-template-columns:220px minmax(0,1fr);gap:16px;max-width:1280px;margin:0 auto;
+  padding-block:16px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+@media (max-width:820px){.wrap{grid-template-columns:minmax(0,1fr)}}
+.rail{display:flex;flex-direction:column;gap:10px}
+.brand{font-weight:700;font-size:17px}
+.brand small{display:block;font-weight:400;color:var(--mute);font-size:12px}
+#q{width:100%;box-sizing:border-box;padding:9px 10px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--fg);font:inherit}
+#q:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.list{display:flex;flex-direction:column;gap:4px}
+@media (max-width:820px){.list{flex-direction:row;flex-wrap:wrap}}
+.co{display:flex;justify-content:space-between;gap:8px;align-items:center;text-align:left;padding:8px 10px;border:1px solid transparent;border-radius:8px;background:none;color:var(--fg);font:inherit;cursor:pointer}
+.co:hover{background:var(--panel);border-color:var(--line)}
+.co[aria-current="true"]{background:var(--accent-soft);border-color:var(--accent)}
+.co b{font-family:var(--f-num);font-size:12.5px}
+.co span{color:var(--mute);font-size:12px}
+.grp{font-size:11px;letter-spacing:.06em;color:var(--mute);margin-top:6px}
+.empty-hint{font-size:12.5px;color:var(--mute);padding:8px;border:1px dashed var(--line);border-radius:8px}
+main{min-width:0;display:flex;flex-direction:column;gap:14px}
+.head{display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between;align-items:flex-end}
+.head h1{margin:0;font-size:22px;text-wrap:balance}
+.head h1 .tk{font-family:var(--f-num);font-size:14px;color:var(--mute);margin-left:6px}
+.head p{margin:4px 0 0;color:var(--mute);max-width:65ch}
+.ctl{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:12.5px;color:var(--mute)}
+select{padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:var(--panel);color:var(--fg);font:inherit}
+.tabs{display:flex;gap:4px;overflow-x:auto;border-bottom:1px solid var(--line);padding-bottom:0}
+.tab{white-space:nowrap;padding:8px 12px;border:0;border-bottom:2px solid transparent;background:none;color:var(--mute);font:inherit;cursor:pointer}
+.tab[aria-selected="true"]{color:var(--fg);border-bottom-color:var(--accent);font-weight:700}
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+@media (max-width:700px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px}
+.kpi .l{font-size:12px;color:var(--mute)}
+.kpi .v{font-family:var(--f-num);font-size:22px;font-weight:600;font-variant-numeric:tabular-nums;margin-top:2px}
+.kpi .y{font-size:12px;margin-top:2px;font-family:var(--f-num)}
+.up{color:var(--good)} .dn{color:var(--bad)} .na{color:var(--mute)}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+@media (max-width:900px){.grid{grid-template-columns:minmax(0,1fr)}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px;min-width:0}
+.card.wide{grid-column:1/-1}
+.card h2{margin:0 0 10px;font-size:14px;display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+.card h2 small{font-weight:400;color:var(--mute);font-size:11.5px}
+.bar{display:grid;grid-template-columns:minmax(80px,34%) minmax(0,1fr) auto;gap:8px;align-items:center;font-size:12.5px;margin:5px 0}
+.bar .t{height:10px;background:var(--accent-soft);border-radius:3px;overflow:hidden}
+.bar .t i{display:block;height:100%;background:var(--accent)}
+.bar .n{font-family:var(--f-num);font-variant-numeric:tabular-nums;white-space:nowrap}
+.row{display:flex;gap:10px;padding:8px 0;border-top:1px solid var(--line);font-size:13px}
+.row:first-of-type{border-top:0}
+.row .d{font-family:var(--f-num);font-size:12px;color:var(--mute);min-width:84px}
+.row .b{min-width:0;flex:1}
+.pill{display:inline-block;font-size:11px;padding:1px 7px;border-radius:99px;margin-right:4px;font-weight:500;white-space:nowrap}
+.p-ok{background:var(--good-soft);color:var(--good)} .p-tg{background:var(--warn-soft);color:var(--warn)}
+.p-rp{background:var(--accent-soft);color:var(--accent)} .p-bad{background:var(--bad-soft);color:var(--bad)}
+.src{font-size:11px;margin-left:4px;white-space:nowrap}
+.muted{color:var(--mute)}
+.chart{width:100%;height:auto;display:block}
+.tbl{width:100%;border-collapse:collapse;font-size:12.5px}
+.tbl th,.tbl td{padding:6px 6px;border-top:1px solid var(--line);text-align:right;font-family:var(--f-num);font-variant-numeric:tabular-nums;white-space:nowrap}
+.tbl th:first-child,.tbl td:first-child{text-align:left;font-family:var(--f-body)}
+.tbl th{color:var(--mute);font-weight:500;border-top:0}
+.scroll{overflow-x:auto}
+ul.plain{margin:0;padding-left:18px} ul.plain li{margin:4px 0}
+.note{font-size:12px;color:var(--mute)}
+.loading{padding:40px 0;text-align:center;color:var(--mute)}
+</style>
+
+<div class="wrap">
+  <aside class="rail">
+    <div class="brand">종목 분석실<small>석준님 보유 종목 · 숫자마다 근거 링크</small></div>
+    <input id="q" type="search" placeholder="종목 찾기 (예: 팔란티어, PLTR)" autocomplete="off">
+    <div class="list" id="list"><div class="empty-hint">자료를 불러오는 중이에요.</div></div>
+  </aside>
+  <main id="main"><div class="loading">왼쪽에서 종목을 고르세요. 자료가 들어오면 여기에 보여요.</div></main>
+</div>
+
+<script>
+const TABS=[["all","전체"],["biz","사업·매출"],["cust","수주·고객"],["ops","공급·운영"],["fin","수익·현금"],["cap","자본·주주"],["rel","관계·경쟁"],["evt","이벤트"]];
+let DOCS={}, cur=null, tab="all", qSel=null;
+try{tab=localStorage.getItem("co_tab")||"all"}catch(e){}
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const src=u=>u?` <a class="src" href="${esc(u)}" target="_blank" rel="noopener">근거↗</a>`:"";
+const usd=m=>{if(m==null||isNaN(m))return"—";const a=Math.abs(m),s=m<0?"-":"";return a>=1000?`${s}$${(a/1000).toFixed(2)}B`:`${s}$${a.toFixed(a<10?1:0)}M`};
+const pct=(a,b)=>(a==null||b==null||b===0)?null:(a-b)/Math.abs(b)*100;
+const yoyTxt=v=>v==null?'<span class="na">작년 대비 —</span>':`<span class="${v>=0?"up":"dn"}">작년 같은 분기 대비 ${v>=0?"+":""}${v.toFixed(1)}%</span>`;
+const prevYearQ=q=>q?`${+q.slice(0,4)-1}${q.slice(4)}`:null;
+
+function renderList(){
+  const f=$("#q").value.trim().toLowerCase();
+  const all=Object.values(DOCS).filter(d=>!f||[d.ticker,d.name,d.nameKo].join(" ").toLowerCase().includes(f));
+  const groups=[["미국 주식",all.filter(d=>d.type!=="etf")],["ETF",all.filter(d=>d.type==="etf")]];
+  let h="";
+  for(const [g,arr] of groups){ if(!arr.length)continue; h+=`<div class="grp">${g}</div>`;
+    for(const d of arr) h+=`<button class="co" data-t="${esc(d.ticker)}" aria-current="${d.ticker===cur}"><span style="color:var(--fg)">${esc(d.nameKo||d.name)}</span><b>${esc(d.ticker)}</b></button>`;}
+  if(!all.length) h=Object.keys(DOCS).length?`<div class="empty-hint">"${esc(f)}"은(는) 아직 없어요. 매니저에게 "${esc(f)} 추가해줘"라고 말하면 넣어드려요.</div>`:`<div class="empty-hint">아직 자료가 없어요. 담당이 모으는 중이에요.</div>`;
+  $("#list").innerHTML=h;
+  $("#list").querySelectorAll(".co").forEach(b=>b.onclick=()=>{cur=b.dataset.t;qSel=null;location.hash=cur;renderList();render()});
+}
+
+function bars(items,unit){
+  if(!items||!items.length)return'<div class="note">아직 확인된 자료가 없어요.</div>';
+  const max=Math.max(...items.map(i=>Math.abs(i.value??i.weight??0)),1);
+  return items.map(i=>{const v=i.value??i.weight;const w=v==null?0:Math.abs(v)/max*100;
+    const num=v==null?"—":unit==="%"?`${(+v).toFixed(1)}%`:usd(v);
+    const y=i.yoy!=null?` <span class="${i.yoy>=0?"up":"dn"}">${i.yoy>=0?"+":""}${(+i.yoy).toFixed(0)}%</span>`:"";
+    return`<div class="bar"><span>${esc(i.name)}${src(i.src)}</span><span class="t"><i style="width:${w}%"></i></span><span class="n">${num}${y}</span></div>`}).join("");
+}
+
+function trend(qs,key,label){
+  const pts=qs.filter(q=>q[key]!=null);
+  if(pts.length<2)return'<div class="note">분기 자료가 모자라요.</div>';
+  const W=560,H=170,P={l:8,r:8,t:16,b:26};const vals=pts.map(p=>p[key]);
+  const max=Math.max(...vals,0),min=Math.min(...vals,0),rng=max-min||1;
+  const bw=(W-P.l-P.r)/pts.length;const y=v=>P.t+(max-v)/rng*(H-P.t-P.b);
+  let g=`<line x1="${P.l}" x2="${W-P.r}" y1="${y(0)}" y2="${y(0)}" stroke="var(--line)"/>`;
+  pts.forEach((p,i)=>{const x=P.l+i*bw+bw*.18,w=bw*.64,v=p[key],top=Math.min(y(v),y(0)),h=Math.max(1,Math.abs(y(v)-y(0)));
+    const sel=p.q===qSel;
+    g+=`<rect x="${x}" y="${top}" width="${w}" height="${h}" rx="2" fill="${v<0?"var(--bad)":"var(--accent)"}" opacity="${sel?1:.55}"/>`;
+    g+=`<text x="${x+w/2}" y="${H-8}" text-anchor="middle" font-size="10" fill="var(--mute)" font-family="JetBrains Mono,monospace">${p.q.slice(2)}</text>`;
+    if(sel||i===pts.length-1)g+=`<text x="${x+w/2}" y="${Math.max(11,top-4)}" text-anchor="middle" font-size="10.5" fill="var(--fg)" font-family="JetBrains Mono,monospace">${usd(v)}</text>`;});
+  return`<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(label)} 분기 추이">${g}</svg>`;
+}
+
+function listRows(arr,fn){return arr&&arr.length?arr.map(fn).join(""):'<div class="note">아직 확인된 자료가 없어요.</div>'}
+const card=(tabs,title,sub,body,wide)=>`<section class="card${wide?" wide":""}" data-tabs="${tabs}"><h2>${title}<small>${sub||""}</small></h2>${body}</section>`;
+
+function render(){
+  const d=DOCS[cur]; if(!d){$("#main").innerHTML='<div class="loading">왼쪽에서 종목을 고르세요.</div>';return}
+  const isEtf=d.type==="etf";
+  const qs=(d.quarters||[]).slice().sort((a,b)=>a.q<b.q?-1:1);
+  if(!qSel||!qs.find(x=>x.q===qSel))qSel=d.latestQuarter&&qs.find(x=>x.q===d.latestQuarter)?d.latestQuarter:(qs.at(-1)?.q||null);
+  const Q=qs.find(x=>x.q===qSel)||{}, P=qs.find(x=>x.q===prevYearQ(qSel))||{};
+  let h=`<div class="head"><div><h1>${esc(d.nameKo||d.name)}<span class="tk">${esc(d.ticker)} · ${esc(d.name)}</span></h1>
+    <p>${esc(d.oneLine||"")}</p><p class="note">${esc(d.sector||"")} · 자료 기준일 ${esc(d.asOf||"—")}${d.nextEarnings?` · 다음 실적 ${esc(d.nextEarnings)}`:""}</p></div>`;
+  if(!isEtf&&qs.length)h+=`<div class="ctl"><label for="qsel">보는 분기</label><select id="qsel">${qs.slice().reverse().map(x=>`<option ${x.q===qSel?"selected":""}>${x.q}</option>`).join("")}</select><span>비교: 작년 같은 분기 (${prevYearQ(qSel)})</span></div>`;
+  h+=`</div><div class="tabs" role="tablist">${TABS.map(([k,l])=>`<button class="tab" role="tab" data-k="${k}" aria-selected="${k===tab}">${l}</button>`).join("")}</div>`;
+
+  if(isEtf){
+    const e=d.etf||{};
+    h+=`<div class="kpis">
+      <div class="kpi"><div class="l">순자산(덩치)</div><div class="v" style="font-size:18px">${esc(e.aum??"—")}</div><div class="y na">${src(e.src)}</div></div>
+      <div class="kpi"><div class="l">1년 보수(수수료)</div><div class="v" style="font-size:18px">${esc(e.fee??"—")}</div></div>
+      <div class="kpi"><div class="l">상장일</div><div class="v" style="font-size:18px">${esc(e.listed??"—")}</div></div>
+      <div class="kpi"><div class="l">담은 종목 기준일</div><div class="v" style="font-size:18px">${esc(e.holdingsAsOf??"—")}</div></div></div>
+      <div class="grid">`+
+      card("all biz","무엇을 따라가나","",`<p style="margin:0">${esc(e.index||"—")}</p>`,true)+
+      card("all biz","담고 있는 종목 TOP 10",`비중 % · ${esc(e.holdingsAsOf||"")}`,bars((e.holdings||[]).slice(0,10).map(x=>({name:`${x.name}${x.ticker?" ("+x.ticker+")":""}`,weight:x.weight})),"%"))+
+      card("all biz","분야별 비중","%",bars((e.sectors||[]).map(x=>({name:x.name,weight:x.weight})),"%"))+
+      card("all evt","이벤트 타임라인","최근 1년",listRows((d.events||[]).slice().sort((a,b)=>a.date<b.date?1:-1),ev=>`<div class="row"><span class="d">${esc(ev.date)}</span><span class="b"><span class="pill p-rp">${esc(ev.type||"")}</span>${esc(ev.title)}${src(ev.src)}</span></div>`),true)+
+      card("all rel cap","조심할 점","",`<ul class="plain">${(d.risks||[]).map(r=>`<li>${esc(r)}</li>`).join("")||"<li class=muted>—</li>"}</ul>`,true)+
+      card("all","자료 출처","",`<ul class="plain">${(d.sources||[]).map(s=>`<li><a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.label)}</a></li>`).join("")}</ul>`,true)+`</div>`;
+  } else {
+    const rpoKey=Q.rpo!=null?"rpo":"backlog", rpoLbl=rpoKey==="rpo"?"남은 계약 금액(RPO)":"수주잔고(백로그)";
+    const k=(l,key,note)=>`<div class="kpi"><div class="l">${l}</div><div class="v">${usd(Q[key])}</div><div class="y">${yoyTxt(pct(Q[key],P[key]))}</div>${note?`<div class="note">${note}</div>`:""}</div>`;
+    h+=`<div class="kpis">${k("분기 매출","revenue")}${k("영업이익(본업 이익)","opIncome")}${k("현금","cash")}${k(rpoLbl,rpoKey,esc(d.kpiNotes?.rpo||""))}</div>
+      <p class="note">${esc(qSel||"")} 기준${src(Q.src)} · 단위 미국 달러 (B=10억, M=100만)</p><div class="grid">`+
+      card("all biz fin","분기 매출 추이","선택 분기 진하게",trend(qs,"revenue","매출"))+
+      card("all fin","분기 영업이익 추이","빨강 = 적자",trend(qs,"opIncome","영업이익"))+
+      card("all biz","사업별 매출",`${esc(d.segments?.q||"")} · 옆 % = 작년 대비`,bars(d.segments?.items))+
+      card("all biz","지역별 매출",`${esc(d.regions?.q||"")}`,bars(d.regions?.items))+
+      card("all cust","주요 계약·고객","초록=회사 발표, 파랑=언론 보도",listRows((d.customers||[]).slice().sort((a,b)=>a.date<b.date?1:-1),c=>`<div class="row"><span class="d">${esc(c.date)}</span><span class="b"><span class="pill ${c.status==="확정"?"p-ok":"p-rp"}">${c.status==="확정"?"확정":"보도"}</span><b>${esc(c.name)}</b> <span class="muted">${esc(c.amount||"")}</span><br>${esc(c.desc||"")}${src(c.src)}</span></div>`),true)+
+      card("all ops","운영·마일스톤","초록=이미 한 일, 주황=회사 목표",listRows((d.milestones||[]).slice().sort((a,b)=>a.date<b.date?1:-1),m=>`<div class="row"><span class="d">${esc(m.date)}</span><span class="b"><span class="pill ${m.kind==="확정"?"p-ok":"p-tg"}">${m.kind==="확정"?"확정":"목표"}</span>${esc(m.text)}${src(m.src)}</span></div>`))+
+      card("all ops","공급·생산","",listRows(d.supply,s=>`<div class="row"><span class="b"><b>${esc(s.name)}</b> ${esc(s.note)}${src(s.src)}</span></div>`))+
+      card("fin","분기 숫자 표","USD",`<div class="scroll"><table class="tbl"><tr><th>분기</th><th>매출</th><th>영업이익</th><th>순이익</th><th>현금</th><th>총이익률</th><th></th></tr>${qs.slice().reverse().map(x=>`<tr><td>${x.q}</td><td>${usd(x.revenue)}</td><td class="${x.opIncome<0?"dn":""}">${usd(x.opIncome)}</td><td class="${x.netIncome<0?"dn":""}">${usd(x.netIncome)}</td><td>${usd(x.cash)}</td><td>${x.grossMargin!=null?(+x.grossMargin).toFixed(1)+"%":"—"}</td><td>${src(x.src)}</td></tr>`).join("")}</table></div>`,true)+
+      card("all cap","자본·주주","",(()=>{const c=d.capital||{};return`<div class="scroll"><table class="tbl">
+        <tr><td>발행 주식 수</td><td>${c.sharesOutM!=null?(+c.sharesOutM).toLocaleString()+"M 주":"—"}</td></tr>
+        <tr><td>시가총액(회사 전체 값)</td><td>${c.marketCapB!=null?"$"+(+c.marketCapB).toFixed(1)+"B":"—"}</td></tr>
+        <tr><td>현금</td><td>${c.cashB!=null?"$"+(+c.cashB).toFixed(2)+"B":"—"}</td></tr>
+        <tr><td>빚</td><td>${c.debtB!=null?"$"+(+c.debtB).toFixed(2)+"B":"—"}</td></tr></table></div>
+        <p class="note" style="margin:8px 0 0">주식 수 변화: ${esc(c.dilution||"—")}</p><p class="note" style="margin:4px 0 0">내부자 매매: ${esc(c.insider||"—")}${src(c.src)}</p>`})())+
+      card("all rel","관계 지도","고객·공급·경쟁·파트너",listRows(d.relations,r=>`<div class="row"><span class="b"><span class="pill ${r.rel==="경쟁"?"p-bad":r.rel==="고객"?"p-ok":"p-rp"}">${esc(r.rel)}</span><b>${esc(r.name)}</b> ${esc(r.note||"")}${src(r.src)}</span></div>`))+
+      card("rel","경쟁사","",listRows(d.competition,c=>`<div class="row"><span class="b"><b>${esc(c.name)}</b> ${esc(c.note||"")}</span></div>`))+
+      card("all rel","정책·규제","",listRows(d.policy,p=>`<div class="row"><span class="b">${esc(p.text)}${src(p.src)}</span></div>`))+
+      card("all evt","이벤트 타임라인","최근 12개월",listRows((d.events||[]).slice().sort((a,b)=>a.date<b.date?1:-1),ev=>`<div class="row"><span class="d">${esc(ev.date)}</span><span class="b"><span class="pill p-rp">${esc(ev.type||"")}</span>${esc(ev.title)}${src(ev.src)}</span></div>`),true)+
+      card("all cap rel","조심할 점","",`<ul class="plain">${(d.risks||[]).map(r=>`<li>${esc(r)}</li>`).join("")||"<li class=muted>—</li>"}</ul>`,true)+
+      card("all","자료 출처","",`<ul class="plain">${(d.sources||[]).map(s=>`<li><a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.label)}</a></li>`).join("")}</ul>`,true)+`</div>`;
+  }
+  h+=`<p class="note">투자 판단은 석준님이 직접 하세요. 이 화면은 정보만 보여드려요. "보도"는 회사가 직접 밝히지 않은 언론 기사예요.</p>`;
+  $("#main").innerHTML=h;
+  $("#main").querySelectorAll(".tab").forEach(b=>b.onclick=()=>{tab=b.dataset.k;try{localStorage.setItem("co_tab",tab)}catch(e){}applyTab()});
+  const qsEl=$("#qsel"); if(qsEl)qsEl.onchange=()=>{qSel=qsEl.value;render()};
+  applyTab();
+}
+function applyTab(){
+  $("#main").querySelectorAll(".tab").forEach(b=>b.setAttribute("aria-selected",b.dataset.k===tab));
+  $("#main").querySelectorAll("[data-tabs]").forEach(s=>s.hidden=!s.dataset.tabs.split(" ").includes(tab));
+  const kp=$("#main .kpis");if(kp)kp.hidden=!(tab==="all"||tab==="fin"||tab==="biz");
+}
+$("#q").addEventListener("input",renderList);
+window.addEventListener("hashchange",()=>{const t=location.hash.slice(1);if(DOCS[t]&&t!==cur){cur=t;qSel=null;renderList();render()}});
+
+(async()=>{
+  const db=await window.claude?.use?.("db");
+  if(!db){$("#list").innerHTML='<div class="empty-hint">로그인해야 자료가 보여요.</div>';return}
+  db.collection("companies").onSnapshot(snap=>{
+    DOCS={};(snap.docs||snap).forEach(s=>{const v=typeof s.data==="function"?s.data():s.data||s;if(v&&v.ticker)DOCS[v.ticker]=v});
+    const h=location.hash.slice(1);
+    if(!cur||!DOCS[cur])cur=DOCS[h]?h:(Object.keys(DOCS).sort()[0]||null);
+    renderList();render();
+  });
+})();
+</script>

@@ -1,0 +1,161 @@
+<title>지금 증시판</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;600;800&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+/* 한눈 판: 신호등 → 지수 → 내 종목 타일(누르면 뉴스) → 매크로 온도계 → 가격 사다리 → 일정 시간띠. 한국식 색: 오름 빨강, 내림 파랑 */
+:root{--bg:#eef1f5;--card:#fff;--fg:#151b26;--mute:#5d6878;--line:#d8dee7;--up:#d6303b;--dn:#2563d6;--g:#1f9d55;--y:#d99a00;--r:#d6303b;--acc:#2f6fe0;
+--f-body:"Noto Sans KR",system-ui,sans-serif;--f-num:"IBM Plex Mono",ui-monospace,monospace}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0e1218;--card:#171d26;--fg:#e7ebf1;--mute:#97a2b2;--line:#29313d;--up:#ff5d66;--dn:#5c9bff;--g:#45c97c;--y:#f0b93a;--r:#ff5d66;--acc:#6ea0ff;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0e1218;--card:#171d26;--fg:#e7ebf1;--mute:#97a2b2;--line:#29313d;--up:#ff5d66;--dn:#5c9bff;--g:#45c97c;--y:#f0b93a;--r:#ff5d66;--acc:#6ea0ff;color-scheme:dark}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);line-height:1.5;padding-left:max(14px,env(safe-area-inset-left,0px));padding-right:max(14px,env(safe-area-inset-right,0px));padding-block:16px 40px}
+main{max-width:820px;margin:0 auto;display:grid;gap:14px}
+.top{display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:6px}
+h1{font-size:1.35rem;margin:0;font-weight:800}
+.stamp{font-family:var(--f-num);font-size:.9rem;color:var(--mute)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;min-width:0}
+h2{font-size:.82rem;letter-spacing:.05em;color:var(--mute);margin:0 0 10px;font-weight:700}
+.n{font-family:var(--f-num);font-variant-numeric:tabular-nums}
+.up{color:var(--up)}.dn{color:var(--dn)}
+/* 신호등 */
+.lights{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.light{display:grid;justify-items:center;gap:4px;text-align:center;padding:10px 4px;border-radius:10px;border:1px solid var(--line)}
+.dot{width:38px;height:38px;border-radius:50%;box-shadow:0 0 0 4px color-mix(in srgb,currentColor 18%,transparent)}
+.light b{font-size:.95rem}.light span{font-size:.78rem;color:var(--mute)}
+.L-g{color:var(--g)}.L-y{color:var(--y)}.L-r{color:var(--r)}
+.dot.L-g{background:var(--g)}.dot.L-y{background:var(--y)}.dot.L-r{background:var(--r)}
+/* 지수 */
+.idx{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px}
+.ix{border:1px solid var(--line);border-radius:10px;padding:10px}
+.ix .nm{font-size:.8rem;color:var(--mute)}.ix .v{font-size:1.35rem;font-weight:600}
+.ix svg{width:100%;height:44px;display:block;margin-top:4px}
+.ix .t{font-size:.72rem;color:var(--mute)}
+/* 타일 */
+.tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(118px,1fr));gap:6px}
+.tile{border:0;border-radius:10px;padding:10px 8px;text-align:left;cursor:pointer;color:#fff;font:inherit;display:grid;gap:1px;min-height:78px}
+.tile b{font-size:.9rem}.tile .p{font-family:var(--f-num);font-size:.82rem;opacity:.95}.tile .c{font-family:var(--f-num);font-size:1.05rem;font-weight:600}
+.tile[aria-pressed="true"]{outline:3px solid var(--fg);outline-offset:2px}
+.tile:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+.news{margin-top:10px;border-top:1px solid var(--line);padding-top:10px;display:grid;gap:6px}
+.news h3{margin:0;font-size:1rem}
+.news ul{margin:0;padding-left:0;list-style:none;display:grid;gap:5px}
+.news li{display:grid;grid-template-columns:22px 1fr;gap:6px;font-size:.9rem}
+.news .i{font-weight:800;text-align:center;border-radius:6px;font-size:.78rem;line-height:20px;height:20px}
+.i.g{background:color-mix(in srgb,var(--up) 18%,transparent);color:var(--up)}
+.i.b{background:color-mix(in srgb,var(--dn) 18%,transparent);color:var(--dn)}
+.i.w{background:color-mix(in srgb,var(--y) 22%,transparent);color:var(--y)}
+/* 온도계 */
+.thermo{display:grid;gap:10px}
+.th{display:grid;grid-template-columns:92px 1fr 92px;gap:8px;align-items:center;font-size:.86rem}
+.bar{position:relative;height:14px;border-radius:7px;background:linear-gradient(90deg,var(--g),var(--y),var(--r))}
+.bar i{position:absolute;top:-4px;width:4px;height:22px;background:var(--fg);border-radius:2px;transform:translateX(-2px)}
+.th .note{grid-column:2/4;font-size:.74rem;color:var(--mute);margin-top:-6px}
+/* 사다리 */
+.ladder svg{width:100%;height:auto;display:block}
+.ladder text{font-family:var(--f-num);font-size:22px;fill:var(--fg)}
+.ladder .m{fill:var(--mute);font-family:var(--f-body)}
+/* 시간띠 */
+.tl{position:relative;display:grid;gap:8px;padding-left:16px;border-left:3px solid var(--line)}
+.ev{position:relative;font-size:.88rem}
+.ev::before{content:"";position:absolute;left:-23px;top:5px;width:11px;height:11px;border-radius:50%;background:var(--line)}
+.ev.now::before{background:var(--acc);box-shadow:0 0 0 4px color-mix(in srgb,var(--acc) 25%,transparent)}
+.ev.now{font-weight:700;color:var(--acc)}
+.ev .n{color:var(--mute);margin-right:6px}
+.foot{font-size:.76rem;color:var(--mute)}
+.foot a{color:var(--acc)}
+@media (max-width:420px){.th{grid-template-columns:78px 1fr 78px}}
+</style>
+<main>
+<div class="top"><h1>지금 증시판</h1><span class="stamp">11/18(수) 12:40 기준 · 한국 오전값 · 미국 11/17 종가</span></div>
+
+<section class="card">
+<h2>신호등</h2>
+<div class="lights">
+<div class="light"><div class="dot L-y"></div><b class="L-y">한국장: 눈치</b><span>+2.6% 출발 → 11시 −0.1%</span></div>
+<div class="light"><div class="dot L-g"></div><b class="L-g">미국: 반등 기대</b><span>엔비디아 깜짝 실적, 선물 반등</span></div>
+<div class="light"><div class="dot L-r"></div><b class="L-r">매크로: 부담</b><span>금리 5.1% · 달러 강세</span></div>
+</div>
+</section>
+
+<section class="card">
+<h2>지수 (선: 어제 종가 → 시가 → 지금)</h2>
+<div class="idx" id="idx"></div>
+</section>
+
+<section class="card">
+<h2>내 종목 · 관심 종목 (색 진할수록 크게 움직임 · 누르면 뉴스)</h2>
+<div class="tiles" id="tiles"></div>
+<div class="news" id="news"></div>
+</section>
+
+<section class="card">
+<h2>매크로 온도계 (오른쪽 빨강일수록 주식에 부담)</h2>
+<div class="thermo" id="thermo"></div>
+</section>
+
+<section class="card ladder">
+<h2>가격 사다리</h2>
+<div id="lad1"></div>
+<div id="lad2" style="margin-top:8px"></div>
+</section>
+
+<section class="card">
+<h2>오늘 · 내일 일정</h2>
+<div class="tl">
+<div class="ev"><span class="n">06:20</span>엔비디아 실적 발표: 매출 1,158억$(예상 1,091억), 판정 '보통'</div>
+<div class="ev"><span class="n">09:00</span>코스피 +2.6% 출발, 5,000 되찾음</div>
+<div class="ev now"><span class="n">12:40</span>지금</div>
+<div class="ev"><span class="n">15:40</span>JC 보고: 하이닉스 저점 지켰나 · 외국인 수급</div>
+<div class="ev"><span class="n">15:47</span>장마감 페이지 자동 갱신</div>
+<div class="ev"><span class="n">밤</span>앤트로픽 공모가 결정(보도) · 11/19 나스닥 상장 예정</div>
+<div class="ev"><span class="n">04:00</span>연준 회의록(11/19 새벽) · 금리 인상 분위기 확인</div>
+<div class="ev"><span class="n">07:20</span>11/19 QLD 규칙 판정(QQQ 종가) · 07:33 앤트로픽 확인</div>
+<div class="ev"><span class="n">11/19</span>수능일: 한국장 16:30 마감</div>
+<div class="ev"><span class="n">11/24</span>IREN 주주총회</div>
+</div>
+</section>
+
+<p class="foot">한국 오전값은 기사마다 시각이 달라 조금씩 다릅니다(확정값은 15:47 장마감 페이지). 이 판은 오늘 첫 판이고, JC가 장중 10분·그 밖 30분마다 자동 갱신하는 판으로 이어받습니다.<br>
+출처: <a href="https://www.ajunews.com/view/20261118111801743">아주경제 11:19</a> · <a href="https://www.newspim.com/news/view/20261118000177">뉴스핌 개장</a> · <a href="https://www.hankyung.com/article/202611183644i">한국경제</a> · <a href="https://www.news1.kr/finance/market-exr/6357614">뉴스1 환율</a> · <a href="https://www.swissinfo.ch/eng/stocks,-us-futures-rebound-after-nvidia-earnings:-markets-wrap/92397458">swissinfo</a> · <a href="https://www.fool.com/coverage/stock-market-today/2026/11/16/stock-market-today-nov-16-iren-slides-as-neocloud-weakness-and-tech-sector-selling-put-pressure-on-shares/">IREN(Fool)</a> · <a href="https://www.heygotrade.com/en/news/iren-iren-stock-news-november-9-2026/">IREN 실적</a> · <a href="https://247wallst.com/investing/2026/11/17/rocket-lab-slides-4-as-spacex-shares-a-985-million-launch-award-are-cathie-wood-and-david-tepper-picking-spacex-over-rocket-lab/">RKLB(24/7)</a> · <a href="https://www.marketbeat.com/instant-alerts/price-palantir-technologies-nasdaq-pltr-shares-down-24-should-you-sell-2026-11-17/">PLTR(MarketBeat)</a> · <a href="https://www.investing.com/news/insider-trading-news/palantir-director-alexander-moore-sells-269m-in-pltr-stock-93CH-5034468">PLTR 내부자</a> · <a href="https://www.gurufocus.com/news/9169880/navitas-semiconductor-nvts-shares-jump-on-strong-q3-and-buy-upgrade">NVTS</a> · <a href="https://www.marketbeat.com/instant-alerts/insider-lightpath-technologies-nasdaq-lpth-stock-insider-shmuel-rubin-buys-2860-shares-2026-11-16/">LPTH 내부자</a> · 미국 종가·QLD 선: JC(Yahoo 일봉, 11/18 07:20)</p>
+</main>
+
+<script>
+const IDX=[
+ {nm:"코스피",v:"4,961.72",c:-0.14,pts:[4968.48,5098.82,5088.61,4961.72],t:"11:19 · 시가 5,098.82"},
+ {nm:"코스닥",v:"663.87",c:2.12,pts:[650.06,663.87],t:"개장값 · 지금 값 확인 못 함"},
+ {nm:"나스닥100 (11/17)",v:"27,001.79",c:-0.7,pts:[27191,27001.79],t:"엔비디아 실적 뒤 선물 반등"},
+ {nm:"원·달러",v:"1,331.9원",c:-0.26,pts:[1335.4,1331.9],t:"09:09 · 원화 조금 강해짐"}
+];
+const T=[
+ {k:"hynix",nm:"SK하이닉스",p:"약 1,155,000원",c:5.2,when:"오전",news:[["g","엔비디아 공급 약정 3,900억$(주로 메모리) → HBM 수요 더 단단해짐"],["g","외국인 3일 연속 매도 뒤 오늘 오전 매수로 바뀜"],["g","걱정하던 저점 1,089,000원보다 약 6% 위"],["w","10거래일 외국인 누적 매도 −6.4조원, 오후 수급 확인 필요(15:40)"]]},
+ {k:"sam",nm:"삼성전자",p:"197,800원",c:3.9,when:"오전",news:[["g","엔비디아 메모리 약정 증가 수혜(HBM4)"],["w","어제 외국인 −4,766억 매도, 오늘 바뀌는지 확인"]]},
+ {k:"kodex",nm:"KODEX200 타겟위클리",p:"14,160원",c:0,when:"11/17",news:[["w","코스피를 따라감: 오늘 오전 코스피 +2.6% → −0.1%"],["g","11월 분배 266원(월배당, 15일 기준) · 최근 12번 합계 3,305원"],["w","분배금이 5~6월 350원에서 줄어드는 중"]]},
+ {k:"qld",nm:"QLD",p:"73.98$",c:-1.47,when:"11/17",news:[["w","QLD 규칙: '기다리기' — QQQ 656.95$, 사기선 689.4$(+4.9% 위)"],["g","엔비디아 깜짝 실적으로 나스닥 선물 반등"],["b","미국 10년 금리 5.1%, 달러 강세가 기술주 부담"]]},
+ {k:"iren",nm:"IREN",p:"15.81$",c:-3.57,when:"11/17",news:[["b","52주 최저 근처(1년 범위 15.17~70.71$)"],["b","2027 계획까지 약 60억$ 자금 부족 → 주식 늘리기(희석) 걱정"],["g","11/5 실적: AI 클라우드 매출 약 3배, 수주잔고 203억$"],["w","JP모건 목표 65→55$(비중확대 유지) · 11/24 주주총회"]]},
+ {k:"rklb",nm:"RKLB",p:"55.05$",c:-4.04,when:"11/17",news:[["b","9.85억$ 발사 계약을 SpaceX가 일부 따냄, 로켓랩은 빠짐"],["g","3분기 매출 +73%, 수주잔고 사상 최대 35.7억$"],["g","일렉트론 100번째 발사 성공(11/14)"],["b","뉴트론 로켓 지연 · 주식 늘리기 걱정"]]},
+ {k:"pltr",nm:"PLTR",p:"156.56$",c:-2.39,when:"11/17",news:[["b","3일 연속 하락, 1주 약 −9% (비싸다는 걱정 + 기술주 약세)"],["w","이사 무어가 11/13 약 269만$어치 매도"],["g","실적은 좋았음 · Phillip증권 목표 215→248$"]]},
+ {k:"nvts",nm:"NVTS",p:"7.60$",c:-3.55,when:"11/17",news:[["g","3분기 매출 1,399만$ 예상 넘음, 4분기 전망도 예상 위"],["g","11/4 투자의견 상향 2곳(Craig-Hallum·Rosenblatt)"],["b","르네사스와 특허 소송(11/12) · 적자·희석 위험"]]},
+ {k:"lpth",nm:"LPTH",p:"6.23$",c:1.14,when:"11/17",news:[["g","CEO가 11/13 자기 회사 주식 2,860주 매수"],["g","드론용 광학 부품 5만 개 넘는 주문(10월 말)"],["w","중국 자회사 매각 완료(11/5) · Lake Street 목표 15→12$"]]},
+ {k:"nvda",nm:"NVDA",p:"155.46$",c:-0.44,when:"11/17",news:[["g","매출 1,158억$, 다음 분기 1,300억$ — 둘 다 예상 크게 넘음"],["b","다음 분기 이익률 71~72%(예상 72.3%) → 판정 '보통'"],["g","시간외 +2~5%(매체마다 다름)"]]}
+];
+const TH=[
+ {nm:"미국 10년 금리",v:"5.10%",a:"↓",pos:88,note:"5% 넘으면 기술주 부담. 지난밤 조금 내림"},
+ {nm:"달러인덱스",v:"103.6",a:"↑",pos:80,note:"2025년 4월 이후 가장 높음"},
+ {nm:"원·달러",v:"1,332원",a:"↓",pos:45,note:"오늘 조금 내림(원화 강세) → 외국인 매수에 유리"},
+ {nm:"WTI 유가",v:"85.6$",a:"→",pos:62,note:"물가 걱정을 조금 키우는 수준"},
+ {nm:"금",v:"3,852$",a:"→",pos:70,note:"불안할 때 오르는 자산, 높은 편"}
+];
+const fmtc=c=>(c>0?"+":"")+c.toFixed(2)+"%";
+function spark(p,up){const W=160,H=44,mn=Math.min(...p),mx=Math.max(...p),r=mx-mn||1;const pts=p.map((y,i)=>[i/(p.length-1)*(W-8)+4,H-6-(y-mn)/r*(H-12)]);const d=pts.map((q,i)=>(i?"L":"M")+q[0].toFixed(1)+" "+q[1].toFixed(1)).join(" ");const L=pts[pts.length-1];const col=up?"var(--up)":"var(--dn)";return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true"><path d="${d}" fill="none" stroke="${col}" stroke-width="2.2"/><circle cx="${L[0]}" cy="${L[1]}" r="3.5" fill="${col}"/></svg>`;}
+document.getElementById("idx").innerHTML=IDX.map(x=>`<div class="ix"><div class="nm">${x.nm}</div><div class="v n ${x.c>=0?"up":"dn"}">${x.v}</div><div class="n ${x.c>=0?"up":"dn"}">${fmtc(x.c)}</div>${spark(x.pts,x.c>=0)}<div class="t">${x.t}</div></div>`).join("");
+function tileColor(c){const a=Math.min(Math.abs(c)/5,1);if(Math.abs(c)<0.05)return "#7a8494";const base=c>0?[214,48,59]:[37,99,214];const mix=v=>Math.round(150+(v-150)*(0.45+0.55*a));return `rgb(${mix(base[0])},${mix(base[1])},${mix(base[2])})`;}
+const tiles=document.getElementById("tiles"),news=document.getElementById("news");
+let cur="hynix";try{cur=localStorage.getItem("mkTile")||cur;}catch(e){}
+T.forEach(t=>{const b=document.createElement("button");b.type="button";b.className="tile";b.style.background=tileColor(t.c);b.dataset.k=t.k;b.innerHTML=`<b>${t.nm}</b><span class="c">${t.c===0?"–":fmtc(t.c)}</span><span class="p">${t.p} · ${t.when}</span>`;b.onclick=()=>{cur=t.k;try{localStorage.setItem("mkTile",cur);}catch(e){}showNews();};tiles.appendChild(b);});
+const IC={g:"좋",b:"나",w:"주"};
+function showNews(){tiles.querySelectorAll(".tile").forEach(b=>b.setAttribute("aria-pressed",b.dataset.k===cur?"true":"false"));const t=T.find(x=>x.k===cur)||T[0];news.innerHTML=`<h3>${t.nm} <span class="n ${t.c>=0?"up":"dn"}" style="font-size:.9rem">${t.p} ${t.c===0?"":fmtc(t.c)}</span></h3><ul>${t.news.map(n=>`<li><span class="i ${n[0]}">${IC[n[0]]}</span><span>${n[1]}</span></li>`).join("")}</ul><p class="foot" style="margin:0">좋 = 좋은 소식 · 나 = 나쁜 소식 · 주 = 지켜볼 것</p>`;}
+showNews();
+document.getElementById("thermo").innerHTML=TH.map(x=>`<div class="th"><span>${x.nm}</span><div class="bar"><i style="left:${x.pos}%"></i></div><span class="n" style="text-align:right">${x.v} ${x.a}</span><span class="note">${x.note}</span></div>`).join("");
+function ladder(id,title,unit,levels,now){const W=640,H=150,L=70,R=70;const vals=levels.map(l=>l[1]).concat([now]);const mn=Math.min(...vals),mx=Math.max(...vals),pad=(mx-mn)*.12;const lo=mn-pad,hi=mx+pad;const x=v=>L+(v-lo)/(hi-lo)*(W-L-R);let s=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${title}"><text x="0" y="24" class="m">${title}</text><line x1="${L}" x2="${W-R}" y1="88" y2="88" stroke="var(--line)" stroke-width="8" stroke-linecap="round"/>`;levels.forEach(l=>{s+=`<line x1="${x(l[1])}" x2="${x(l[1])}" y1="72" y2="104" stroke="${l[2]}" stroke-width="4"/><text x="${x(l[1])}" y="134" text-anchor="middle" style="fill:${l[2]}">${l[0]} ${l[1].toLocaleString()}</text>`;});s+=`<circle cx="${x(now)}" cy="88" r="12" fill="var(--fg)"/><text x="${x(now)}" y="60" text-anchor="middle" font-weight="600">지금 ${now.toLocaleString()}${unit}</text></svg>`;document.getElementById(id).innerHTML=s;}
+ladder("lad1","QQQ와 QLD 규칙 선 (11/17 종가)","$",[["팔기선",675.7,"var(--dn)"],["사기선",689.4,"var(--up)"]],656.95);
+ladder("lad2","SK하이닉스와 지켜볼 저점 (오전)","원",[["11/6 저점",1089000,"var(--dn)"],["어제 종가",1098000,"var(--mute)"]],1155000);
+</script>

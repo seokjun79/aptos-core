@@ -1,0 +1,5 @@
+source: https://github.com/oil-oil/oil-ui
+commit: 5b03da0997e0c57650880c521bf5462696d3efe9 (2026-11-02)
+license: MIT
+copied: 2026-11-04 by 매니저 비너스 (README 이미지, tests, .github 제외)
+update check: OFF (.claude/settings.json env OIL_NO_UPDATE_CHECK=1, OIL_NO_AUTO_UPDATE=1)

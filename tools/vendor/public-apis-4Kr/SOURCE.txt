@@ -1,0 +1,5 @@
+source: https://github.com/yybmion/public-apis-4Kr
+commit: e17cf09afe0acfc71d77ea3f7ba3476e804d0287 (2026-11-03)
+license: MIT
+copied: 2026-11-07 by 매니저 비너스 (문서만: README·README_EN·GLOBAL·LICENSE·CONTRIBUTING·최신 링크점검 보고서. scripts·assets·옛 보고서 제외)
+content: 한국 공개 API 300+ / 글로벌 780+ 목록 (마크다운, 실행 코드 없음)

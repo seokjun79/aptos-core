@@ -1,0 +1,231 @@
+<title>RC 실시간 차트 분석</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: trading desk — symbol tabs, 4H + M15 charts with labelled levels, verdict card beside */
+:root{
+  --bg:#f3f5f7; --panel:#fff; --line:#d7dde4; --grid:#eef1f4; --fg:#151b24; --mute:#5c6878;
+  --up:#16865a; --down:#c8443a; --entry:#2563eb; --sl:#c8443a; --tp:#16865a; --lvl:#8a6a1f; --hi:#7c3aed;
+  --accent:#2563eb; --accent-soft:#e4ecfd; --warn-soft:#faefdb; --warn:#a86300;
+  --f-body:"IBM Plex Sans KR",system-ui,sans-serif; --f-num:"JetBrains Mono",ui-monospace,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0e1218; --panel:#161c25; --line:#283140; --grid:#1d2430; --fg:#e5eaf1; --mute:#8d99aa;
+  --up:#3dbb85; --down:#ef6b61; --entry:#60a5fa; --sl:#ef6b61; --tp:#3dbb85; --lvl:#d4a94a; --hi:#a78bfa;
+  --accent:#60a5fa; --accent-soft:#16263d; --warn-soft:#2b2010; --warn:#e0a446; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0e1218; --panel:#161c25; --line:#283140; --grid:#1d2430; --fg:#e5eaf1; --mute:#8d99aa;
+  --up:#3dbb85; --down:#ef6b61; --entry:#60a5fa; --sl:#ef6b61; --tp:#3dbb85; --lvl:#d4a94a; --hi:#a78bfa;
+  --accent:#60a5fa; --accent-soft:#16263d; --warn-soft:#2b2010; --warn:#e0a446; color-scheme:dark}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:14.5px;line-height:1.55}
+.wrap{max-width:1180px;margin:0 auto;padding-block:16px 32px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:12px}
+h1{font-size:21px;margin:0} .sub{color:var(--mute);font-size:13px}
+.tabs{display:flex;gap:6px;flex-wrap:wrap}
+.tab{font:inherit;border:1px solid var(--line);background:var(--panel);color:var(--fg);border-radius:8px;padding:7px 12px;cursor:pointer;display:flex;gap:8px;align-items:center}
+.tab[aria-selected="true"]{border-color:var(--accent);background:var(--accent-soft);font-weight:700}
+.tab b{font-family:var(--f-num);font-weight:600}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--mute)} .dot.sig{background:var(--up)}
+.main{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:12px}
+@media (max-width:900px){.main{grid-template-columns:minmax(0,1fr)}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px;min-width:0}
+.card h2{font-size:14px;margin:0 0 6px;display:flex;justify-content:space-between;gap:8px}
+.card h2 small{color:var(--mute);font-weight:400}
+.chartbox{overflow-x:auto} svg.c{width:100%;min-width:560px;height:auto;display:block}
+.verdict{font-size:16px;font-weight:700;margin:2px 0 6px}
+.pill{display:inline-block;font-size:11.5px;padding:1px 8px;border-radius:99px;font-weight:500}
+.p-up{background:rgba(22,134,90,.14);color:var(--up)} .p-dn{background:rgba(200,68,58,.14);color:var(--down)} .p-n{background:var(--warn-soft);color:var(--warn)}
+table.t{border-collapse:collapse;width:100%;font-size:13px}
+table.t td{padding:5px 4px;border-top:1px solid var(--line)} table.t td.n{font-family:var(--f-num);text-align:right}
+.note{font-size:12.5px;color:var(--mute)}
+ul.plain{margin:4px 0 0;padding-left:18px} ul.plain li{margin:3px 0}
+.empty{padding:40px 10px;text-align:center;color:var(--mute)}
+.sigrow{border-top:1px solid var(--line);padding:6px 0;font-size:13px}
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>RC 실시간 차트 분석</h1>
+    <div class="sub" id="sub">RC비너스가 15분마다 MT5 차트를 읽고 석준님 SMC+CRT 기준으로 판정해 여기에 올려요. 주문은 하지 않아요.</div>
+  </header>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:space-between">
+    <div class="tabs" id="tabs"></div>
+    <button class="tab" id="mode" type="button">자세히 보기</button>
+  </div>
+  <section class="card" id="story" style="border-color:var(--accent)"><div class="note">RC가 올린 분석을 불러오는 중이에요.</div></section>
+  <div class="main">
+    <div style="display:flex;flex-direction:column;gap:12px;min-width:0">
+      <section class="card"><h2><span id="h4title">4시간봉</span> <small id="h4note"></small></h2><div class="chartbox"><svg class="c" id="ch4"></svg></div></section>
+      <section class="card"><h2>15분봉 <small id="m15note"></small></h2><div class="chartbox"><svg class="c" id="cm15"></svg></div></section>
+      <section class="card"><h2>5분봉 <small id="m5note"></small></h2><div class="chartbox"><svg class="c" id="cm5"></svg></div></section>
+    </div>
+    <aside style="display:flex;flex-direction:column;gap:12px">
+      <section class="card" id="panel"><div class="empty">RC가 첫 분석을 올리면 여기에 판정이 보여요.</div></section>
+      <section class="card"><h2>최근 신호 <small>가상 채점</small></h2><div id="sigs" class="note">아직 신호가 없어요.</div></section>
+    </aside>
+  </div>
+  <p class="note">SMC 표시: HH·HL·LH·LL = 스윙 고저 · <b>BOS</b> = 같은 방향 구조 돌파 · <b style="color:var(--warn)">CHoCH/MSS</b> = 방향 전환 돌파(몸통 마감) · 상자 = 오더블록(OB)·FVG · 점선 = 같은 높이 고점/저점(EQH/EQL, 유동성) · 빨강/초록 배경 = 프리미엄/디스카운트.<br>선 색: 4H CRH/CRL = 기준 4시간 캠들의 고점·저점(그 캠들에만 짧게 표시) · <span style="color:var(--hi)">■</span> 전일·런던·아시아 고저 · <span style="color:var(--entry)">■</span> 진입 · <span style="color:var(--sl)">■</span> 손절 · <span style="color:var(--tp)">■</span> 목표. 투자 결정은 석준님이 하세요.</p>
+</div>
+
+<script>
+let DOCS={}, SIGS=[], cur=null, SIMPLE=true;
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const dig=p=>p>=1000?2:p>=50?3:5;
+const fmt=(v,p)=>v==null?"—":(+v).toFixed(dig(p||v));
+const colorOf=k=>({crt:"--lvl",hl:"--hi",mss:"--warn",entry:"--entry",sl:"--sl",tp:"--tp"}[k]||"--mute");
+
+const IND_SYMS=["QLD","TQQQ"]; // 보조지표(MA20·MA200·RSI)는 이 종목에만
+function chart(id,bars,levels,price,smc){
+  const IND=IND_SYMS.includes(cur);
+  const svg=document.getElementById(id);
+  if(!bars||!bars.length){svg.setAttribute("viewBox","0 0 600 120");svg.innerHTML=`<text x="300" y="60" text-anchor="middle" fill="var(--mute)" font-size="13">봉 자료 없음</text>`;return}
+  // 보조지표: 이동평균 20·200, RSI 14 — 받은 봉 전체로 계산하고 최근 구간만 그림
+  const full=bars, SHOWN={ch4:120,cm15:96,cm5:144}[id]||full.length, off=Math.max(0,full.length-SHOWN);
+  const closes=full.map(b=>+b[4]);
+  const sma=p=>closes.map((_,i)=>i+1<p?null:closes.slice(i+1-p,i+1).reduce((a,c)=>a+c,0)/p);
+  const ma20=sma(20).slice(off), ma200=sma(200).slice(off);
+  const rsi=(()=>{const r=Array(closes.length).fill(null);let ag=0,al=0;for(let i=1;i<closes.length;i++){const ch=closes[i]-closes[i-1],gn=Math.max(ch,0),ls=Math.max(-ch,0);
+    if(i<=14){ag+=gn/14;al+=ls/14;if(i===14)r[i]=al===0?100:100-100/(1+ag/al)}else{ag=(ag*13+gn)/14;al=(al*13+ls)/14;r[i]=al===0?100:100-100/(1+ag/al)}}return r.slice(off)})();
+  bars=full.slice(off);
+  const W=760,H=360,L=8,R=150,T=12,B=22,n=bars.length,cw=(W-L-R)/n,RH=78,HT=IND?H+RH+14:H;
+  smc=smc||{};
+  if(SIMPLE){smc={...smc,
+    fvgs:(smc.fvgs||[]).filter(z=>!z.filled).slice(-2),
+    obs:(smc.obs||[]).filter(z=>!z.t1).slice(-2).map(z=>({...z,filled:false})),
+    breaks:(smc.breaks||[]).filter(b=>b.level!=="internal").slice(-2),
+    swings:(smc.swings||[]).slice(-4),
+    liq:(smc.liq||[]).filter(q=>!q.swept).slice(-2)};
+    levels=(levels||[]).filter(l=>["crt","mss","entry","sl","tp"].includes(l.kind));}
+  const idx=t=>{if(t==null)return null;const s=String(t);let k=bars.findIndex(b=>String(b[0])>=s);return k<0?(String(bars[n-1][0])<s?n-1:0):k};
+  const ys=[];bars.forEach(b=>ys.push(b[2],b[3]));
+  const lv=(levels||[]).filter(l=>l.price!=null);
+  const lo0=Math.min(...ys),hi0=Math.max(...ys),span=hi0-lo0;
+  lv.forEach(l=>{if(l.price>lo0-span*.6&&l.price<hi0+span*.6)ys.push(l.price)});
+  let lo=Math.min(...ys),hi=Math.max(...ys);const m=(hi-lo)*.05;lo-=m;hi+=m;
+  const Y=v=>T+(hi-v)/(hi-lo)*(H-T-B),X=i=>L+i*cw+cw/2;
+  let g="";
+  for(let k=0;k<=4;k++){const y=T+k*(H-T-B)/4;g+=`<line x1="${L}" x2="${W-R}" y1="${y}" y2="${y}" stroke="var(--grid)"/>`}
+  const cl=v=>Math.max(T,Math.min(H-B,Y(v)));
+  // 프리미엄/디스카운트: 범위 50% 위는 프리미엄, 아래는 디스카운트
+  if(smc.pd&&smc.pd.hi!=null&&smc.pd.lo!=null){const eq=(smc.pd.hi+smc.pd.lo)/2;
+    g+=`<rect x="${L}" y="${cl(smc.pd.hi)}" width="${W-R-L}" height="${Math.max(0,cl(eq)-cl(smc.pd.hi))}" fill="var(--down)" opacity=".05"/>`;
+    g+=`<rect x="${L}" y="${cl(eq)}" width="${W-R-L}" height="${Math.max(0,cl(smc.pd.lo)-cl(eq))}" fill="var(--up)" opacity=".05"/>`;
+    g+=`<line x1="${L}" x2="${W-R}" y1="${Y(eq)}" y2="${Y(eq)}" stroke="var(--mute)" stroke-dasharray="1 4"/>`;
+    g+=`<text x="${L+4}" y="${cl(smc.pd.hi)+12}" font-size="10" fill="var(--down)">프리미엄</text><text x="${L+4}" y="${cl(smc.pd.lo)-4}" font-size="10" fill="var(--up)">디스카운트</text>`;}
+  // OB·FVG 상자
+  const box=(z,col,lab)=>{const i0=idx(z.t0),i1=z.t1?idx(z.t1):n-1;if(i0==null)return;const x0=L+i0*cw,x1=L+(i1+1)*cw;
+    g+=`<rect x="${x0}" y="${cl(z.top)}" width="${Math.max(2,x1-x0)}" height="${Math.max(1,cl(z.bottom)-cl(z.top))}" fill="${col}" opacity="${z.filled?.08:.2}" stroke="${col}" stroke-opacity=".6"/>`;
+    g+=`<text x="${x0+3}" y="${cl(z.top)+10}" font-size="9.5" fill="${col}" font-weight="600">${lab}</text>`;};
+  (smc.obs||[]).forEach(z=>box(z,z.dir==="bull"?"var(--up)":"var(--down)",(z.dir==="bull"?"강세 OB":"약세 OB")));
+  (smc.fvgs||[]).forEach(z=>box(z,z.dir==="bull"?"var(--entry)":"var(--hi)",(z.dir==="bull"?"강세 FVG":"약세 FVG")+(z.filled?" (메움)":"")));
+  const step=Math.max(1,Math.round(n/6));
+  bars.forEach((b,i)=>{const[t,o,h,l,c]=b,up=c>=o,col=up?"var(--up)":"var(--down)",x=X(i),bw=Math.max(1.5,cw*.62);
+    g+=`<line x1="${x}" x2="${x}" y1="${Y(h)}" y2="${Y(l)}" stroke="${col}"/>`;
+    g+=`<rect x="${x-bw/2}" y="${Y(Math.max(o,c))}" width="${bw}" height="${Math.max(1,Math.abs(Y(o)-Y(c)))}" fill="${col}"/>`;
+    if(i%step===0)g+=`<text x="${x}" y="${H-6}" text-anchor="middle" font-size="10" fill="var(--mute)" font-family="JetBrains Mono,monospace">${esc(String(t).slice(5,16).replace("T"," "))}</text>`;});
+  // 스윙 고점·저점 표시(HH/HL/LH/LL)
+  (smc.swings||[]).forEach(s=>{const i=idx(s.t);if(i==null)return;const x=X(i),hiSw=s.type==="H",y=hiSw?Y(s.price)-6:Y(s.price)+14;
+    g+=`<text x="${x}" y="${y}" text-anchor="middle" font-size="10" font-weight="700" fill="${hiSw?"var(--down)":"var(--up)"}">${esc(s.label||(hiSw?"H":"L"))}</text>`;});
+  // 구조 돌파: BOS / CHoCH(MSS)
+  (smc.breaks||[]).forEach(b=>{const i0=idx(b.from_t),i1=idx(b.to_t);if(i0==null||i1==null)return;const col=b.type==="BOS"?"var(--fg)":"var(--warn)",sw=b.level==="external"?2.6:(b.level==="internal"?0.9:1.3);
+    g+=`<line x1="${X(i0)}" x2="${X(i1)}" y1="${Y(b.price)}" y2="${Y(b.price)}" stroke="${col}" stroke-width="${sw}" stroke-dasharray="${b.type==="BOS"?"0":"4 2"}"/>`;
+    g+=`<text x="${X(i1)+3}" y="${Y(b.price)+4}" font-size="10" font-weight="700" fill="${b.type==="BOS"?"#d4b106":"var(--warn)"}">${esc(b.type==="CHoCH"?(b.level==="internal"?"내부 MSS":"MSS"):"BOS")}</text>`;});
+  // 유동성: 같은 높이 고점/저점(EQH/EQL)
+  (smc.liq||[]).forEach(q=>{const i0=idx(q.t0),i1=q.t1?idx(q.t1):n-1;if(i0==null)return;
+    g+=`<line x1="${X(i0)}" x2="${X(i1)}" y1="${Y(q.price)}" y2="${Y(q.price)}" stroke="var(--lvl)" stroke-width="2" stroke-dasharray="1 3"/>`;
+    g+=`<text x="${X(i1)+3}" y="${Y(q.price)+3}" font-size="9.5" fill="var(--lvl)" font-weight="700">${esc(q.name||"EQ")}${q.swept?" ✓쓸림":""}</text>`;});
+  const labs=[];
+  lv.forEach(l=>{if(l.price<lo||l.price>hi)return;const col=`var(${colorOf(l.kind)})`,dash=(l.kind==="hl")?'stroke-dasharray="5 4"':'';
+    if(l.kind==="crt"){
+      // CRT는 기준 캠들의 고점·저점에만 짧게 표시(석준님 작도 방식)
+      const i0=l.t0!=null?idx(l.t0):Math.max(0,n-2), i1=Math.min(n-1,i0+8);
+      const x0=L+i0*cw, x1=L+(i1+1)*cw;
+      g+=`<line x1="${x0}" x2="${x1}" y1="${Y(l.price)}" y2="${Y(l.price)}" stroke="var(--fg)" stroke-width="1.2"/>`;
+      g+=`<line x1="${x0}" x2="${x0}" y1="${Y(l.price)}" y2="${Y(l.price)+(/L/.test(l.name)?-6:6)}" stroke="var(--fg)" stroke-width="1.2"/>`;
+      g+=`<text x="${x1+4}" y="${Y(l.price)+4}" font-size="10.5" fill="var(--fg)" font-weight="600">4H ${esc(l.name)}</text>`;
+      return;}
+    if(["entry","sl","tp"].includes(l.kind)){
+      // 진입·손절·목표는 차트 안에 선을 긋지 않고 오른쪽 바깥에 표시만
+      g+=`<path d="M${W-R+1} ${Y(l.price)} l7 -4 v8 z" fill="${col}"/>`;
+      labs.push({y:Y(l.price),t:`${l.name} ${fmt(l.price,l.price)}`,col});
+      return;}
+    g+=`<line x1="${L}" x2="${W-R+4}" y1="${Y(l.price)}" y2="${Y(l.price)}" stroke="${col}" stroke-width="${l.kind==="entry"||l.kind==="mss"?1.6:1.1}" ${dash}/>`;
+    labs.push({y:Y(l.price),t:`${l.name} ${fmt(l.price,l.price)}`,col});});
+  if(price!=null&&price>=lo&&price<=hi){g+=`<line x1="${L}" x2="${W-R+4}" y1="${Y(price)}" y2="${Y(price)}" stroke="var(--fg)" stroke-dasharray="2 3"/>`;labs.push({y:Y(price),t:`현재 ${fmt(price,price)}`,col:"var(--fg)"})}
+  labs.sort((a,b)=>a.y-b.y);for(let i=1;i<labs.length;i++)if(labs[i].y-labs[i-1].y<13)labs[i].y=labs[i-1].y+13;
+  labs.forEach(a=>g+=`<text x="${W-R+8}" y="${a.y+4}" font-size="11" fill="${a.col}" font-weight="600" font-family="JetBrains Mono,monospace">${esc(a.t)}</text>`);
+  // 이동평균선
+  // 화면 범위 밖 값은 그리지 않고 선을 끊음(가장자리에 눌린 가짜 선 방지)
+  const line=(arr,col,w)=>{let seg=[];const flush=()=>{if(seg.length>1)g+=`<polyline points="${seg.join(" ")}" fill="none" stroke="${col}" stroke-width="${w}" opacity=".9"/>`;seg=[]};
+    arr.forEach((v,i)=>{if(v==null||v<lo||v>hi){flush();return}seg.push(`${X(i).toFixed(1)},${Y(v).toFixed(1)}`)});flush()};
+  if(IND){
+  line(ma20,"#f59e0b",1.4); line(ma200,"#8b5cf6",1.8);
+  const last=a=>{for(let i=a.length-1;i>=0;i--)if(a[i]!=null)return a[i];return null};
+  g+=`<text x="${L+4}" y="${T+10}" font-size="10.5" font-weight="600"><tspan fill="#f59e0b">MA20 ${fmt(last(ma20),price)}</tspan><tspan dx="10" fill="#8b5cf6">MA200 ${last(ma200)==null?"자료 부족":fmt(last(ma200),price)}</tspan></text>`;
+  // RSI(14) 아래 칸
+  const rt=H+8, rb=H+8+RH, RY=v=>rt+(100-v)/100*(rb-rt);
+  g+=`<rect x="${L}" y="${rt}" width="${W-R-L}" height="${RH}" fill="var(--grid)" opacity=".5"/>`;
+  [70,30].forEach(v=>g+=`<line x1="${L}" x2="${W-R}" y1="${RY(v)}" y2="${RY(v)}" stroke="var(--mute)" stroke-dasharray="3 3"/><text x="${W-R+4}" y="${RY(v)+4}" font-size="10" fill="var(--mute)">${v}</text>`);
+  const rp=rsi.map((v,i)=>v==null?null:`${X(i).toFixed(1)},${RY(v).toFixed(1)}`).filter(Boolean);
+  if(rp.length>1)g+=`<polyline points="${rp.join(" ")}" fill="none" stroke="var(--entry)" stroke-width="1.4"/>`;
+  const rl=last(rsi); g+=`<text x="${L+4}" y="${rt+11}" font-size="10.5" font-weight="600" fill="var(--entry)">RSI(14) ${rl==null?"—":rl.toFixed(1)}${rl!=null?(rl>=70?" 과열":rl<=30?" 침체":""):""}</text>`;
+  }
+  svg.setAttribute("viewBox",`0 0 ${W} ${HT}`);svg.setAttribute("role","img");svg.innerHTML=g;
+}
+
+function trendPill(v){return v==="상승"?`<span class="pill p-up">상승</span>`:v==="하락"?`<span class="pill p-dn">하락</span>`:`<span class="pill p-n">${esc(v||"—")}</span>`}
+
+function render(){
+  const syms=Object.keys(DOCS).sort();
+  if(!cur||!DOCS[cur])cur=syms[0]||null;
+  $("#tabs").innerHTML=syms.map(s=>{const d=DOCS[s];return`<button class="tab" data-s="${esc(s)}" aria-selected="${s===cur}"><span class="dot ${d.card?"sig":""}"></span>${esc(s)} <b>${fmt(d.price,d.price)}</b></button>`}).join("");
+  $("#tabs").querySelectorAll(".tab").forEach(b=>b.onclick=()=>{cur=b.dataset.s;render()});
+  const d=DOCS[cur]; if(!d)return;
+  $("#mode").textContent=SIMPLE?"자세히 보기":"간단히 보기";
+  $("#h4title").textContent=(d.tf_labels&&d.tf_labels.h4)||"4시간봉";
+  $("#story").innerHTML=storyHTML(d);
+  $("#sub").textContent=`마지막 분석 ${d.at||"—"} (KST) · RC비너스가 15분마다 갱신 · 주문은 하지 않아요.`;
+  const lv=(d.levels||[]).slice(); if(d.card){["entry","sl","tp"].forEach(k=>{if(d.card[k]!=null)lv.push({name:{entry:"진입",sl:"손절",tp:"목표"}[k],price:d.card[k],kind:k})})}
+  chart("ch4",d.h4,lv,d.price,(d.smc||{}).h4); chart("cm15",d.m15,lv,d.price,(d.smc||{}).m15); chart("cm5",d.m5,lv,d.price,(d.smc||{}).m5);
+  const sm=(d.smc||{}).h4||{};
+  if(!d.smc)$("#h4note").dataset.miss="1";
+  const shown=(a,k)=>a?`최근 ${Math.min(a.length,k)}개`:""; $("#h4note").textContent=shown(d.h4,120); $("#m15note").textContent=shown(d.m15,96); $("#m5note").textContent=d.m5?shown(d.m5,144):"아직 자료 없음";
+  const t=d.trend||{};
+  let h=`<div class="verdict">${d.card?`<span style="color:var(--up)">신호: ${esc(d.card.dir)} (${esc(d.card.grade||"")})</span>`:esc(d.status||"자리 없음")}</div>
+    <table class="t"><tr><td>주봉</td><td>${trendPill(t.w)}</td></tr><tr><td>일봉</td><td>${trendPill(t.d)}</td></tr><tr><td>4시간</td><td>${trendPill(t.h4)}</td></tr>
+    <tr><td>4H 범위 위치</td><td class="n">${d.pos!=null?Math.round(d.pos*100)+"%":"—"}</td></tr><tr><td>변동성</td><td class="n">${d.vol!=null?(+d.vol).toFixed(2)+"배":"—"}</td></tr></table>`;
+  if(d.card){const c=d.card;h+=`<table class="t" style="margin-top:8px"><tr><td>진입</td><td class="n">${fmt(c.entry,c.entry)}</td></tr><tr><td>손절</td><td class="n">${fmt(c.sl,c.sl)}</td></tr><tr><td>목표</td><td class="n">${fmt(c.tp,c.tp)}</td></tr><tr><td>손익비</td><td class="n">${c.rr!=null?"1 : "+(+c.rr).toFixed(2):"—"}</td></tr></table>
+    <div style="margin-top:8px"><b style="font-size:13px">근거</b><ul class="plain">${(c.reasons||[]).map(r=>`<li>${esc(r)}</li>`).join("")}</ul></div>
+    <div style="margin-top:4px"><b style="font-size:13px;color:var(--down)">반대 근거</b><ul class="plain"><li>${esc(c.against||"")}</li></ul></div>`;}
+  if(d.watch)h+=`<div style="margin-top:8px"><b style="font-size:13px">지켜볼 곳</b><ul class="plain">${(Array.isArray(d.watch)?d.watch:[d.watch]).map(w=>`<li>${esc(w)}</li>`).join("")}</ul></div>`;
+  $("#panel").innerHTML=h;
+  const ss=SIGS.filter(s=>!cur||s.sym===cur).slice(0,8);
+  $("#sigs").innerHTML=ss.length?ss.map(s=>`<div class="sigrow"><b>${esc(s.sym)} ${esc(s.dir)}</b> <span class="note">${esc(s.at||"")} · ${esc(s.grade||"")}</span><br>진입 ${fmt(s.entry,s.entry)} · 손절 ${fmt(s.sl,s.sl)} · 목표 ${fmt(s.tp,s.tp)} · 결과 <b>${s.result_r!=null?((s.result_r>=0?"+":"")+(+s.result_r).toFixed(2)+"R"):esc(s.status||"진행 중")}</b></div>`).join(""):"아직 신호가 없어요.";
+}
+
+function storyHTML(d){
+  const t=d.trend||{}, h4=(d.smc||{}).h4||{};
+  let lines=Array.isArray(d.story)&&d.story.length?d.story.slice():null;
+  if(!lines){
+    lines=[];
+    const ext=(h4.breaks||[]).filter(b=>b.level!=="internal").slice(-1)[0];
+    lines.push(`큰 그림: 주봉 ${t.w||"—"}, 일봉 ${t.d||"—"}, 4시간 ${t.h4||"—"}.`+(ext?` 4시간봉 마지막 큰 구조 돌파는 ${ext.dir==="bull"?"위로":"아래로"} ${fmt(ext.price,ext.price)} (${ext.type==="CHoCH"?"방향 전환":"추세 이어짐"}).`:""));
+    if(h4.pd&&h4.pd.hi!=null){const p=(d.price-h4.pd.lo)/(h4.pd.hi-h4.pd.lo);lines.push(p>1?`지금 위치: ${fmt(d.price,d.price)}는 마지막 4시간 다리 고점(${fmt(h4.pd.hi,h4.pd.hi)}) 위로 올라온 상태 → 매우 비싼 쪽. 새로 사기보다 되돌림을 기다리는 구간.`:p<0?`지금 위치: ${fmt(d.price,d.price)}는 마지막 4시간 다리 저점(${fmt(h4.pd.lo,h4.pd.lo)}) 아래 → 매우 싼 쪽. 새로 팔기보다 반등을 기다리는 구간.`:`지금 위치: ${fmt(d.price,d.price)}는 4시간 다리의 ${Math.round(p*100)}% 지점 → ${p>=.5?"비싼 쪽(프리미엄). 여기서 새로 사기는 불리":"싼 쪽(디스카운트). 매수 자리를 찾는 구간"}.`)}
+    const ob=(h4.obs||[]).filter(z=>!z.filled&&!z.t1).slice(-1)[0];
+    if(ob)lines.push(`가까운 4시간 ${ob.dir==="bull"?"강세":"약세"} OB: ${fmt(ob.bottom,ob.bottom)}~${fmt(ob.top,ob.top)}. 가격이 여기로 오면 작은 시간대 MSS를 기다리는 자리.`);
+  }
+  const w=Array.isArray(d.watch)?d.watch:(d.watch?[d.watch]:[]);
+  const head=d.card?`<span style="color:var(--up)">지금 신호 있음: ${esc(d.card.dir)} ${esc(d.card.grade||"")}</span>`:`지금은 기다리는 중 (${esc(d.status||"자리 없음")})`;
+  return `<div class="verdict">${esc(cur)} — ${head}</div>
+    <ol style="margin:4px 0 0;padding-left:20px">${lines.map(l=>`<li style="margin:3px 0">${esc(l)}</li>`).join("")}</ol>
+    ${w.length?`<div style="margin-top:8px"><b>다음에 볼 것:</b><ul class="plain">${w.map(x=>`<li>${esc(x)}</li>`).join("")}</ul></div>`:""}`;
+}
+$("#mode").onclick=()=>{SIMPLE=!SIMPLE;render()};
+
+(async()=>{
+  const db=await window.claude?.use?.("db");
+  if(!db){$("#panel").innerHTML='<div class="empty">로그인해야 차트가 보여요.</div>';return}
+  db.collection("charts").onSnapshot(s=>{DOCS={};s.docs.forEach(x=>{const v=x.data();if(v&&v.sym)DOCS[v.sym]=v});render()});
+  db.collection("signals").onSnapshot(s=>{SIGS=s.docs.map(x=>x.data()).filter(Boolean).sort((a,b)=>(b.at||"").localeCompare(a.at||""));render()});
+})();
+</script>
